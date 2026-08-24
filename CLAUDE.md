@@ -17,6 +17,17 @@ this client.
   and publishes `dist/`
 - Node 24 max — Netlify's build image caps there. **Never pin `.nvmrc` or
   `engines` to a newer local Node than that.**
+- **Vanilla JS with JSDoc, not TypeScript.** `tsconfig.json` exists for
+  editor intellisense only — there is no `typescript` package installed
+  (`npm ls typescript` is empty) and `npm run build` runs `astro build`
+  alone, with no `astro check` or `tsc` step. Astro's `[types] Generated`
+  build line only syncs `.astro/types.d.ts` for the editor; it does not
+  type-check anything. A `.ts` file in this repo would read as type-safe
+  and enforce nothing — verified by injecting a type error into a `.ts`
+  module and watching `npm run build` pass clean. Source files use `.js`
+  with JSDoc annotations (`@param`, `@returns`, `@type`) where types add
+  clarity; `src/env.d.ts` is the one exception (it must be `.d.ts` to
+  augment `ImportMetaEnv`) and is itself editor-only, enforced by nothing.
 
 ## User-Facing Language
 
@@ -53,6 +64,16 @@ than that as a defect, not a hardening opportunity.
 This also means: **never treat this repo's env vars as secrets.** Everything
 under `PUBLIC_` in `.env.example` is meant to be public — see the comment
 there before adding a new one.
+
+`.env.example` carries exactly the two vars Netlify actually provisions for
+this build: `PUBLIC_ELENCHUS_WEB_KEY` and `PUBLIC_TURNSTILE_SITE_KEY`. The
+Worker endpoint (`ELENCHUS_PROXY_URL`) is deliberately **not** one of them —
+it is a constant in `src/lib/config.js`, because it is public and stable and
+an unprovisioned required env var is a silent production failure, not a
+convenience. `src/lib/config.js` is also where the two real env vars are
+read and validated — a missing one throws immediately with the name of the
+variable and how to set it, rather than letting an empty `X-Elenchus-Key`
+header reach the Worker and come back as an opaque 403.
 
 ## Visual identity
 

@@ -32,8 +32,11 @@ caller.
 
     npm install
     cp .env.example .env
-    # fill PUBLIC_ELENCHUS_PROXY_URL / PUBLIC_ELENCHUS_WEB_KEY / PUBLIC_TURNSTILE_SITE_KEY
+    # fill PUBLIC_ELENCHUS_WEB_KEY / PUBLIC_TURNSTILE_SITE_KEY
     npm run dev
+
+The elenchus-proxy Worker endpoint is not an env var — it is a public,
+stable constant in `src/lib/config.js` (see the comment there for why).
 
 ## Build
 
