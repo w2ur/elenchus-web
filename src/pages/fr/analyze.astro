@@ -1,0 +1,21 @@
+---
+import Analyzer from '../../components/Analyzer.astro';
+import Layout from '../../layouts/Layout.astro';
+// Same reasoning as src/pages/analyze.astro: imported in frontmatter so a
+// misconfigured Netlify build fails loudly at `astro build`, not silently in
+// a French-language visitor's browser.
+import { ELENCHUS_PROXY_URL, ELENCHUS_WEB_KEY, TURNSTILE_SITE_KEY } from '../../lib/config.js';
+
+const title = 'Elenchus — analyseur de raisonnement (texte collé)';
+const description =
+  "Collez un texte et obtenez une analyse structurée de ses failles logiques, un score de raisonnement et ses points forts.";
+---
+
+<Layout title={title} description={description} lang="fr">
+  <Analyzer
+    lang="fr"
+    proxyUrl={ELENCHUS_PROXY_URL}
+    webKey={ELENCHUS_WEB_KEY}
+    turnstileSiteKey={TURNSTILE_SITE_KEY}
+  />
+</Layout>

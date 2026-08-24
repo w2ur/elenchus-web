@@ -1,8 +1,11 @@
 /* Design tokens mirror ~/Dev/elenchus/sidepanel/sidepanel.css: same structure
    (light tokens on :root, dark tokens under prefers-color-scheme), swapped to
    the teal accent the hub assigns Elenchus (#4F8A8B family) instead of the
-   side panel's blue. Severity/score tokens are not defined here — they belong
-   to the analyzer UI that C3 builds, not to this scaffold. */
+   side panel's blue. Severity/score tokens are semantic status colors
+   (amber/red/dark-red, green/amber/red) — they are not "the accent color",
+   so the portfolio's never-purple rule does not apply to them, and they are
+   copied verbatim from the extension's sidepanel.css so the same analysis
+   reads with the same colors on both surfaces. */
 :root {
   --bg: #ffffff;
   --bg-card: #f5f5f5;
@@ -11,6 +14,12 @@
   --border: #e0e0e0;
   --accent: #4f8a8b;
   --accent-hover: #3d6d6e;
+  --severity-minor: #d97706;
+  --severity-significant: #dc2626;
+  --severity-critical: #7c2d12;
+  --score-strong: #16a34a;
+  --score-moderate: #d97706;
+  --score-weak: #dc2626;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,6 +31,12 @@
     --border: #404040;
     --accent: #6fb3b4;
     --accent-hover: #8ec4c5;
+    --severity-minor: #fbbf24;
+    --severity-significant: #f87171;
+    --severity-critical: #fca5a5;
+    --score-strong: #4ade80;
+    --score-moderate: #fbbf24;
+    --score-weak: #f87171;
   }
 }
 
@@ -73,4 +88,310 @@ footer {
 footer a {
   color: inherit;
   text-decoration: underline;
+}
+
+/* --- Analyzer (C3) --- */
+
+h1 {
+  font-size: 22px;
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+h2 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+/* Quieter than .warning-notice below: this is a standing condition of the
+   free tier, not something that went wrong, so it must not read as an
+   error — mirrors .privacy-notice in sidepanel.css. */
+.notice {
+  margin-bottom: 20px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.notice a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.warning-notice {
+  background: color-mix(in srgb, var(--severity-minor) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--severity-minor) 30%, transparent);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--severity-minor);
+  margin-bottom: 14px;
+  line-height: 1.4;
+}
+
+textarea#text-input {
+  width: 100%;
+  min-height: 220px;
+  resize: vertical;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+textarea#text-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.textarea-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 6px 0 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.textarea-meta .over-limit {
+  color: var(--severity-significant);
+}
+
+#turnstile-container {
+  margin-bottom: 16px;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+.btn-primary:disabled {
+  background: var(--border);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.btn-secondary:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+/* Loading — names the method, never progress. No percentage, no step count,
+   no progress bar: nothing about this wait is measurable, matching the
+   extension's sidepanel.js / sidepanel.css. */
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 24px auto 16px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+#loading-state {
+  text-align: center;
+  padding: 20px 0;
+}
+
+#loading-message {
+  color: var(--text-muted);
+  font-size: 13px;
+  max-width: 26em;
+  margin: 0 auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2.4s;
+  }
+}
+
+/* Error */
+
+#error-state {
+  padding: 20px 0;
+}
+
+.error-message {
+  color: var(--severity-significant);
+  margin-bottom: 12px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* Results */
+
+#result-state {
+  padding-top: 8px;
+}
+
+#result-summary {
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.score-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 20px;
+}
+
+.score-badge.strong {
+  background: var(--score-strong);
+  color: #fff;
+}
+.score-badge.moderate {
+  background: var(--score-moderate);
+  color: #fff;
+}
+.score-badge.weak {
+  background: var(--score-weak);
+  color: #fff;
+}
+.score-badge:not(.strong):not(.moderate):not(.weak) {
+  background: var(--border);
+  color: var(--text-muted);
+}
+
+.count-badge {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+#no-flaws {
+  color: var(--score-strong);
+  font-size: 13px;
+  padding: 8px 0 16px;
+}
+
+.flaw-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+
+.flaw-type {
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.flaw-severity {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 10px;
+  display: inline-block;
+  margin-bottom: 8px;
+}
+
+.flaw-severity.minor {
+  color: var(--severity-minor);
+  border: 1px solid var(--severity-minor);
+}
+.flaw-severity.significant {
+  color: var(--severity-significant);
+  border: 1px solid var(--severity-significant);
+}
+.flaw-severity.critical {
+  color: var(--severity-critical);
+  border: 1px solid var(--severity-critical);
+}
+
+.flaw-quote {
+  font-style: italic;
+  color: var(--text-muted);
+  border-left: 3px solid var(--border);
+  padding-left: 10px;
+  margin: 8px 0;
+  font-size: 13px;
+}
+
+.flaw-explanation {
+  font-size: 13px;
+  color: var(--text);
+}
+
+#strengths-section {
+  margin-top: 16px;
+  margin-bottom: 20px;
+}
+
+#strengths-list {
+  list-style: none;
+}
+
+#strengths-list li {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+/* Screen-reader-only: present to assistive tech, invisible on screen. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

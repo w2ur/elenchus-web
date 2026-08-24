@@ -90,15 +90,35 @@ extension. Footer signature "Made with care by William" →
 `https://william.revah.paris` is in `src/layouts/Layout.astro`; do not
 duplicate it elsewhere.
 
-`src/` is a deliberate skeleton (`Layout.astro` + an `index.astro`
-placeholder) — the analyzer UI (the paste box, the results panel, the enum
-clamp on model output) is a separate task, not part of this scaffold.
+The analyzer UI (paste box, Turnstile widget, results panel, the enum clamp
+on model output) lives at `src/pages/analyze.astro` and
+`src/pages/fr/analyze.astro`, sharing markup and client wiring via
+`src/components/Analyzer.astro`. `src/lib/clamp.js`, `src/lib/render.js` and
+`src/lib/strings.js` hold the testable logic; `src/pages/index.astro`
+remains a placeholder (the analyzer's own landing/home treatment is a later
+task).
 
 ## Development
 
     npm install
     cp .env.example .env
     npm run dev
+
+## Testing
+
+    npm test
+
+Vitest + jsdom, `test/*.test.js`, covering `src/lib/clamp.js` and
+`src/lib/render.js` only. **The renderer never passes model text to
+innerHTML unescaped** — the analysed text is adversarial by construction (a
+visitor pastes text written by someone else), so the model's JSON output is
+attacker-influenced. `oneOf()` clamps enum fields (severity/score) before
+they reach a CSS class or a label lookup; free-text fields are escaped or
+set via `textContent`, never interpolated raw. `test/render.test.js`
+includes a hostile-input fixture asserting this on the rendered DOM output,
+not on internal calls. There is no test runner for the Astro pages or the
+client wiring in `src/components/Analyzer.astro` themselves — `npm run
+build` and manual verification cover those.
 
 ## Build
 

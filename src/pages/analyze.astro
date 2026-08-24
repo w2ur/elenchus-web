@@ -1,0 +1,25 @@
+---
+import Analyzer from '../components/Analyzer.astro';
+import Layout from '../layouts/Layout.astro';
+// Imported here in frontmatter (not only from a client <script>): frontmatter
+// runs in Node during `astro build` (output: 'static'), so requireEnv()'s
+// throw in src/lib/config.js fails the BUILD when a required env var is
+// missing, before anything ships. A client-script-only import would compile
+// fine and only throw in a visitor's browser — see CLAUDE.md, "the web key
+// is friction, not an auth boundary", and the C3 dispatch notes on why this
+// matters.
+import { ELENCHUS_PROXY_URL, ELENCHUS_WEB_KEY, TURNSTILE_SITE_KEY } from '../lib/config.js';
+
+const title = 'Elenchus — paste-text reasoning analyzer';
+const description =
+  'Paste any text and get a structured analysis of its logical flaws, reasoning score and strengths.';
+---
+
+<Layout title={title} description={description} lang="en">
+  <Analyzer
+    lang="en"
+    proxyUrl={ELENCHUS_PROXY_URL}
+    webKey={ELENCHUS_WEB_KEY}
+    turnstileSiteKey={TURNSTILE_SITE_KEY}
+  />
+</Layout>

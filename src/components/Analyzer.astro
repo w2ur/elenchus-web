@@ -1,0 +1,312 @@
+---
+// Shared markup + client wiring for the paste-text analyzer, used by both
+// src/pages/analyze.astro (English) and src/pages/fr/analyze.astro
+// (French). Kept as one component so the two language pages cannot drift
+// structurally — only the strings (src/lib/strings.js) differ per page.
+//
+// `proxyUrl` / `webKey` / `turnstileSiteKey` are threaded in as props from
+// each page's own frontmatter import of src/lib/config.js — see that
+// file's comment and CLAUDE.md ("import config.js from Astro frontmatter
+// on both pages, so a missing env var fails the build, not just a
+// visitor's browser").
+import { strings } from '../lib/strings.js';
+
+interface Props {
+  lang: 'en' | 'fr';
+  proxyUrl: string;
+  webKey: string;
+  turnstileSiteKey: string;
+}
+
+const { lang, proxyUrl, webKey, turnstileSiteKey } = Astro.props;
+const T = strings[lang];
+
+// The free-tier notice's "use your own API key" link must point somewhere
+// that actually offers that path. It used to point at
+// github.com/w2ur/elenchus, but that repo is private (`gh repo view
+// w2ur/elenchus --json isPrivate` → true) — a 404 for every visitor, in the
+// one part of the page that most needs to be trustworthy (the data-training
+// disclosure). The Chrome Web Store listing is public and is where the
+// extension — and with it the actual bring-your-own-key settings panel —
+// lives. `?hl=` matches the per-language form the portfolio hub already
+// uses for this listing.
+const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/bodfmokjnmkkdobfcnfbplnbplgdbfgl?hl=${lang}`;
+
+// Mirrors the elenchus-proxy Worker: the MAX_TEXT_LENGTH constant (which
+// truncates silently server-side) and its >=50-char minimum-length check,
+// both in elenchus-proxy/src/index.js — both surfaced to the user here
+// instead. Cited by name and file only, never by line number: the two
+// repos move independently, so a line cite goes stale the moment either
+// changes (it already has once, mid-phase).
+const MAX_TEXT_LENGTH = 15000;
+const MIN_TEXT_LENGTH = 50;
+---
+
+<h1>{T.heading}</h1>
+<p class="subtitle">{T.subtitle}</p>
+
+<p class="notice" id="free-tier-notice">
+  {T.freeTierNoticeText}<a
+    href={CHROME_WEB_STORE_URL}
+    target="_blank"
+    rel="noopener noreferrer">{T.freeTierNoticeLink}</a>{T.freeTierNoticeEnd}
+</p>
+
+<form id="analyze-form" novalidate>
+  <label class="sr-only" for="text-input">{T.textareaLabel}</label>
+  <textarea
+    id="text-input"
+    maxlength={MAX_TEXT_LENGTH}
+    placeholder={T.textareaPlaceholder}
+    required></textarea>
+  <div class="textarea-meta">
+    <span id="char-count">0 / {MAX_TEXT_LENGTH}</span>
+    <span id="length-warning" hidden></span>
+  </div>
+
+  <div
+    id="turnstile-container"
+    class="cf-turnstile"
+    data-sitekey={turnstileSiteKey}
+    data-theme="auto"
+  >
+  </div>
+
+  <button id="analyze-btn" class="btn-primary" type="submit" disabled>{T.analyzeBtn}</button>
+</form>
+
+<div id="loading-state" hidden>
+  <div class="spinner" aria-hidden="true"></div>
+  <p id="loading-message">{T.loadingMessage}</p>
+</div>
+
+<div id="error-state" hidden>
+  <p id="error-message" class="error-message"></p>
+  <button id="retry-btn" class="btn-secondary" type="button">{T.retryBtn}</button>
+</div>
+
+<div id="result-state" hidden>
+  <p id="truncation-warning" class="warning-notice" hidden>{T.truncationWarning}</p>
+
+  <h2>{T.summaryHeading}</h2>
+  <p id="result-summary"></p>
+  <span id="result-score" class="score-badge"></span>
+
+  <h2>{T.flawsHeading} <span id="flaws-count" class="count-badge"></span></h2>
+  <p id="no-flaws" hidden>{T.noFlaws}</p>
+  <div id="flaws-list"></div>
+
+  <div id="strengths-section" hidden>
+    <h2>{T.strengthsHeading}</h2>
+    <ul id="strengths-list"></ul>
+  </div>
+
+  <button id="new-analysis-btn" class="btn-secondary" type="button">{T.newAnalysisBtn}</button>
+</div>
+
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
+<!--
+  Config values from Astro frontmatter, passed to the client via data-*
+  attributes on a plain element rather than `define:vars` on the module
+  script below.
+
+  `define:vars` implies `is:inline` (Astro docs): an inline script is
+  emitted into the HTML VERBATIM and is never processed by Vite, so any
+  `import` statement inside it ships as a literal, unresolved relative
+  specifier — the browser tries to fetch e.g. `/lib/clamp.js` (404 on
+  `/analyze/`) or `/fr/lib/clamp.js` (404 on `/fr/analyze/`) and the module
+  dies on its first line before any listener is attached. `npm run build`
+  cannot catch this (it never resolves an inline script's imports) and
+  `npx vitest run` cannot either (it imports src/lib/*.js directly, not
+  through this component) — only serving dist/ and loading the page shows
+  it. A data-* attribute element keeps the script below a normal,
+  non-inline `<script type="module">`, which Astro *does* bundle through
+  Vite, so its relative imports resolve at build time into a real
+  dist/_astro/*.js file.
+-->
+<div
+  id="analyzer-config"
+  data-lang={lang}
+  data-proxy-url={proxyUrl}
+  data-web-key={webKey}
+  data-max-len={MAX_TEXT_LENGTH}
+  data-min-len={MIN_TEXT_LENGTH}
+  hidden
+>
+</div>
+
+<script type="module">
+  import { REASONS, oneOf } from '../lib/clamp.js';
+  import { renderAnalysis } from '../lib/render.js';
+  import { strings as STRINGS } from '../lib/strings.js';
+
+  const config = document.getElementById('analyzer-config').dataset;
+  const PAGE_LANG = config.lang;
+  const PROXY_URL = config.proxyUrl;
+  const WEB_KEY = config.webKey;
+  const MAX_LEN = Number(config.maxLen);
+  const MIN_LEN = Number(config.minLen);
+
+  const T = STRINGS[PAGE_LANG] || STRINGS.en;
+
+  const form = document.getElementById('analyze-form');
+  const textInput = document.getElementById('text-input');
+  const charCount = document.getElementById('char-count');
+  const lengthWarning = document.getElementById('length-warning');
+  const analyzeBtn = document.getElementById('analyze-btn');
+  const loadingState = document.getElementById('loading-state');
+  const errorState = document.getElementById('error-state');
+  const errorMessage = document.getElementById('error-message');
+  const resultState = document.getElementById('result-state');
+  const truncationWarning = document.getElementById('truncation-warning');
+  const retryBtn = document.getElementById('retry-btn');
+  const newAnalysisBtn = document.getElementById('new-analysis-btn');
+
+  const resultElements = {
+    summaryEl: document.getElementById('result-summary'),
+    scoreBadgeEl: document.getElementById('result-score'),
+    flawsCountEl: document.getElementById('flaws-count'),
+    noFlawsEl: document.getElementById('no-flaws'),
+    flawsListEl: document.getElementById('flaws-list'),
+    strengthsSectionEl: document.getElementById('strengths-section'),
+    strengthsListEl: document.getElementById('strengths-list'),
+  };
+
+  /** @param {'form' | 'loading' | 'error' | 'result'} state */
+  function showState(state) {
+    form.hidden = state !== 'form';
+    loadingState.hidden = state !== 'loading';
+    errorState.hidden = state !== 'error';
+    resultState.hidden = state !== 'result';
+  }
+
+  function updateMeta() {
+    const len = textInput.value.length;
+    charCount.textContent = T.charCount(len, MAX_LEN);
+    const atLimit = len >= MAX_LEN;
+    charCount.classList.toggle('over-limit', atLimit);
+
+    const trimmedLen = textInput.value.trim().length;
+    const tooShort = trimmedLen > 0 && trimmedLen < MIN_LEN;
+
+    if (atLimit) {
+      lengthWarning.hidden = false;
+      lengthWarning.textContent = T.maxLengthWarning;
+    } else if (tooShort) {
+      lengthWarning.hidden = false;
+      lengthWarning.textContent = T.minLengthWarning;
+    } else {
+      lengthWarning.hidden = true;
+      lengthWarning.textContent = '';
+    }
+
+    analyzeBtn.disabled = trimmedLen < MIN_LEN;
+  }
+
+  textInput.addEventListener('input', updateMeta);
+  updateMeta();
+
+  function resetTurnstile() {
+    try {
+      window.turnstile?.reset?.();
+    } catch {
+      // Turnstile script not loaded yet (slow network, blocked) — nothing
+      // to reset; the next submit attempt will simply lack a token and be
+      // caught by the check below.
+    }
+  }
+
+  /**
+   * Calls the elenchus-proxy Worker. Throws an Error with a user-facing
+   * message on any failure; never leaks the Worker's internal reason codes
+   * or upstream detail to the UI beyond its own `error` prose.
+   */
+  async function callProxy(text, turnstileToken) {
+    let response;
+    try {
+      response = await fetch(PROXY_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Elenchus-Key': WEB_KEY,
+        },
+        // The Worker does not verify turnstileToken yet (a parallel task),
+        // but the request contract already includes it — sending it now
+        // means nothing here has to change once verification ships.
+        body: JSON.stringify({ text, lang: PAGE_LANG, turnstileToken }),
+      });
+    } catch {
+      throw new Error(T.errNetwork);
+    }
+
+    let data = {};
+    try {
+      data = await response.json();
+    } catch {
+      // Non-JSON body — data stays {}; handled by the branches below.
+    }
+
+    if (!response.ok) {
+      if (response.status === 429) {
+        // The 429 body's `reason` field is attacker-adjacent only in the
+        // sense that it comes over the network — clamp it the same way as
+        // every other enum from this Worker before branching on it.
+        const reason = oneOf(data?.reason, REASONS, 'service');
+        throw new Error(data?.error || (reason === 'ip' ? T.errDailyLimitIp : T.errDailyLimitService));
+      }
+      if (response.status === 403) {
+        throw new Error(data?.error || T.errForbidden);
+      }
+      throw new Error(data?.error || T.errGeneric);
+    }
+
+    if (typeof data !== 'object' || data === null) {
+      throw new Error(T.errInvalidResponse);
+    }
+
+    return data;
+  }
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const rawText = textInput.value;
+    if (rawText.trim().length < MIN_LEN) {
+      updateMeta();
+      return;
+    }
+
+    const formData = new FormData(form);
+    const turnstileToken = String(formData.get('cf-turnstile-response') || '');
+    if (!turnstileToken) {
+      errorMessage.textContent = T.errTurnstile;
+      showState('error');
+      return;
+    }
+
+    // Cap mirrors the Worker's own MAX_TEXT_LENGTH; the textarea's
+    // maxlength already prevents typing/pasting past this in practice, but
+    // this is the same defense-in-depth the extension applies before
+    // sending, not a trust in the DOM attribute alone.
+    const wasTruncated = rawText.length > MAX_LEN;
+    const text = rawText.slice(0, MAX_LEN);
+
+    showState('loading');
+
+    try {
+      const result = await callProxy(text, turnstileToken);
+      truncationWarning.hidden = !wasTruncated;
+      renderAnalysis(result, resultElements, T);
+      showState('result');
+    } catch (err) {
+      errorMessage.textContent = (err && err.message) || T.errGeneric;
+      showState('error');
+    } finally {
+      resetTurnstile();
+    }
+  });
+
+  retryBtn.addEventListener('click', () => showState('form'));
+  newAnalysisBtn.addEventListener('click', () => showState('form'));
+</script>
