@@ -1,0 +1,8 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  # Netlify's own cap; keep in sync with the "Node 24 max" rule in CLAUDE.md —
+  # never point this at a local Node newer than what Netlify offers.
+  NODE_VERSION = "24"
