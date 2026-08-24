@@ -132,12 +132,13 @@ const MIN_TEXT_LENGTH = 50;
   data-web-key={webKey}
   data-max-len={MAX_TEXT_LENGTH}
   data-min-len={MIN_TEXT_LENGTH}
+  data-extension-url={CHROME_WEB_STORE_URL}
   hidden
 >
 </div>
 
 <script type="module">
-  import { REASONS, oneOf } from '../lib/clamp.js';
+  import { isDryState, renderFailureState, selectFailureState } from '../lib/errorState.js';
   import { renderAnalysis } from '../lib/render.js';
   import { strings as STRINGS } from '../lib/strings.js';
 
@@ -147,6 +148,7 @@ const MIN_TEXT_LENGTH = 50;
   const WEB_KEY = config.webKey;
   const MAX_LEN = Number(config.maxLen);
   const MIN_LEN = Number(config.minLen);
+  const EXTENSION_URL = config.extensionUrl;
 
   const T = STRINGS[PAGE_LANG] || STRINGS.en;
 
@@ -218,9 +220,17 @@ const MIN_TEXT_LENGTH = 50;
   }
 
   /**
-   * Calls the elenchus-proxy Worker. Throws an Error with a user-facing
-   * message on any failure; never leaks the Worker's internal reason codes
-   * or upstream detail to the UI beyond its own `error` prose.
+   * Calls the elenchus-proxy Worker. Never throws for an ordinary failure —
+   * returns a discriminated result instead, so the caller can pick one of
+   * the honest failure states (src/lib/errorState.js) rather than leaning
+   * on a generic thrown-Error message. The Worker's `error` prose (a fixed
+   * ENGLISH string — see renderFailureState's doc comment for why) is
+   * logged for developers, never returned for rendering: this repo's
+   * CLAUDE.md requires user-facing content to follow the page's language,
+   * and there is no state where the Worker's prose is more specific than
+   * this repo's own localized fallback copy.
+   *
+   * @returns {Promise<{ ok: true, data: unknown } | { ok: false, state: import('../lib/errorState.js').FailureState }>}
    */
   async function callProxy(text, turnstileToken) {
     let response;
@@ -237,7 +247,7 @@ const MIN_TEXT_LENGTH = 50;
         body: JSON.stringify({ text, lang: PAGE_LANG, turnstileToken }),
       });
     } catch {
-      throw new Error(T.errNetwork);
+      return { ok: false, state: selectFailureState({ networkError: true }) };
     }
 
     let data = {};
@@ -248,24 +258,17 @@ const MIN_TEXT_LENGTH = 50;
     }
 
     if (!response.ok) {
-      if (response.status === 429) {
-        // The 429 body's `reason` field is attacker-adjacent only in the
-        // sense that it comes over the network — clamp it the same way as
-        // every other enum from this Worker before branching on it.
-        const reason = oneOf(data?.reason, REASONS, 'service');
-        throw new Error(data?.error || (reason === 'ip' ? T.errDailyLimitIp : T.errDailyLimitService));
+      if (typeof data?.error === 'string') {
+        console.error('[elenchus] proxy error:', data.error);
       }
-      if (response.status === 403) {
-        throw new Error(data?.error || T.errForbidden);
-      }
-      throw new Error(data?.error || T.errGeneric);
+      return { ok: false, state: selectFailureState({ status: response.status, reason: data?.reason }) };
     }
 
     if (typeof data !== 'object' || data === null) {
-      throw new Error(T.errInvalidResponse);
+      return { ok: false, state: 'invalid' };
     }
 
-    return data;
+    return { ok: true, data };
   }
 
   form.addEventListener('submit', async (event) => {
@@ -280,7 +283,15 @@ const MIN_TEXT_LENGTH = 50;
     const formData = new FormData(form);
     const turnstileToken = String(formData.get('cf-turnstile-response') || '');
     if (!turnstileToken) {
+      // Not a renderFailureState() call (there is no Worker outcome yet to
+      // select a state from), so its two side effects — the dry-state class
+      // and Retry visibility — are reset by hand: a stale 'is-dry-state'
+      // class or a stale hidden Retry button from a PREVIOUS failed attempt
+      // must not leak into this one, where retrying (after solving the
+      // challenge) is exactly the right next step.
+      errorMessage.classList.remove('is-dry-state');
       errorMessage.textContent = T.errTurnstile;
+      retryBtn.hidden = false;
       showState('error');
       return;
     }
@@ -295,13 +306,18 @@ const MIN_TEXT_LENGTH = 50;
     showState('loading');
 
     try {
-      const result = await callProxy(text, turnstileToken);
+      const outcome = await callProxy(text, turnstileToken);
+      if (!outcome.ok) {
+        renderFailureState(outcome.state, errorMessage, T, EXTENSION_URL);
+        // 'ip'/'service' offer no Retry: retrying provably cannot succeed
+        // until the day rolls over — see isDryState()'s doc comment.
+        retryBtn.hidden = isDryState(outcome.state);
+        showState('error');
+        return;
+      }
       truncationWarning.hidden = !wasTruncated;
-      renderAnalysis(result, resultElements, T);
+      renderAnalysis(outcome.data, resultElements, T);
       showState('result');
-    } catch (err) {
-      errorMessage.textContent = (err && err.message) || T.errGeneric;
-      showState('error');
     } finally {
       resetTurnstile();
     }

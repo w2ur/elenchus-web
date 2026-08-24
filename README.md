@@ -10,7 +10,7 @@ facts_en: "Static Astro site with no backend of its own — calls the same Cloud
 
 Static Astro site at [elenchus.untilt.app](https://elenchus.untilt.app) — a
 paste-text version of the [Elenchus Chrome
-extension](https://github.com/w2ur/elenchus): paste any text and get a
+extension](https://chromewebstore.google.com/detail/elenchus/bodfmokjnmkkdobfcnfbplnbplgdbfgl): paste any text and get a
 structured analysis of its logical flaws, an overall reasoning score, and its
 strengths. No install required.
 
@@ -48,11 +48,20 @@ stable constant in `src/lib/config.js` (see the comment there for why).
 
     npm test
 
-Unit tests for `src/lib/clamp.js` (the enum-clamp security control) and
+Unit tests for `src/lib/clamp.js` (the enum-clamp security control),
 `src/lib/render.js` (the result renderer, including a hostile-input fixture
-asserting model output never reaches the DOM as live markup). There is no
-UI/e2e test runner — the analyzer flow itself is exercised manually and by
-`npm run build`.
+asserting model output never reaches the DOM as live markup), and
+`src/lib/errorState.js` (which of the honest failure states — `ip`,
+`service`, `network`, `forbidden`, `generic`, `invalid` — a 429/403/network
+outcome selects, and the presentation `isDryState()` drives — see
+`CLAUDE.md`, "Failure-state copy"). There is no UI/e2e test runner — the
+analyzer flow itself is exercised manually and by `npm run build`.
+
+    npm run check:labels-sync
+
+Advisory drift-check: exits 1 if the severity/score labels in
+`src/lib/strings.js` no longer match `~/Dev/elenchus/i18n/strings.js` — see
+`CLAUDE.md`, "Label drift-check", for what it does and doesn't compare.
 
 ## Build
 

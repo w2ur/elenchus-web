@@ -14,6 +14,16 @@
   --border: #e0e0e0;
   --accent: #4f8a8b;
   --accent-hover: #3d6d6e;
+  /* Text/link color, separate from --accent (C4 review). #4F8A8B on white is
+     3.93:1 — below the 4.5:1 AA floor for the 13px body text it is used at,
+     and the extension link in the ip/service dry-state notice is now the
+     primary call to action of the state most visitors will see. --accent
+     itself stays #4F8A8B (the teal the portfolio hub assigns Elenchus,
+     used as a background/border color, where a different contrast pair
+     applies) — only text/links get the darker shade. Reuses the existing
+     --accent-hover value, which already cleared 4.5:1 as a hover color;
+     measured here at 5.82:1 against #ffffff. */
+  --link: #3d6d6e;
   --severity-minor: #d97706;
   --severity-significant: #dc2626;
   --severity-critical: #7c2d12;
@@ -31,6 +41,9 @@
     --border: #404040;
     --accent: #6fb3b4;
     --accent-hover: #8ec4c5;
+    /* Dark mode was never flagged: #6FB3B4 on #1A1A1A measures 7.28:1,
+       already past AAA, so --link stays equal to --accent here. */
+    --link: #6fb3b4;
     --severity-minor: #fbbf24;
     --severity-significant: #f87171;
     --severity-critical: #fca5a5;
@@ -69,7 +82,7 @@ main {
 }
 
 a {
-  color: var(--accent);
+  color: var(--link);
 }
 
 a:hover {
@@ -198,9 +211,13 @@ button {
   cursor: not-allowed;
 }
 
+/* Text color uses --link, not --accent: same 3.93:1-on-white contrast
+   defect the C4 review found on the ip/service extension link, on a
+   button sitting directly on --bg. Border stays --accent (a non-text
+   UI-component outline; 3:1 is the relevant floor there, already cleared). */
 .btn-secondary {
   background: transparent;
-  color: var(--accent);
+  color: var(--link);
   border: 1px solid var(--accent);
   border-radius: 8px;
   padding: 9px 18px;
@@ -260,6 +277,24 @@ button {
   margin-bottom: 12px;
   font-size: 13px;
   line-height: 1.4;
+}
+
+/* Dry-state notice (C4 review): 'ip'/'service' are the ordinary shape of a
+   good day on this free tier (see src/lib/errorState.js's isDryState() doc
+   comment), not an error — the alarm-red .error-message above, sitting
+   above a Retry button that provably cannot succeed for either state,
+   contradicted that. Applied via JS (renderFailureState toggles this class;
+   Analyzer.astro hides Retry alongside it) with the same quiet,
+   informational treatment .notice already uses for the standing free-tier
+   disclosure above the form — background/border tinted from --accent
+   rather than left plain, so this state still reads as "about your
+   allowance" rather than blending into ordinary body text. */
+.error-message.is-dry-state {
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  border-radius: 6px;
+  padding: 10px 12px;
 }
 
 /* Results */

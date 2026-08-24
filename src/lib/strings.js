@@ -58,9 +58,33 @@ export const strings = {
     severities: { minor: 'minor', significant: 'significant', critical: 'critical' },
 
     errTurnstile: 'Please complete the verification challenge before analyzing.',
-    errNetwork: 'Network error — check your connection and try again.',
-    errDailyLimitIp: 'Daily limit reached for your connection. Try again tomorrow.',
-    errDailyLimitService: 'The free tier has reached its daily ceiling. Try again tomorrow.',
+
+    // The three honest failure states from src/lib/errorState.js. A dry
+    // per-IP bucket is the ordinary state of this service on a good day —
+    // the web surface allows only 2 analyses/day per IP, service-wide only
+    // 150/day — so this is a first-impression surface for most visitors,
+    // not a rare error path. Each state names the real numbers and the real
+    // next step rather than a generic "something went wrong". No
+    // percentage, no step count, no claimed wait that cannot be measured —
+    // "resets at 00:00 UTC" is stated because it is true (verified against
+    // elenchus-proxy/src/rate-limiter.js's currentDay(), which is
+    // ISO-8601/UTC), not because it sounds reassuring.
+    errIpText: 'Your 2 free analyses on this site today are used. The ',
+    errIpLink: 'Chrome extension',
+    errIpEnd: ' gives you 21 a day, and lets you bring your own API key for unlimited use.',
+
+    errServiceText:
+      "The free demo has reached today's service-wide limit — everyone is turned away right now, not just you. It resets at 00:00 UTC. Until then, try the ",
+    errServiceLink: 'Chrome extension',
+    errServiceEnd:
+      ', which has its own separate allowance and lets you bring your own API key for unlimited use — or just come back tomorrow.',
+
+    // Deliberately makes no claim about whether retrying will help — that
+    // is not knowable from here. Covers both an actual network failure and
+    // an upstream failure the Worker itself could not resolve.
+    errNetworkText:
+      "Could not reach the analysis service — this may be your connection, or a temporary problem on our end. Retrying may or may not help; there's no way to tell from here.",
+
     errForbidden: 'This request was rejected by the analysis service.',
     errGeneric: 'Something went wrong while analyzing this text. Try again.',
     errInvalidResponse: 'The analysis service returned an unexpected response. Try again.',
@@ -97,9 +121,21 @@ export const strings = {
     severities: { minor: 'mineure', significant: 'significative', critical: 'critique' },
 
     errTurnstile: 'Merci de compléter la vérification avant de lancer l’analyse.',
-    errNetwork: 'Erreur réseau — vérifiez votre connexion et réessayez.',
-    errDailyLimitIp: 'Limite quotidienne atteinte pour votre connexion. Réessayez demain.',
-    errDailyLimitService: 'La version gratuite a atteint son plafond quotidien. Réessayez demain.',
+
+    // See the EN block for why these exist and why the UTC reset is stated.
+    errIpText: 'Vos 2 analyses gratuites du jour sur ce site sont épuisées. L’',
+    errIpLink: 'extension Chrome',
+    errIpEnd: ' vous en donne 21 par jour, et vous permet d’utiliser votre propre clé API pour un usage illimité.',
+
+    errServiceText:
+      'La version de démonstration gratuite a atteint son plafond quotidien — tout le monde est refusé en ce moment, pas seulement vous. Tout repart à 00:00 UTC. En attendant, essayez l’',
+    errServiceLink: 'extension Chrome',
+    errServiceEnd:
+      ', qui dispose de son propre quota et permet d’utiliser votre propre clé API pour un usage illimité — ou revenez simplement demain.',
+
+    errNetworkText:
+      "Impossible de joindre le service d'analyse — cela peut venir de votre connexion, ou d'un problème temporaire de notre côté. Réessayer peut aider ou non ; impossible de le savoir d'ici.",
+
     errForbidden: 'Cette requête a été rejetée par le service d’analyse.',
     errGeneric: 'Une erreur est survenue pendant l’analyse de ce texte. Réessayez.',
     errInvalidResponse: 'Le service d’analyse a renvoyé une réponse inattendue. Réessayez.',

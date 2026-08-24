@@ -12,7 +12,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "test": "vitest run"
+    "test": "vitest run",
+    "check:labels-sync": "scripts/check-labels-sync.sh"
   },
   "dependencies": {
     "astro": "^7.2.6"
