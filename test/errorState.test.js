@@ -10,7 +10,13 @@
 // "you personally are out" when the *service* is out sends an innocent
 // person away for the day for no reason.
 import { describe, expect, it } from 'vitest';
-import { isDryState, renderFailureState, selectFailureState } from '../src/lib/errorState.js';
+import {
+  FAILURE_STATES,
+  canRetry,
+  isDryState,
+  renderFailureState,
+  selectFailureState,
+} from '../src/lib/errorState.js';
 import { strings } from '../src/lib/strings.js';
 
 const T = strings.en;
@@ -194,11 +200,16 @@ describe('renderFailureState', () => {
       expect(el.classList.contains('is-dry-state')).toBe(true);
     });
 
-    it.each(['network', 'forbidden', 'generic', 'invalid'])('is absent for the %s state', (state) => {
-      const el = buildElement();
-      renderFailureState(state, el, T, 'https://example.test/');
-      expect(el.classList.contains('is-dry-state')).toBe(false);
-    });
+    // Derived from FAILURE_STATES, not hand-listed: a state added to the
+    // enum and forgotten here would otherwise be silently uncovered.
+    it.each(FAILURE_STATES.filter((s) => s !== 'ip' && s !== 'service'))(
+      'is absent for the %s state',
+      (state) => {
+        const el = buildElement();
+        renderFailureState(state, el, T, 'https://example.test/');
+        expect(el.classList.contains('is-dry-state')).toBe(false);
+      },
+    );
 
     it('is removed when a later render moves from a dry state to an alarm state', () => {
       const el = buildElement();
@@ -210,16 +221,114 @@ describe('renderFailureState', () => {
   });
 });
 
-describe('isDryState', () => {
-  it('is true for ip and service — the two states where a retry provably cannot succeed', () => {
+describe('isDryState (presentation only)', () => {
+  it('is true for ip and service — the ordinary shape of a good day, not an error', () => {
     expect(isDryState('ip')).toBe(true);
     expect(isDryState('service')).toBe(true);
   });
 
-  it('is false for network, forbidden, generic and invalid — states where Retry stays offered or is a judgement call', () => {
-    expect(isDryState('network')).toBe(false);
-    expect(isDryState('forbidden')).toBe(false);
-    expect(isDryState('generic')).toBe(false);
-    expect(isDryState('invalid')).toBe(false);
+  it.each(FAILURE_STATES.filter((s) => s !== 'ip' && s !== 'service'))(
+    'is false for the %s state — something actually went wrong there',
+    (state) => {
+      expect(isDryState(state)).toBe(false);
+    },
+  );
+});
+
+// Regression (final review): Retry visibility used to be `isDryState()`,
+// which tied "don't offer a retry" to "present this quietly". The two came
+// apart with 'turnstileBlocked' — a genuine problem worth reporting in the
+// alarm treatment, but one no retry can fix, because there is no challenge
+// on the page to complete.
+describe('canRetry', () => {
+  it.each(['ip', 'service', 'turnstileBlocked'])(
+    'is false for the %s state — pressing Retry provably cannot change the outcome',
+    (state) => {
+      expect(canRetry(state)).toBe(false);
+    },
+  );
+
+  it.each(['network', 'generic', 'forbidden', 'invalid', 'turnstileUnsolved'])(
+    'is true for the %s state — a retry might genuinely work',
+    (state) => {
+      expect(canRetry(state)).toBe(true);
+    },
+  );
+
+  it('covers every member of FAILURE_STATES between its two lists', () => {
+    // Guards the two hand-written lists above against the enum growing
+    // past them: 3 + 5 must equal the enum's size.
+    expect(FAILURE_STATES.filter((s) => !canRetry(s))).toHaveLength(3);
+    expect(FAILURE_STATES.filter(canRetry)).toHaveLength(5);
+    expect(FAILURE_STATES).toHaveLength(8);
+  });
+});
+
+// The Turnstile pair. Before this fix there was one string for both
+// situations: a blocked visitor (challenges.cloudflare.com never loaded —
+// uBlock Origin, Firefox strict mode, a corporate proxy) was told to
+// "complete the verification challenge" that was not on their page, and
+// offered a Retry that could not help. That was the one piece of copy in
+// this repo promising the unmeasurable.
+describe('the two Turnstile states', () => {
+  function buildElement() {
+    document.body.innerHTML = '<p id="error-message"></p>';
+    return document.getElementById('error-message');
+  }
+
+  it('turnstileUnsolved keeps the "complete the challenge" copy and no link', () => {
+    const el = buildElement();
+    renderFailureState('turnstileUnsolved', el, T, 'https://example.test/');
+    expect(el.textContent).toBe(T.errTurnstileUnsolved);
+    expect(el.querySelector('a')).toBeNull();
+  });
+
+  it('turnstileBlocked never asks the visitor to complete a challenge that is not there', () => {
+    const el = buildElement();
+    renderFailureState('turnstileBlocked', el, T, 'https://example.test/');
+
+    expect(el.textContent).not.toBe(T.errTurnstileUnsolved);
+    expect(el.textContent.toLowerCase()).not.toContain('complete the verification challenge');
+  });
+
+  it('turnstileBlocked names the likely cause and offers the extension as a real way through', () => {
+    const el = buildElement();
+    const url = 'https://chromewebstore.google.com/detail/elenchus/x?hl=en';
+    renderFailureState('turnstileBlocked', el, T, url);
+
+    expect(el.textContent).toContain('challenges.cloudflare.com');
+    expect(el.textContent.toLowerCase()).toContain('content blocker');
+    const link = el.querySelector('a');
+    expect(link).not.toBeNull();
+    expect(link.href).toBe(url);
+    expect(link.rel).toContain('noopener');
+  });
+
+  it('turnstileBlocked renders French copy on the French page, with the ?hl=fr link', () => {
+    const el = buildElement();
+    const TFR = strings.fr;
+    const url = 'https://chromewebstore.google.com/detail/elenchus/x?hl=fr';
+    renderFailureState('turnstileBlocked', el, TFR, url);
+
+    expect(el.textContent).toBe(
+      `${TFR.errTurnstileBlockedText}${TFR.errTurnstileBlockedLink}${TFR.errTurnstileBlockedEnd}`,
+    );
+    expect(el.textContent).toContain('challenges.cloudflare.com');
+    expect(el.querySelector('a').href).toBe(url);
+  });
+});
+
+// Coverage guard, derived from the enum rather than a hand-copied list.
+describe('every failure state renders real copy in both languages', () => {
+  it.each(FAILURE_STATES)('%s renders non-empty text in en and fr', (state) => {
+    for (const lang of ['en', 'fr']) {
+      document.body.innerHTML = '<p id="error-message"></p>';
+      const el = document.getElementById('error-message');
+      renderFailureState(state, el, strings[lang], 'https://example.test/');
+      expect(el.textContent.trim().length).toBeGreaterThan(0);
+      // A missing string.js key renders the literal "undefined" rather
+      // than failing — the exact way an untranslated new state would ship.
+      expect(el.textContent).not.toContain('undefined');
+    }
   });
 });

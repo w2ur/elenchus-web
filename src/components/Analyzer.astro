@@ -75,17 +75,35 @@ const MIN_TEXT_LENGTH = 50;
   <button id="analyze-btn" class="btn-primary" type="submit" disabled>{T.analyzeBtn}</button>
 </form>
 
-<div id="loading-state" hidden>
+<!--
+  Live regions. The three panels below are always in the DOM and only
+  toggled with `hidden`, so without these a screen-reader user gets total
+  silence on every outcome — including the dry-state message, which is the
+  ORDINARY result on this free tier, not an edge case (see
+  src/lib/errorState.js).
+
+  `role="status"` (polite), not `role="alert"` (assertive), on the error
+  panel: the states most visitors will actually reach — `ip` and `service`
+  — are deliberately not presented as alarms visually either (`.is-dry-state`),
+  and an assertive interruption would contradict that copy in the one
+  channel where the visual treatment cannot.
+
+  `#result-state` uses `aria-live="polite"` with `aria-atomic="false"`
+  rather than `role="status"` (which implies `aria-atomic="true"`) because
+  the analysis can be long: atomic would re-read the whole panel as one
+  block, where non-atomic announces the arriving content instead.
+-->
+<div id="loading-state" role="status" hidden>
   <div class="spinner" aria-hidden="true"></div>
   <p id="loading-message">{T.loadingMessage}</p>
 </div>
 
-<div id="error-state" hidden>
+<div id="error-state" role="status" hidden>
   <p id="error-message" class="error-message"></p>
   <button id="retry-btn" class="btn-secondary" type="button">{T.retryBtn}</button>
 </div>
 
-<div id="result-state" hidden>
+<div id="result-state" aria-live="polite" aria-atomic="false" hidden>
   <p id="truncation-warning" class="warning-notice" hidden>{T.truncationWarning}</p>
 
   <h2>{T.summaryHeading}</h2>
@@ -138,7 +156,8 @@ const MIN_TEXT_LENGTH = 50;
 </div>
 
 <script type="module">
-  import { isDryState, renderFailureState, selectFailureState } from '../lib/errorState.js';
+  import { canRetry, renderFailureState } from '../lib/errorState.js';
+  import { callProxy } from '../lib/proxyClient.js';
   import { renderAnalysis } from '../lib/render.js';
   import { strings as STRINGS } from '../lib/strings.js';
 
@@ -220,55 +239,17 @@ const MIN_TEXT_LENGTH = 50;
   }
 
   /**
-   * Calls the elenchus-proxy Worker. Never throws for an ordinary failure —
-   * returns a discriminated result instead, so the caller can pick one of
-   * the honest failure states (src/lib/errorState.js) rather than leaning
-   * on a generic thrown-Error message. The Worker's `error` prose (a fixed
-   * ENGLISH string — see renderFailureState's doc comment for why) is
-   * logged for developers, never returned for rendering: this repo's
-   * CLAUDE.md requires user-facing content to follow the page's language,
-   * and there is no state where the Worker's prose is more specific than
-   * this repo's own localized fallback copy.
+   * Renders one failure state and its Retry visibility together — the two
+   * always move as a pair, and the one place they were set separately (the
+   * Turnstile branch below) is how "Retry" ended up offered for a state no
+   * retry could fix.
    *
-   * @returns {Promise<{ ok: true, data: unknown } | { ok: false, state: import('../lib/errorState.js').FailureState }>}
+   * @param {import('../lib/errorState.js').FailureState} state
    */
-  async function callProxy(text, turnstileToken) {
-    let response;
-    try {
-      response = await fetch(PROXY_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Elenchus-Key': WEB_KEY,
-        },
-        // The Worker does not verify turnstileToken yet (a parallel task),
-        // but the request contract already includes it — sending it now
-        // means nothing here has to change once verification ships.
-        body: JSON.stringify({ text, lang: PAGE_LANG, turnstileToken }),
-      });
-    } catch {
-      return { ok: false, state: selectFailureState({ networkError: true }) };
-    }
-
-    let data = {};
-    try {
-      data = await response.json();
-    } catch {
-      // Non-JSON body — data stays {}; handled by the branches below.
-    }
-
-    if (!response.ok) {
-      if (typeof data?.error === 'string') {
-        console.error('[elenchus] proxy error:', data.error);
-      }
-      return { ok: false, state: selectFailureState({ status: response.status, reason: data?.reason }) };
-    }
-
-    if (typeof data !== 'object' || data === null) {
-      return { ok: false, state: 'invalid' };
-    }
-
-    return { ok: true, data };
+  function showFailure(state) {
+    renderFailureState(state, errorMessage, T, EXTENSION_URL);
+    retryBtn.hidden = !canRetry(state);
+    showState('error');
   }
 
   form.addEventListener('submit', async (event) => {
@@ -281,18 +262,26 @@ const MIN_TEXT_LENGTH = 50;
     }
 
     const formData = new FormData(form);
-    const turnstileToken = String(formData.get('cf-turnstile-response') || '');
+    // Two different situations, and they need different copy. Turnstile
+    // creates its own hidden <input name="cf-turnstile-response"> inside
+    // this form when it RENDERS the widget, empty until the challenge is
+    // solved. So:
+    //
+    //   null  → no input exists: challenges.cloudflare.com never loaded
+    //           (uBlock Origin, Firefox strict mode, a corporate proxy) or
+    //           the widget failed to render. There is no challenge on the
+    //           page, so "please complete the challenge" names an action
+    //           that cannot be taken and Retry cannot help — 'turnstileBlocked'.
+    //   ''    → the widget is there and simply is not solved yet —
+    //           'turnstileUnsolved', where Retry after solving is exactly
+    //           the right next step.
+    //
+    // showFailure() also resets the stale '.is-dry-state' class and Retry
+    // visibility a PREVIOUS failed attempt may have left behind.
+    const tokenField = formData.get('cf-turnstile-response');
+    const turnstileToken = typeof tokenField === 'string' ? tokenField : '';
     if (!turnstileToken) {
-      // Not a renderFailureState() call (there is no Worker outcome yet to
-      // select a state from), so its two side effects — the dry-state class
-      // and Retry visibility — are reset by hand: a stale 'is-dry-state'
-      // class or a stale hidden Retry button from a PREVIOUS failed attempt
-      // must not leak into this one, where retrying (after solving the
-      // challenge) is exactly the right next step.
-      errorMessage.classList.remove('is-dry-state');
-      errorMessage.textContent = T.errTurnstile;
-      retryBtn.hidden = false;
-      showState('error');
+      showFailure(tokenField === null ? 'turnstileBlocked' : 'turnstileUnsolved');
       return;
     }
 
@@ -306,13 +295,18 @@ const MIN_TEXT_LENGTH = 50;
     showState('loading');
 
     try {
-      const outcome = await callProxy(text, turnstileToken);
+      // The Worker does not verify turnstileToken yet (a parallel task),
+      // but the request contract already includes it — sending it now
+      // means nothing here has to change once verification ships.
+      const outcome = await callProxy({
+        text,
+        lang: PAGE_LANG,
+        turnstileToken,
+        proxyUrl: PROXY_URL,
+        webKey: WEB_KEY,
+      });
       if (!outcome.ok) {
-        renderFailureState(outcome.state, errorMessage, T, EXTENSION_URL);
-        // 'ip'/'service' offer no Retry: retrying provably cannot succeed
-        // until the day rolls over — see isDryState()'s doc comment.
-        retryBtn.hidden = isDryState(outcome.state);
-        showState('error');
+        showFailure(outcome.state);
         return;
       }
       truncationWarning.hidden = !wasTruncated;

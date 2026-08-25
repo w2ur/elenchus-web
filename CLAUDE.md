@@ -109,30 +109,80 @@ task).
     npm test
 
 Vitest + jsdom, `test/*.test.js`, covering `src/lib/clamp.js`,
-`src/lib/render.js` and `src/lib/errorState.js`. **The renderer never passes
-model text to innerHTML unescaped** — the analysed text is adversarial by
-construction (a visitor pastes text written by someone else), so the
-model's JSON output is attacker-influenced. `oneOf()` clamps enum fields
-(severity/score) before they reach a CSS class or a label lookup; free-text
-fields are escaped or set via `textContent`, never interpolated raw.
-`test/render.test.js` includes a hostile-input fixture asserting this on the
-rendered DOM output, not on internal calls. There is no test runner for the
-Astro pages or the client wiring in `src/components/Analyzer.astro`
-themselves — `npm run build` and manual verification cover those.
+`src/lib/render.js`, `src/lib/errorState.js` and `src/lib/proxyClient.js`.
+**The renderer never passes model text to innerHTML unescaped** — the
+analysed text is adversarial by construction (a visitor pastes text written
+by someone else), so the model's JSON output is attacker-influenced.
+`oneOf()` clamps enum fields (severity/score) before they reach a CSS class
+or a label lookup; free-text fields are escaped or set via `textContent`,
+never interpolated raw. `test/render.test.js` asserts this on the rendered
+DOM output, not on internal calls, for **every** free-text field —
+`type`, `quote`, `explanation`, `strengths` and `summary`.
+
+**Never prove escaping with a `textContent` read.** `textContent` reads
+back identically whether a field was written with `textContent` or with
+`innerHTML`, so an assertion like `expect(summaryEl.textContent).toBe(prose)`
+passes on both — which is how `summary` reached a final review as the one
+free-text field with no hostile-input test, on a suite that was green with
+`render.js` mutated to `innerHTML` and a live `<img onerror>` in the DOM.
+Assert on a **live-element** check (`querySelector('img')` is null) and on
+the escaped markup (`innerHTML` contains `&lt;img`, not `<img`). The same
+rule killed an earlier assertion: `not.toContain('onerror')` is worthless,
+because the word `onerror` survives escaping legitimately.
+
+There is no test runner for the Astro pages themselves, so anything in
+`src/components/Analyzer.astro`'s client `<script>` is unreachable by
+`npx vitest run` — which is why the Worker call lives in
+`src/lib/proxyClient.js` and not inline in the component. Keep logic on
+that side of the line.
+
+**`src/lib/proxyClient.js`: an unparseable or wrong-shaped 2xx is a
+failure, never a result.** This is the highest-stakes branch in the repo.
+It once did `let data = {}` before `await response.json()` and swallowed
+the parse error, so `{}` reached the success path (`response.ok` passed,
+`typeof {} === 'object'` passed) and the page rendered an empty summary, an
+"unknown" badge and the `#no-flaws` block — green text reading "No
+reasoning flaws detected." A Cloudflare interstitial or any CDN error page
+therefore made a reasoning-analysis tool **assert the opposite of the
+truth**, confidently. Two guards now stand there, and neither is
+redundant: a parse failure on a 2xx returns `invalid`, and a parsed body is
+checked for the shape of an analysis (`summary` a string, `flaws` an array
+— `{}`, `null` and `[]` all pass a bare `typeof === 'object'`). A parse
+failure on a **non**-2xx keeps selecting from the status instead, so a 503
+interstitial still reads as `network` rather than the vaguer "unexpected
+response".
 
 ### Failure-state copy
+
+**The build-time fail-loud gate is two frontmatter imports and nothing
+else.** `src/lib/config.js` throws at module scope for a missing `PUBLIC_`
+var, and that fails `astro build` only because `src/pages/analyze.astro`
+and `src/pages/fr/analyze.astro` import it in **frontmatter** (which runs
+in Node at build time). The client gets config through `data-*` attributes,
+so nothing else imports the module — remove both imports and the build
+goes green with the env completely unset, shipping a site broken for every
+visitor (measured: exit 0, zero errors). `npm run build` cannot catch that
+by construction, and there is no type-checker here. `test/configFailLoud.test.js`
+is the pin: it asserts both imports are real `import` statements **inside
+the frontmatter fence** (not in a client script, not in a comment), and
+that importing `config.js` with a var unset actually throws and names it.
 
 A dry per-IP bucket is the **normal** state of this service on a good day
 (150 requests/day service-wide, 2 per IP) — this is a first-impression
 surface for most visitors, not a rare error path. `src/lib/errorState.js`
-selects and renders one of six states from the elenchus-proxy Worker's HTTP
-outcome: `ip` and `service` (from the 429 body's `reason` enum, clamped
+selects and renders the failure states, enumerated once in
+`FAILURE_STATES` so tests iterate the enum rather than a hand-copied list.
+Six describe an elenchus-proxy Worker outcome: `ip` and
+`service` (from the 429 body's `reason` enum, clamped
 through `oneOf()`/`REASONS` with unknown values falling to `'service'` — the
 safe direction, since it never tells an individual visitor "you're out" when
 the whole service is), `network` (a fetch throw, or a 5xx the Worker itself
 couldn't resolve — same honest-retry copy either way, since neither can be
 distinguished from here), `forbidden` (403), `generic` (any other non-2xx
-status) and `invalid` (a 2xx response whose body isn't the expected shape).
+status) and `invalid` (a 2xx response whose body isn't the expected shape;
+returned by `proxyClient.js` directly, never by `selectFailureState()`).
+The other two are raised before any request is made — see "The Turnstile
+challenge has two failure modes" below.
 The `ip`/`service` copy in `src/lib/strings.js` states the real numbers (2
 here, 21 in the extension) and links to the Chrome Web Store listing
 (`https://chromewebstore.google.com/detail/elenchus/bodfmokjnmkkdobfcnfbplnbplgdbfgl`
@@ -160,8 +210,39 @@ alarm-red `.error-message` box — and the Retry button is hidden for both:
 retrying provably cannot succeed until the day rolls over (`ip`/`service`)
 or the visitor's own allowance frees up, neither of which this page
 controls. `network`/`generic`/`forbidden`/`invalid` keep the alarm
-treatment and Retry. See `isDryState()` in `src/lib/errorState.js` for the
-full reasoning per state.
+treatment and Retry.
+
+**Presentation and Retry are two separate questions**, answered by
+`isDryState()` and `canRetry()` respectively. They used to be one function,
+and `turnstileBlocked` is what pulled them apart: a genuine problem that
+belongs in the alarm treatment, but one no retry can fix. Do not fold them
+back together.
+
+**The Turnstile challenge has two failure modes and they must not share
+copy.** If `challenges.cloudflare.com` is blocked (uBlock Origin, Firefox
+strict mode, a corporate proxy), no widget renders — so "please complete
+the verification challenge", plus a Retry button, names an action the
+visitor cannot take and a retry that cannot work. That was the one piece
+of copy here promising the unmeasurable, which is the rule the rest of the
+copy obeys. The two are told apart by Turnstile's own hidden
+`cf-turnstile-response` input, which exists only once the widget has
+rendered: **`null` → `turnstileBlocked`** (no challenge on the page; honest
+copy naming the blocker, a link to the extension, no Retry) and **`''` →
+`turnstileUnsolved`** (the widget is there and unsolved; the original copy,
+Retry offered). The claim that the extension needs no challenge is a fact,
+not reassurance — the Worker makes zero siteverify calls on the extension's
+path, an invariant pinned by a call counter in
+`elenchus-proxy/test/turnstile.test.js`.
+
+**The three state panels are live regions.** `#loading-state` and
+`#error-state` carry `role="status"`, `#result-state` carries
+`aria-live="polite" aria-atomic="false"`. Without them a screen-reader user
+gets silence on every outcome — including the dry-state message, which is
+the ordinary result here, not an edge case. Polite and not `role="alert"`
+on purpose: an assertive interruption for `ip`/`service` would contradict
+the deliberately quiet visual treatment in the one channel that cannot see
+it. `aria-atomic="false"` on the result panel because an analysis can be
+long, and atomic would re-read the whole thing as one block.
 
 **Link/text contrast**: `--accent` (`#4F8A8B`) stays the portfolio's teal
 identity, used for backgrounds/borders/buttons. Body text and links use a

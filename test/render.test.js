@@ -194,6 +194,38 @@ describe('renderAnalysis', () => {
       expect(card.textContent).toContain('<img src=x onerror=alert(1)>');
     });
 
+    // Regression (final review): `summary` was the ONLY free-text field
+    // with no hostile-input test — type, quote, explanation, severity,
+    // score and strengths were all covered. It is also the field most
+    // likely to echo pasted attacker text verbatim, being the model's
+    // freest prose.
+    //
+    // The gap was invisible because the only assertion touching it read
+    // `summaryEl.textContent`, and textContent reads back IDENTICALLY
+    // whether the field was written with textContent or innerHTML — so
+    // flipping render.js's `summaryEl.textContent =` to `.innerHTML =`
+    // left the whole suite green while producing a real, live
+    // `<img src="x" onerror="alert(1)">` element in the DOM. Assert on a
+    // live-element check and on the escaped markup instead, mirroring the
+    // hostile-strengths test below; never on a substring that survives
+    // escaping.
+    it('renders a hostile summary as plain text via textContent, never as markup', () => {
+      renderAnalysis(
+        { summary: hostileProse, score: 'weak', flaws: [], strengths: [] },
+        elements,
+        T,
+      );
+
+      // No live element was created from the hostile string...
+      expect(elements.summaryEl.querySelector('img')).toBeNull();
+      expect(elements.summaryEl.children).toHaveLength(0);
+      // ...and the markup shows it encoded, not parsed.
+      expect(elements.summaryEl.innerHTML).not.toContain('<img');
+      expect(elements.summaryEl.innerHTML).toContain('&lt;img');
+      // The prose itself is still shown, just neutralized.
+      expect(elements.summaryEl.textContent).toBe(hostileProse);
+    });
+
     it('renders a hostile strength as plain text via textContent, never as markup', () => {
       renderAnalysis(
         { summary: 'x', score: 'weak', flaws: [], strengths: [hostileProse] },

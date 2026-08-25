@@ -22,7 +22,28 @@
 
 import { REASONS, oneOf } from './clamp.js';
 
-/** @typedef {'ip' | 'service' | 'network' | 'forbidden' | 'generic' | 'invalid'} FailureState */
+/** @typedef {'ip' | 'service' | 'network' | 'forbidden' | 'generic' | 'invalid' | 'turnstileUnsolved' | 'turnstileBlocked'} FailureState */
+
+/**
+ * Every member of `FailureState`, as data. Exists so the tests can iterate
+ * the enum instead of a hand-copied list: a hand-copied list is the shape
+ * of coverage that silently shrinks — a state added here but forgotten
+ * there produces zero findings and zero coverage, which look identical from
+ * the outside. Adding a state without a rendered string, or without a FR
+ * translation, now reds test/errorState.test.js by construction.
+ *
+ * @type {FailureState[]}
+ */
+export const FAILURE_STATES = [
+  'ip',
+  'service',
+  'network',
+  'forbidden',
+  'generic',
+  'invalid',
+  'turnstileUnsolved',
+  'turnstileBlocked',
+];
 
 /**
  * Picks which failure state to show from one attempt to call the Worker.
@@ -39,12 +60,16 @@ import { REASONS, oneOf } from './clamp.js';
  * honest-retry copy as a network error: from here, the two are
  * indistinguishable in what they let a caller promise.
  *
- * `'invalid'` (a 200 response whose body is not the expected shape) is
- * deliberately NOT produced here — it never involves a status/reason pair,
- * only a successful response with an unusable body, so the caller
- * (Analyzer.astro) returns it directly rather than routing it through this
- * function. It is still a member of `FailureState` because
- * `renderFailureState` below must render it.
+ * Three members of `FailureState` are deliberately NOT produced here,
+ * because none of them involves a status/reason pair — but all three are
+ * still members, because `renderFailureState` below must render them:
+ *
+ *   - `'invalid'`: a 2xx response whose body could not be parsed, or whose
+ *     shape is not an analysis. `callProxy` (src/lib/proxyClient.js)
+ *     returns it directly.
+ *   - `'turnstileUnsolved'` / `'turnstileBlocked'`: raised before any
+ *     request is made at all, by the submit handler in
+ *     src/components/Analyzer.astro — there is no Worker outcome yet.
  *
  * @param {{ networkError?: boolean, status?: number, reason?: unknown }} [outcome]
  * @returns {FailureState}
@@ -68,24 +93,17 @@ export function selectFailureState(outcome) {
 }
 
 /**
- * True for the two states that are the ordinary shape of a good day on this
- * free tier, not an error: a visitor (or the service) has simply spent
- * today's allowance. Two consequences follow from that, both applied by the
- * caller (src/components/Analyzer.astro) using this flag:
+ * PRESENTATION only. True for the two states that are the ordinary shape of
+ * a good day on this free tier, not an error: a visitor (or the service)
+ * has simply spent today's allowance. Those get no alarm-red box — see the
+ * `.is-dry-state` CSS class applied alongside this flag, which trades the
+ * red `.error-message` treatment for the same quiet, informational one
+ * `.notice` already uses for the standing free-tier disclosure.
  *
- *   1. Presentation: no alarm-red box — see the `.is-dry-state` CSS class
- *      applied alongside this flag, which trades the red `.error-message`
- *      treatment for the same quiet, informational one `.notice` already
- *      uses for the standing free-tier disclosure.
- *   2. No Retry button: retrying provably cannot succeed for 'ip' (this
- *      visitor's own allowance is spent) or 'service' (the whole service's
- *      is) until the day rolls over — offering it would repeat the same
- *      unmeasurable promise the copy itself is written to avoid.
- *
- * `network` and `generic` keep Retry, because a retry might actually work
- * there. `forbidden` and `invalid` are rare, config-level problems no
- * retry fixes either, but they are not "the ordinary shape of a good day"
- * — they stay in the alarm/Retry-offered treatment, same as `network`.
+ * Whether the Retry button is offered is a SEPARATE question, answered by
+ * `canRetry()` below — the two sets used to be the same one and are not
+ * any more (`turnstileBlocked` offers no retry but is a genuine problem
+ * worth reporting in the alarm treatment).
  *
  * @param {FailureState} state
  * @returns {boolean}
@@ -95,12 +113,58 @@ export function isDryState(state) {
 }
 
 /**
+ * True when the Retry button should be offered — i.e. when pressing it
+ * could plausibly produce a different outcome. The three exceptions:
+ *
+ *   - `ip`: this visitor's own allowance is spent until the day rolls over.
+ *   - `service`: the whole service's is.
+ *   - `turnstileBlocked`: the Turnstile widget never loaded, so there is no
+ *     challenge on the page to complete and nothing a retry can change —
+ *     only unblocking challenges.cloudflare.com, or using the extension,
+ *     gets this visitor through. Offering Retry here would name an action
+ *     that cannot succeed, which is exactly what the rest of this repo's
+ *     copy is written to avoid.
+ *
+ * `turnstileUnsolved` DOES keep Retry: the widget is right there, and
+ * completing it then retrying is the actual path forward. So do `network`,
+ * `generic`, `forbidden` and `invalid` — the last three are rare,
+ * config-level problems, but a retry is not provably futile for any of them
+ * (a 403 can be a transient origin hiccup; a malformed body can be a
+ * one-off upstream glitch).
+ *
+ * @param {FailureState} state
+ * @returns {boolean}
+ */
+export function canRetry(state) {
+  return !(state === 'ip' || state === 'service' || state === 'turnstileBlocked');
+}
+
+/**
+ * The states whose copy is a text/link/text sandwich around a real `<a>` to
+ * the Chrome Web Store listing. Keyed by state, valued by the `strings.js`
+ * keys to read — so adding a linked state is a table entry, not another
+ * branch, and every one of them goes through the same
+ * `document.createElement('a')` path.
+ *
+ * @type {Record<string, { text: string, link: string, end: string }>}
+ */
+const LINKED_COPY = {
+  ip: { text: 'errIpText', link: 'errIpLink', end: 'errIpEnd' },
+  service: { text: 'errServiceText', link: 'errServiceLink', end: 'errServiceEnd' },
+  turnstileBlocked: {
+    text: 'errTurnstileBlockedText',
+    link: 'errTurnstileBlockedLink',
+    end: 'errTurnstileBlockedEnd',
+  },
+};
+
+/**
  * Renders one failure state into `element`, replacing whatever it held
- * before. The 'ip' and 'service' states carry a real `<a>` to the Chrome
- * Web Store listing (built via DOM APIs, not string concatenation into
- * innerHTML, matching src/lib/render.js's posture) and get the
- * `.is-dry-state` class (see `isDryState`'s doc comment); the others are
- * plain text with no class added.
+ * before. The states in `LINKED_COPY` carry a real `<a>` to the Chrome Web
+ * Store listing (built via DOM APIs, not string concatenation into
+ * innerHTML, matching src/lib/render.js's posture); `ip`/`service` also get
+ * the `.is-dry-state` class (see `isDryState`'s doc comment). The others
+ * are plain text with no class added.
  *
  * There is deliberately no way to override the rendered copy with a
  * Worker-supplied `error` string. Every non-429 Worker error body is a
@@ -121,7 +185,9 @@ export function isDryState(state) {
  *   errIpText: string, errIpLink: string, errIpEnd: string,
  *   errServiceText: string, errServiceLink: string, errServiceEnd: string,
  *   errNetworkText: string, errForbidden: string, errGeneric: string,
- *   errInvalidResponse: string,
+ *   errInvalidResponse: string, errTurnstileUnsolved: string,
+ *   errTurnstileBlockedText: string, errTurnstileBlockedLink: string,
+ *   errTurnstileBlockedEnd: string,
  * }} T
  * @param {string} extensionUrl Chrome Web Store listing URL, per-language.
  */
@@ -129,18 +195,15 @@ export function renderFailureState(state, element, T, extensionUrl) {
   element.textContent = '';
   element.classList.toggle('is-dry-state', isDryState(state));
 
-  if (state === 'ip' || state === 'service') {
-    const prefix = state === 'ip' ? T.errIpText : T.errServiceText;
-    const linkText = state === 'ip' ? T.errIpLink : T.errServiceLink;
-    const suffix = state === 'ip' ? T.errIpEnd : T.errServiceEnd;
-
-    element.append(document.createTextNode(prefix));
+  const linked = LINKED_COPY[state];
+  if (linked) {
+    element.append(document.createTextNode(T[linked.text]));
     const link = document.createElement('a');
     link.href = extensionUrl;
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
-    link.textContent = linkText;
-    element.append(link, document.createTextNode(suffix));
+    link.textContent = T[linked.link];
+    element.append(link, document.createTextNode(T[linked.end]));
     return;
   }
 
@@ -151,6 +214,11 @@ export function renderFailureState(state, element, T, extensionUrl) {
 
   if (state === 'invalid') {
     element.textContent = T.errInvalidResponse;
+    return;
+  }
+
+  if (state === 'turnstileUnsolved') {
+    element.textContent = T.errTurnstileUnsolved;
     return;
   }
 

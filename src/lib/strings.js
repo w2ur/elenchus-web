@@ -57,7 +57,28 @@ export const strings = {
     scores: { strong: 'strong', moderate: 'moderate', weak: 'weak', unknown: 'unknown' },
     severities: { minor: 'minor', significant: 'significant', critical: 'critical' },
 
-    errTurnstile: 'Please complete the verification challenge before analyzing.',
+    // Two different Turnstile situations, and they must not share copy.
+    //
+    // `errTurnstileUnsolved` is the one where the widget IS on the page and
+    // simply has not been completed — "complete the challenge" names an
+    // action the visitor can actually take, and Retry is the right next
+    // step after taking it.
+    //
+    // `errTurnstileBlocked*` is the one where challenges.cloudflare.com
+    // never loaded at all (uBlock Origin, Firefox strict tracking
+    // protection, a corporate proxy): there is no widget on the page, so
+    // asking someone to "complete the verification challenge" points at
+    // something that does not exist, and Retry cannot change the outcome.
+    // The claim that the extension needs no challenge is true, not
+    // reassurance: the Worker runs zero siteverify calls on the extension's
+    // path (an invariant pinned by a call counter in
+    // elenchus-proxy/test/turnstile.test.js — cited by name, not line).
+    errTurnstileUnsolved: 'Please complete the verification challenge before analyzing.',
+
+    errTurnstileBlockedText:
+      "The verification challenge could not load, so this text cannot be analyzed here. That is almost always a content blocker or a strict privacy mode blocking challenges.cloudflare.com — allowing it for this site is the way through. If that is not an option, the ",
+    errTurnstileBlockedLink: 'Chrome extension',
+    errTurnstileBlockedEnd: ' runs the same analysis with no challenge at all.',
 
     // The three honest failure states from src/lib/errorState.js. A dry
     // per-IP bucket is the ordinary state of this service on a good day —
@@ -120,7 +141,13 @@ export const strings = {
     scores: { strong: 'solide', moderate: 'modéré', weak: 'faible', unknown: 'inconnu' },
     severities: { minor: 'mineure', significant: 'significative', critical: 'critique' },
 
-    errTurnstile: 'Merci de compléter la vérification avant de lancer l’analyse.',
+    // See the EN block for why these are two states and not one.
+    errTurnstileUnsolved: 'Merci de compléter la vérification avant de lancer l’analyse.',
+
+    errTurnstileBlockedText:
+      "La vérification n’a pas pu se charger : impossible d’analyser ce texte ici. C’est presque toujours un bloqueur de contenu ou un mode de confidentialité strict qui bloque challenges.cloudflare.com — l’autoriser sur ce site est la solution. Si ce n’est pas envisageable, l’",
+    errTurnstileBlockedLink: 'extension Chrome',
+    errTurnstileBlockedEnd: ' effectue la même analyse sans aucune vérification.',
 
     // See the EN block for why these exist and why the UTC reset is stated.
     errIpText: 'Vos 2 analyses gratuites du jour sur ce site sont épuisées. L’',

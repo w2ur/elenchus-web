@@ -49,13 +49,15 @@ stable constant in `src/lib/config.js` (see the comment there for why).
     npm test
 
 Unit tests for `src/lib/clamp.js` (the enum-clamp security control),
-`src/lib/render.js` (the result renderer, including a hostile-input fixture
-asserting model output never reaches the DOM as live markup), and
-`src/lib/errorState.js` (which of the honest failure states — `ip`,
-`service`, `network`, `forbidden`, `generic`, `invalid` — a 429/403/network
-outcome selects, and the presentation `isDryState()` drives — see
-`CLAUDE.md`, "Failure-state copy"). There is no UI/e2e test runner — the
-analyzer flow itself is exercised manually and by `npm run build`.
+`src/lib/render.js` (the result renderer, including hostile-input fixtures
+asserting model output never reaches the DOM as live markup),
+`src/lib/errorState.js` (which honest failure state an outcome selects, how
+it renders, and whether Retry is offered — see `CLAUDE.md`, "Failure-state
+copy"), `src/lib/proxyClient.js` (the Worker call — in particular that an
+unparseable or wrong-shaped 2xx body is a failure, never a result) and
+`test/configFailLoud.test.js` (the build-time env gate, which nothing else
+can catch). There is no UI/e2e test runner — the analyzer flow itself is
+exercised manually and by `npm run build`.
 
     npm run check:labels-sync
 
@@ -71,6 +73,8 @@ Builds to `./dist/`. Must produce zero warnings — see `CLAUDE.md`. Frontmatter
 in `src/pages/analyze.astro` and `src/pages/fr/analyze.astro` imports
 `src/lib/config.js`, so a missing `PUBLIC_ELENCHUS_WEB_KEY` /
 `PUBLIC_TURNSTILE_SITE_KEY` fails this command, not just a visitor's browser.
+Those two imports are the whole mechanism, and removing them fails nothing —
+`test/configFailLoud.test.js` is what keeps them there.
 
 ## Deployment
 
