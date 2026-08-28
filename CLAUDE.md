@@ -93,10 +93,32 @@ duplicate it elsewhere.
 The analyzer UI (paste box, Turnstile widget, results panel, the enum clamp
 on model output) lives at `src/pages/analyze.astro` and
 `src/pages/fr/analyze.astro`, sharing markup and client wiring via
-`src/components/Analyzer.astro`. `src/lib/clamp.js`, `src/lib/render.js` and
-`src/lib/strings.js` hold the testable logic; `src/pages/index.astro`
-remains a placeholder (the analyzer's own landing/home treatment is a later
-task).
+`src/components/Analyzer.astro`. The bookmarklet install page is
+`src/pages/bookmarklet.astro` + `src/pages/fr/bookmarklet.astro` over
+`src/components/BookmarkletInstall.astro`. `src/lib/clamp.js`,
+`src/lib/render.js` and `src/lib/strings.js` hold the testable logic;
+`src/pages/index.astro` remains a placeholder (the landing page is B3).
+
+**Two copy files, two jobs.** `src/lib/strings.js` is the analyzer UI's
+strings — labels, failure states, and the severity/score tables a
+drift-check compares against the extension. `src/lib/pageCopy.js` is prose
+for content pages, both languages side by side so a paragraph cannot be
+rewritten in one and forgotten in the other. Page prose has none of
+`strings.js`'s obligations and does not belong there.
+
+**Every claim on the install page about where the bookmarklet runs is a
+measured claim.** Ran on github.com, lemonde.fr and
+chromewebstore.google.com; did nothing on `chrome://settings`. Firefox,
+Safari and Chrome's PDF viewer were not tested, and the page says so rather
+than guessing. Do not add a failure case to that list without measuring it,
+and do not remove the untested disclaimer without testing.
+
+**Canonical and hreflang come from one `path` prop** on `Layout.astro`: pass
+the page's ENGLISH path with its trailing slash (`/`, `/analyze/`,
+`/bookmarklet/`) and the French twin is derived as `/fr` + that. Deriving it
+is what stops the two languages disagreeing about each other's URL, the usual
+way hreflang goes wrong. Omitting `path` skips the whole block rather than
+emitting a wrong one. English is `x-default`.
 
 ## The bookmarklet handoff
 
@@ -151,6 +173,25 @@ choose to put an article into a link.
 the Worker's own two constants — because the paste box, the bookmarklet and
 the fragment now all enforce the same cap. Three copies of `15000` would be
 three chances to drift.
+
+**Both transports are verified in a real browser, because vitest cannot reach
+either of them** — the receiving code lives in `Analyzer.astro`'s client
+`<script>`, which no test in `test/` imports. Verified against the local
+`astro preview` build in Chrome: the fragment path fills the box and leaves
+`location.hash` empty (`history.replaceState` ran), a plain `#section-2`
+anchor fills nothing, the postMessage handshake completes cross-tab from an
+opener page, and a well-formed `elenchus-text` message posted from a source
+that is **not** the opener is ignored. Repeat that shape after any change to
+`handoff.js` or the component's client script; a green `npm test` says
+nothing about it.
+
+`buildBookmarklet()` resolves its entry file from `process.cwd()`, **not**
+from `import.meta.url`. Astro bundles page frontmatter into
+`dist/.prerender/chunks/` before running it, so `import.meta.url` points into
+the build output where the source does not exist — the build fails with
+"Could not resolve dist/.prerender/chunks/bookmarkletSource.js". Consequence:
+the build must run from the project root, which `npm run build` and Netlify
+both do; there is an `existsSync` check that says so if it ever does not.
 
 `buildBookmarklet()` **fails the build** if the encoded URL passes
 `MAX_BOOKMARKLET_LENGTH` (8000 chars; it is ~2.7 KB today). That budget is

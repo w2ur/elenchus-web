@@ -1,0 +1,11 @@
+---
+import BookmarkletInstall from '../components/BookmarkletInstall.astro';
+import Layout from '../layouts/Layout.astro';
+import { bookmarkletCopy } from '../lib/pageCopy.js';
+
+const C = bookmarkletCopy.en;
+---
+
+<Layout title={C.title} description={C.description} lang="en" path="/bookmarklet/">
+  <BookmarkletInstall lang="en" />
+</Layout>

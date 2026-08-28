@@ -1,0 +1,71 @@
+---
+// The bookmarklet install page, shared by /bookmarklet and /fr/bookmarklet
+// so the two languages cannot drift structurally — only the copy
+// (src/lib/pageCopy.js) differs.
+//
+// The draggable link's href is the whole product here: it is built at build
+// time by src/lib/buildBookmarklet.js from src/lib/bookmarkletSource.js, so
+// it always matches the extraction and handoff code this site itself ships.
+import { buildBookmarklet } from '../lib/buildBookmarklet.js';
+import { bookmarkletCopy } from '../lib/pageCopy.js';
+import { strings } from '../lib/strings.js';
+
+interface Props {
+  lang: 'en' | 'fr';
+}
+
+const { lang } = Astro.props;
+const C = bookmarkletCopy[lang];
+const T = strings[lang];
+
+const analyzePath = lang === 'fr' ? '/fr/analyze' : '/analyze';
+const analyzeUrl = new URL(analyzePath, Astro.site).href;
+
+// Runs in Node during `astro build`. It throws on a non-absolute analyzer
+// URL and on a bookmarklet over the length budget, which is deliberate:
+// both are failures that would otherwise ship silently and only show up in
+// a reader's browser, where nothing can report them.
+const bookmarkletHref = await buildBookmarklet(analyzeUrl);
+---
+
+<h1>{C.heading}</h1>
+<p class="subtitle">{C.intro}</p>
+
+<h2>{C.installHeading}</h2>
+<p>{C.installStep}</p>
+
+<p class="bookmarklet-drop">
+  <!--
+    `draggable` is the point of this link, not its click behaviour. Clicking
+    it here runs the bookmarklet against THIS page, so the analyzer opens
+    holding these instructions — useless but harmless, and self-explanatory
+    enough that a reader who does it understands what the bookmark does. No
+    `target`/`rel` on a javascript: URL: neither applies.
+  -->
+  <a class="btn-primary bookmarklet-link" href={bookmarkletHref} draggable="true">
+    {C.buttonLabel}
+  </a>
+</p>
+<p class="notice">{C.installHint}</p>
+
+<h2>{C.useHeading}</h2>
+<ol>
+  {C.useSteps.map((step) => <li>{step}</li>)}
+</ol>
+
+<h2>{C.limitsHeading}</h2>
+<p>{C.limitsIntro}</p>
+<ul>
+  {C.limits.map((limit) => <li>{limit}</li>)}
+</ul>
+<p>{C.limitsGood}</p>
+
+<h2>{C.fallbackHeading}</h2>
+<p>
+  {C.fallbackText}<a href={`${analyzePath}/`}>{C.fallbackLink}</a>{C.fallbackEnd}
+</p>
+
+<h2>{C.privacyHeading}</h2>
+<p class="notice">
+  {C.privacyText}<a href={T.privacyUrl}>{C.privacyLink}</a>{C.privacyEnd}
+</p>

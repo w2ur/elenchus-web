@@ -6,13 +6,27 @@ interface Props {
   title?: string;
   description?: string;
   lang?: string;
+  /**
+   * The page's ENGLISH path, always with its trailing slash ('/', '/analyze/').
+   * The French twin is derived from it, because that is the site's actual
+   * shape — `/x/` and `/fr/x/` — and deriving it means the two languages
+   * cannot disagree about each other's URL, which is the usual way hreflang
+   * goes wrong. Omit it and the canonical/hreflang block is skipped entirely
+   * rather than emitted wrong.
+   */
+  path?: string;
 }
 
 const {
   title = 'Elenchus — reasoning analyzer',
   description = 'Paste any text and get a structured analysis of its logical flaws, reasoning score and strengths.',
   lang = 'en',
+  path,
 } = Astro.props;
+
+const enHref = path ? new URL(path, Astro.site).href : null;
+const frHref = path ? new URL(path === '/' ? '/fr/' : `/fr${path}`, Astro.site).href : null;
+const canonical = lang === 'fr' ? frHref : enHref;
 
 // The privacy policy is LINKED, never restated here. The canonical pages live
 // in the portfolio hub because they are the only copy a user can reach — the
@@ -30,6 +44,12 @@ const t = strings[lang] ?? strings.en;
     <meta name="description" content={description} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
+    {canonical && <link rel="canonical" href={canonical} />}
+    {enHref && <link rel="alternate" hreflang="en" href={enHref} />}
+    {frHref && <link rel="alternate" hreflang="fr" href={frHref} />}
+    {/* English is x-default: it is the wider audience, and the site's own
+        user-facing language per CLAUDE.md. */}
+    {enHref && <link rel="alternate" hreflang="x-default" href={enHref} />}
     <title>{title}</title>
   </head>
   <body>

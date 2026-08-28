@@ -11,9 +11,17 @@
 // Plain JS with JSDoc, not TypeScript — see CLAUDE.md.
 
 import { build } from 'esbuild';
-import { fileURLToPath } from 'node:url';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 
-const ENTRY = fileURLToPath(new URL('./bookmarkletSource.js', import.meta.url));
+// Resolved from the project root, NOT from `import.meta.url`. This module is
+// imported by an Astro page's frontmatter, and Astro bundles frontmatter
+// into `dist/.prerender/chunks/` before running it — so `import.meta.url`
+// points into the build output, where the bookmarklet source does not exist
+// (measured: "Could not resolve dist/.prerender/chunks/bookmarkletSource.js",
+// a build failure, which is the right direction for this mistake to fail).
+// `astro build` and `vitest` both run from the project root.
+const ENTRY = resolve(process.cwd(), 'src/lib/bookmarkletSource.js');
 
 /**
  * A `javascript:` URL is a bookmark's whole payload, and browsers cap
@@ -38,6 +46,14 @@ export async function buildBookmarklet(analyzeUrl) {
     );
   }
 
+  if (!existsSync(ENTRY)) {
+    throw new Error(
+      `Cannot find the bookmarklet source at ${ENTRY}. It is resolved from the current working ` +
+        'directory, so this build must run from the project root (`npm run build`), not from a ' +
+        'subdirectory.',
+    );
+  }
+
   const result = await build({
     entryPoints: [ENTRY],
     bundle: true,
@@ -51,9 +67,15 @@ export async function buildBookmarklet(analyzeUrl) {
 
   // Trailing `void 0` so the script's completion value is undefined no
   // matter what the bundle's last statement evaluates to. A `javascript:`
-  // URL that yields a string REPLACES the page the reader is on with that
-  // string — the worst possible failure mode for a tool that runs on other
-  // people's articles. It goes last, not as a `void` prefix: esbuild emits
+  // URL that yields a string REPLACES the page the reader is on with a
+  // document containing that string — the worst possible failure mode for a
+  // tool that runs on other people's articles.
+  //
+  // **Observed, not hypothetical.** The M2 probe bookmarklet
+  // (`javascript:document.title='ELENCHUS-OK'`, no `void`) did exactly this
+  // on 2026-08-28: the assignment's value is the string, and the tab was
+  // navigated to a blank page reading ELENCHUS-OK while the address bar
+  // still showed the original URL. It goes last, not as a `void` prefix: esbuild emits
   // a `"use strict";` directive first, so a prefix would apply to that
   // directive and leave the real payload's value ungoverned.
   const code = `${result.outputFiles[0].text.trim()};void 0;`;
