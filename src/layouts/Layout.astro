@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import { strings } from '../lib/strings.js';
 
 interface Props {
   title?: string;
@@ -12,6 +13,14 @@ const {
   description = 'Paste any text and get a structured analysis of its logical flaws, reasoning score and strengths.',
   lang = 'en',
 } = Astro.props;
+
+// The privacy policy is LINKED, never restated here. The canonical pages live
+// in the portfolio hub because they are the only copy a user can reach — the
+// extension repo is private — and they are what the Chrome Web Store points
+// at. This site's use of Cloudflare Turnstile is disclosed there, scoped to
+// the web surface. `scripts/check-privacy-sync.sh` in the elenchus repo fails
+// if this link goes missing.
+const t = strings[lang] ?? strings.en;
 ---
 
 <html lang={lang}>
@@ -29,6 +38,8 @@ const {
     </main>
     <footer>
       Made with care by <a href="https://william.revah.paris">William</a>
+      <span aria-hidden="true"> · </span>
+      <a href={t.privacyUrl}>{t.privacyLabel}</a>
     </footer>
   </body>
 </html>

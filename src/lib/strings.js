@@ -38,6 +38,17 @@ export const strings = {
     freeTierNoticeLink: 'use your own API key in the Elenchus extension',
     freeTierNoticeEnd: '.',
 
+    // The canonical privacy policy, which this site links rather than
+    // restates. It is the page the Chrome Web Store points at and the one
+    // the extension's options page opens; a copy here would be a fourth
+    // document to keep in agreement, and the one nobody would remember to
+    // update. It is also where this site's use of Cloudflare Turnstile is
+    // disclosed — the extension does not use it, so the two surfaces are
+    // described separately there.
+    // Guarded by check-privacy-sync.sh in the elenchus repo.
+    privacyLabel: 'Privacy',
+    privacyUrl: 'https://william.revah.paris/en/elenchus/privacy/',
+
     analyzeBtn: 'Analyze',
     retryBtn: 'Retry',
     newAnalysisBtn: 'Analyze again',
@@ -124,6 +135,11 @@ export const strings = {
       "Version gratuite : ce texte est envoyé à des fournisseurs de modèles susceptibles de l'enregistrer et de s'en servir pour l'entraînement. Évitez d'analyser un texte confidentiel, ou ",
     freeTierNoticeLink: 'utilisez votre propre clé API dans l’extension Elenchus',
     freeTierNoticeEnd: '.',
+
+    // Voir le commentaire du bloc `en` : la politique est liée, jamais
+    // recopiée ici.
+    privacyLabel: 'Confidentialité',
+    privacyUrl: 'https://william.revah.paris/elenchus/confidentialite/',
 
     analyzeBtn: 'Analyser',
     retryBtn: 'Réessayer',

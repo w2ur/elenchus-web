@@ -295,9 +295,13 @@ const MIN_TEXT_LENGTH = 50;
     showState('loading');
 
     try {
-      // The Worker does not verify turnstileToken yet (a parallel task),
-      // but the request contract already includes it — sending it now
-      // means nothing here has to change once verification ships.
+      // The Worker DOES verify turnstileToken, server-side, before it does
+      // anything else with the text: it posts the token, the site secret and
+      // the caller's IP to Cloudflare's siteverify and refuses the request on
+      // anything short of success. So this field is load-bearing, not
+      // forward-looking — dropping it turns every analysis into a 403. The
+      // extension's path never makes that call at all, and the privacy policy
+      // describes the two surfaces separately for that reason.
       const outcome = await callProxy({
         text,
         lang: PAGE_LANG,
