@@ -475,3 +475,48 @@ main a {
 .bookmarklet-link:active {
   cursor: grabbing;
 }
+
+/* --- Landing (B3) --- */
+
+/* The three ways in. A list, not a row of cards: on a phone they stack
+   either way, and a list keeps them announced as "3 items" by a screen
+   reader — which is the page's actual claim. */
+.ways {
+  list-style: none;
+  margin: 0 0 24px;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.way {
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-card);
+}
+
+.way h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 6px;
+}
+
+.way p {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.way-cta {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--link);
+}
+
+@media (min-width: 720px) {
+  .ways {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

@@ -1,0 +1,11 @@
+---
+import Landing from '../../components/Landing.astro';
+import Layout from '../../layouts/Layout.astro';
+import { landingCopy } from '../../lib/pageCopy.js';
+
+const C = landingCopy.fr;
+---
+
+<Layout title={C.title} description={C.description} lang="fr" path="/">
+  <Landing lang="fr" />
+</Layout>

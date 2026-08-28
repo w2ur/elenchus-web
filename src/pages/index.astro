@@ -1,11 +1,11 @@
 ---
+import Landing from '../components/Landing.astro';
 import Layout from '../layouts/Layout.astro';
+import { landingCopy } from '../lib/pageCopy.js';
+
+const C = landingCopy.en;
 ---
 
-<Layout>
-  <h1>Elenchus</h1>
-  <p>
-    Paste-text reasoning analyzer — coming soon. This page is a scaffolding
-    placeholder; the analyzer UI ships in a later task.
-  </p>
+<Layout title={C.title} description={C.description} lang="en" path="/">
+  <Landing lang="en" />
 </Layout>

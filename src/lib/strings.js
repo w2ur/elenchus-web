@@ -57,6 +57,11 @@ export const strings = {
     privacyLabel: 'Privacy',
     privacyUrl: 'https://william.revah.paris/en/elenchus/privacy/',
 
+    // The footer's link to this page's twin in the other language, written
+    // in the language it leads TO — the only form a reader who cannot read
+    // this page recognises.
+    otherLangLabel: 'Français',
+
     analyzeBtn: 'Analyze',
     retryBtn: 'Retry',
     newAnalysisBtn: 'Analyze again',
@@ -152,6 +157,9 @@ export const strings = {
     // recopiée ici.
     privacyLabel: 'Confidentialité',
     privacyUrl: 'https://william.revah.paris/elenchus/confidentialite/',
+
+    // Voir le commentaire du bloc `en`.
+    otherLangLabel: 'English',
 
     analyzeBtn: 'Analyser',
     retryBtn: 'Réessayer',

@@ -28,6 +28,10 @@ const enHref = path ? new URL(path, Astro.site).href : null;
 const frHref = path ? new URL(path === '/' ? '/fr/' : `/fr${path}`, Astro.site).href : null;
 const canonical = lang === 'fr' ? frHref : enHref;
 
+const otherLang = lang === 'fr' ? 'en' : 'fr';
+const otherHref = lang === 'fr' ? enHref : frHref;
+const otherLabel = (strings[lang] ?? strings.en).otherLangLabel;
+
 // The privacy policy is LINKED, never restated here. The canonical pages live
 // in the portfolio hub because they are the only copy a user can reach — the
 // extension repo is private — and they are what the Chrome Web Store points
@@ -60,6 +64,21 @@ const t = strings[lang] ?? strings.en;
       Made with care by <a href="https://william.revah.paris">William</a>
       <span aria-hidden="true"> · </span>
       <a href={t.privacyUrl}>{t.privacyLabel}</a>
+      {
+        /* The twin page in the other language, from the same derived pair as
+           the hreflang tags above — so the link a reader clicks and the link
+           a crawler reads can never point at different pages. `hreflang` and
+           `lang` are both set: without `lang`, a screen reader announces
+           "Français" in the surrounding page's voice. */
+        otherHref && (
+          <>
+            <span aria-hidden="true"> · </span>
+            <a href={otherHref} hreflang={otherLang} lang={otherLang}>
+              {otherLabel}
+            </a>
+          </>
+        )
+      }
     </footer>
   </body>
 </html>

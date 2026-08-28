@@ -96,8 +96,23 @@ on model output) lives at `src/pages/analyze.astro` and
 `src/components/Analyzer.astro`. The bookmarklet install page is
 `src/pages/bookmarklet.astro` + `src/pages/fr/bookmarklet.astro` over
 `src/components/BookmarkletInstall.astro`. `src/lib/clamp.js`,
-`src/lib/render.js` and `src/lib/strings.js` hold the testable logic;
-`src/pages/index.astro` remains a placeholder (the landing page is B3).
+`src/lib/render.js` and `src/lib/strings.js` hold the testable logic. The
+landing page is `src/pages/index.astro` + `src/pages/fr/index.astro` over
+`src/components/Landing.astro`.
+
+**The landing page says "it does not fact-check" before it says anything
+about how to use the tool.** Every reasoning tool gets mistaken for a
+fact-checker, and a visitor holding that expectation reads a good score on a
+well-argued falsehood as a defect rather than as the tool doing its job.
+That paragraph is the page's load-bearing claim; do not demote it below the
+calls to action.
+
+Measured with Lighthouse against the local preview build: SEO,
+accessibility and best-practices all **100** on `/` and `/fr/`. The run was
+made to fail first — the same command scored 47 accessibility / 82 SEO on a
+deliberately broken control page (no `lang`, no meta description, an
+unlabelled link, an image with no alt, 1.1:1 text contrast) — so those
+hundreds are a measurement rather than a tool that always says yes.
 
 **Two copy files, two jobs.** `src/lib/strings.js` is the analyzer UI's
 strings — labels, failure states, and the severity/score tables a

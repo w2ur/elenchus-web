@@ -2,8 +2,8 @@
 name: "Elenchus"
 tagline_fr: "Collez un texte, obtenez une analyse de sa rigueur logique — sans compte, sans extension."
 tagline_en: "Paste text, get a reasoning analysis back — no account, no extension."
-facts_fr: "Site statique Astro, sans backend propre : appelle le Worker Cloudflare qui alimente déjà l'extension Elenchus."
-facts_en: "Static Astro site with no backend of its own — calls the same Cloudflare Worker that already powers the Elenchus extension."
+facts_fr: "Site statique Astro, sans backend propre : appelle le Worker Cloudflare qui alimente déjà l'extension Elenchus. Trois portes d'entrée — champ de collage, bookmarklet, extension."
+facts_en: "Static Astro site with no backend of its own — calls the same Cloudflare Worker that already powers the Elenchus extension. Three ways in: paste box, bookmarklet, extension."
 ---
 
 # Elenchus (web)
@@ -19,10 +19,27 @@ Worker (a separate repo) over a `web` surface added specifically for this
 client — see `CLAUDE.md` for what that surface can and cannot assume about the
 caller.
 
-**Status:** the analyzer ships at `/analyze` (English) and `/fr/analyze`
-(French) — paste text, solve the Turnstile challenge, get back a structured
-analysis. Turnstile widget setup, Netlify env vars and DNS are still the
-owner's job (see Deployment below).
+**Status:** three ways in, in both languages.
+
+| Page | English | French |
+|---|---|---|
+| Landing | `/` | `/fr/` |
+| Paste analyzer | `/analyze` | `/fr/analyze` |
+| Bookmarklet | `/bookmarklet` | `/fr/bookmarklet` |
+
+The bookmarklet takes the page you are reading — or the passage you selected —
+and opens the analyzer with it already filled in. It is built at build time
+from `src/lib/bookmarkletSource.js`, so it shares its extraction and handoff
+code with the site itself rather than being a hand-minified copy.
+
+A Content-Security-Policy does **not** stop it: measured on github.com, whose
+`script-src` carries no `'unsafe-inline'`. Chrome implements the CSP 1.0
+carve-out for user-supplied scripts. What CSP still governs is anything a
+bookmarklet *injects*, and this one injects nothing. Firefox and Safari are
+untested, and the install page says so.
+
+Turnstile widget setup, Netlify env vars and DNS remain the owner's job (see
+Deployment below).
 
 ## Tech stack
 

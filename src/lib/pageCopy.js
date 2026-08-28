@@ -16,6 +16,129 @@
 //
 // Plain JS with JSDoc, not TypeScript — see CLAUDE.md.
 
+export const landingCopy = {
+  en: {
+    title: 'Elenchus — does this argument hold up?',
+    description:
+      'Paste any text and get a structured analysis of its reasoning: where the logic breaks, how strong the case is, and what it gets right. Elenchus examines reasoning — it does not fact-check.',
+
+    heading: 'Does this argument hold up?',
+    intro:
+      'Elenchus reads a text and reports how its reasoning holds together: where the logic breaks, how strong the case is, and what it gets right.',
+
+    // The single most important paragraph on this page. Every reasoning
+    // tool gets mistaken for a fact-checker, and a visitor who expects one
+    // will read a good score on a well-argued falsehood as the tool being
+    // wrong. Said before the calls to action, not in a footnote.
+    notFactCheckHeading: 'It does not fact-check',
+    notFactCheck:
+      'Elenchus does not know whether a claim is true. It examines whether the conclusions follow from what came before — circular reasoning, false dilemmas, unsupported leaps, loaded framing. A tight argument built on false premises will score well here, and a true conclusion argued badly will not. That is the tool working, not failing.',
+
+    getHeading: 'What you get back',
+    getItems: [
+      'A summary of what the text is actually arguing.',
+      'An overall reasoning score: strong, moderate or weak.',
+      'Each flaw found, with its severity and the passage it comes from.',
+      'The strengths — what the argument does well.',
+    ],
+
+    waysHeading: 'Three ways to use it',
+    ways: [
+      {
+        name: 'Paste it',
+        body: 'Any text, any browser, any device. Nothing to install.',
+        cta: 'Open the analyzer',
+        href: '/analyze/',
+      },
+      {
+        name: 'One click while reading',
+        body: 'A bookmark that sends the page you are on — or the passage you selected — straight to the analyzer.',
+        cta: 'Get the bookmarklet',
+        href: '/bookmarklet/',
+      },
+      {
+        name: 'The Chrome extension',
+        body: 'Analyse in a side panel without leaving the page: 21 a day, or unlimited with your own API key.',
+        cta: 'View on the Chrome Web Store',
+        href: null, // the Web Store URL, threaded in per language
+      },
+    ],
+
+    // The free web tier is small by construction and cannot grow — the
+    // provider caps the whole account. Saying so here is what stops the
+    // dry state from reading as a broken site.
+    limitsHeading: 'The free demo is small on purpose',
+    limitsText:
+      'This site runs on a free model tier: 2 analyses a day per visitor, and 150 a day across everyone. When the day’s allowance is gone, it is gone — the extension has its own separate allowance and takes your own API key for unlimited use.',
+
+    privacyText: 'What happens to the text you submit is described in the ',
+    privacyLink: 'privacy policy',
+    privacyEnd: '.',
+
+    houseText: 'Elenchus is part of ',
+    houseLink: 'Untilt',
+    houseEnd: ', a small house of tools for thinking straight.',
+  },
+
+  fr: {
+    title: 'Elenchus — cet argument tient-il debout ?',
+    description:
+      'Collez un texte et obtenez une analyse structurée de son raisonnement : où la logique cède, la solidité de l’ensemble, et ce qui tient. Elenchus examine le raisonnement — il ne vérifie pas les faits.',
+
+    heading: 'Cet argument tient-il debout ?',
+    intro:
+      'Elenchus lit un texte et rend compte de la tenue de son raisonnement : où la logique cède, la solidité de l’ensemble, et ce qu’il fait bien.',
+
+    // Voir le commentaire du bloc `en` : c'est le paragraphe le plus
+    // important de la page.
+    notFactCheckHeading: 'Il ne vérifie pas les faits',
+    notFactCheck:
+      'Elenchus ignore si une affirmation est vraie. Il examine si les conclusions découlent de ce qui les précède — raisonnement circulaire, faux dilemmes, sauts non justifiés, cadrage orienté. Un argument serré bâti sur des prémisses fausses obtiendra un bon score ; une conclusion vraie mal défendue, un mauvais. C’est l’outil qui fonctionne, pas qui échoue.',
+
+    getHeading: 'Ce que vous obtenez',
+    getItems: [
+      'Un résumé de ce que le texte soutient réellement.',
+      'Un score de raisonnement global : solide, modéré ou faible.',
+      'Chaque faille repérée, avec sa gravité et le passage dont elle vient.',
+      'Les points forts — ce que l’argumentation réussit.',
+    ],
+
+    waysHeading: 'Trois façons de l’utiliser',
+    ways: [
+      {
+        name: 'Collez le texte',
+        body: 'N’importe quel texte, navigateur ou appareil. Rien à installer.',
+        cta: 'Ouvrir l’analyseur',
+        href: '/fr/analyze/',
+      },
+      {
+        name: 'En un clic pendant la lecture',
+        body: 'Un favori qui envoie la page où vous êtes — ou le passage sélectionné — directement à l’analyseur.',
+        cta: 'Obtenir le bookmarklet',
+        href: '/fr/bookmarklet/',
+      },
+      {
+        name: 'L’extension Chrome',
+        body: 'Analysez dans un panneau latéral sans quitter la page : 21 par jour, ou sans limite avec votre propre clé API.',
+        cta: 'Voir sur le Chrome Web Store',
+        href: null,
+      },
+    ],
+
+    limitsHeading: 'La démonstration gratuite est volontairement petite',
+    limitsText:
+      'Ce site fonctionne sur un palier de modèles gratuit : 2 analyses par jour et par visiteur, 150 par jour pour tout le monde. Une fois le quota du jour épuisé, il l’est — l’extension dispose de son propre quota et accepte votre clé API pour un usage illimité.',
+
+    privacyText: 'Le sort du texte que vous soumettez est décrit dans la ',
+    privacyLink: 'politique de confidentialité',
+    privacyEnd: '.',
+
+    houseText: 'Elenchus fait partie d’',
+    houseLink: 'Untilt',
+    houseEnd: ', une petite maison d’outils pour penser droit.',
+  },
+};
+
 export const bookmarkletCopy = {
   en: {
     title: 'The Elenchus bookmarklet — one click from any page',
