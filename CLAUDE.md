@@ -98,6 +98,59 @@ on model output) lives at `src/pages/analyze.astro` and
 remains a placeholder (the analyzer's own landing/home treatment is a later
 task).
 
+## The bookmarklet handoff
+
+The bookmarklet is not a file that ships: `src/lib/buildBookmarklet.js`
+bundles `src/lib/bookmarkletSource.js` with esbuild **at build time** and the
+install page renders the result as a `javascript:` link. That is what keeps
+one source of truth — `src/lib/extract.js` (what text to send) and
+`src/lib/handoff.js` (the protocol) are imported by both the bookmarklet and
+this site's own client script. A hand-minified literal would drift the first
+time either changed, silently, on someone else's page.
+
+**It silently does nothing on sites whose CSP has no `'unsafe-inline'` in
+`script-src`** — github.com among them. The body never executes, so no error
+handling in it can report the failure. Expectation-setting on the install
+page is the only available mitigation; do not add code that claims to detect
+this.
+
+**Transport: `window.open` + `postMessage` primary, URL fragment fallback**
+(plan task M3, decided from the COOP measurement in M1 — no
+`Cross-Origin-Opener-Policy` on any news or opinion site sampled, nor on this
+site). postMessage keeps the reader's text out of the address bar, history
+and any link they might share, and has no length ceiling. The fragment is
+what survives a severed opener (COOP) or a popup blocker; it is capped at
+`MAX_TEXT_LENGTH` and **flags its own truncation in the URL**, because on
+that path the box arrives exactly at the cap and the character counter alone
+would read as a coincidence rather than a cut.
+
+Two rules in `src/lib/handoff.js` that look like oversights and are not:
+
+- The text leg posts to an **exact target origin**, never `'*'` — it carries
+  the reader's content.
+- The receiving page checks `event.source === window.opener` and
+  **deliberately does not check the sender's origin**: the opener is
+  whatever site the reader was on, so there is no origin to allowlist. The
+  text is adversarial by construction on both paths and takes the same
+  escaped, enum-clamped route through `render.js` as anything pasted by hand.
+
+The fragment is erased with `history.replaceState` the moment it is read. A
+fragment never reaches a server, but it is shareable, and the reader did not
+choose to put an article into a link.
+
+`src/lib/limits.js` holds `MAX_TEXT_LENGTH`/`MIN_TEXT_LENGTH` — the mirror of
+the Worker's own two constants — because the paste box, the bookmarklet and
+the fragment now all enforce the same cap. Three copies of `15000` would be
+three chances to drift.
+
+`buildBookmarklet()` **fails the build** if the encoded URL passes
+`MAX_BOOKMARKLET_LENGTH` (8000 chars; it is ~2.7 KB today). That budget is
+deliberately far below any browser's real bookmark limit — raise it only
+against a measurement, never to make a bigger bookmarklet fit. It is also why
+Readability.js is not inlined: 43 KB encoded, in a disputed band for Firefox,
+buying extraction quality mostly on the heavy sites where CSP blocks the
+bookmarklet anyway.
+
 ## Development
 
     npm install
@@ -109,7 +162,15 @@ task).
     npm test
 
 Vitest + jsdom, `test/*.test.js`, covering `src/lib/clamp.js`,
-`src/lib/render.js`, `src/lib/errorState.js` and `src/lib/proxyClient.js`.
+`src/lib/render.js`, `src/lib/errorState.js`, `src/lib/proxyClient.js`,
+`src/lib/extract.js`, `src/lib/handoff.js` and `src/lib/buildBookmarklet.js`
+(that last one carries `// @vitest-environment node` at the top of its test
+file — esbuild's own entry point does not run under jsdom).
+
+`test/extract.test.js` runs against real DOM trees built in jsdom, never
+against stubbed queries: the extraction heuristic **is** its interaction
+with a document, and a test that mocked `querySelectorAll` would stay green
+on a heuristic that returns the navigation bar.
 **The renderer never passes model text to innerHTML unescaped** — the
 analysed text is adversarial by construction (a visitor pastes text written
 by someone else), so the model's JSON output is attacker-influenced.

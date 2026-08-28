@@ -33,6 +33,14 @@ export const strings = {
     // post-hoc truncation.
     maxLengthWarning: 'You have reached the 15,000-character limit for one analysis.',
 
+    // Shown when the bookmarklet had to cut the page's text to fit. Stated
+    // on arrival, not after the analysis: the reader did not type this text
+    // and has no way to see what was left behind — and on the fragment
+    // transport the box arrives exactly at the cap, so the character
+    // counter alone would look like a coincidence rather than a cut.
+    handoffTruncated:
+      'This page had more than 15,000 characters, so only the beginning was brought over. Edit the text below if the part you wanted to examine is missing.',
+
     freeTierNoticeText:
       "Free tier: this text is sent to model providers that may log it and train on it. Avoid analysing confidential text, or ",
     freeTierNoticeLink: 'use your own API key in the Elenchus extension',
@@ -130,6 +138,10 @@ export const strings = {
     charCount: (count, max) => `${count} / ${max}`,
     minLengthWarning: 'Saisissez au moins 50 caractères pour lancer l’analyse.',
     maxLengthWarning: 'Vous avez atteint la limite de 15 000 caractères pour une analyse.',
+
+    // Voir le commentaire du bloc `en`.
+    handoffTruncated:
+      'Cette page dépassait 15 000 caractères : seul le début a été repris. Modifiez le texte ci-dessous si le passage que vous vouliez examiner en est absent.',
 
     freeTierNoticeText:
       "Version gratuite : ce texte est envoyé à des fournisseurs de modèles susceptibles de l'enregistrer et de s'en servir pour l'entraînement. Évitez d'analyser un texte confidentiel, ou ",

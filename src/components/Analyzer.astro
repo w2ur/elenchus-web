@@ -9,6 +9,7 @@
 // file's comment and CLAUDE.md ("import config.js from Astro frontmatter
 // on both pages, so a missing env var fails the build, not just a
 // visitor's browser").
+import { MAX_TEXT_LENGTH, MIN_TEXT_LENGTH } from '../lib/limits.js';
 import { strings } from '../lib/strings.js';
 
 interface Props {
@@ -32,14 +33,11 @@ const T = strings[lang];
 // uses for this listing.
 const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/bodfmokjnmkkdobfcnfbplnbplgdbfgl?hl=${lang}`;
 
-// Mirrors the elenchus-proxy Worker: the MAX_TEXT_LENGTH constant (which
-// truncates silently server-side) and its >=50-char minimum-length check,
-// both in elenchus-proxy/src/index.js — both surfaced to the user here
-// instead. Cited by name and file only, never by line number: the two
-// repos move independently, so a line cite goes stale the moment either
-// changes (it already has once, mid-phase).
-const MAX_TEXT_LENGTH = 15000;
-const MIN_TEXT_LENGTH = 50;
+// MAX_TEXT_LENGTH / MIN_TEXT_LENGTH come from src/lib/limits.js, which
+// holds the mirror of the elenchus-proxy Worker's own two constants. They
+// live there rather than here because the bookmarklet and the fragment
+// handoff (src/lib/handoff.js) enforce the same cap, and three copies of
+// "15000" is three chances to drift.
 ---
 
 <h1>{T.heading}</h1>
@@ -51,6 +49,14 @@ const MIN_TEXT_LENGTH = 50;
     target="_blank"
     rel="noopener noreferrer">{T.freeTierNoticeLink}</a>{T.freeTierNoticeEnd}
 </p>
+
+<!--
+  Set only when the bookmarklet hands text over and that text had to be cut
+  to fit (see src/lib/handoff.js). The reader did not type this text and
+  cannot see what was dropped, so the cut is stated at the moment it
+  arrives rather than in the results panel afterwards.
+-->
+<p class="notice" id="handoff-notice" hidden></p>
 
 <form id="analyze-form" novalidate>
   <label class="sr-only" for="text-input">{T.textareaLabel}</label>
@@ -157,6 +163,13 @@ const MIN_TEXT_LENGTH = 50;
 
 <script type="module">
   import { canRetry, renderFailureState } from '../lib/errorState.js';
+  import {
+    PROTOCOL_VERSION,
+    READY_TYPE,
+    isBookmarkletLaunch,
+    parseTextMessage,
+    readFragment,
+  } from '../lib/handoff.js';
   import { callProxy } from '../lib/proxyClient.js';
   import { renderAnalysis } from '../lib/render.js';
   import { strings as STRINGS } from '../lib/strings.js';
@@ -176,6 +189,7 @@ const MIN_TEXT_LENGTH = 50;
   const charCount = document.getElementById('char-count');
   const lengthWarning = document.getElementById('length-warning');
   const analyzeBtn = document.getElementById('analyze-btn');
+  const handoffNotice = document.getElementById('handoff-notice');
   const loadingState = document.getElementById('loading-state');
   const errorState = document.getElementById('error-state');
   const errorMessage = document.getElementById('error-message');
@@ -226,7 +240,61 @@ const MIN_TEXT_LENGTH = 50;
   }
 
   textInput.addEventListener('input', updateMeta);
+  textInput.addEventListener('input', () => {
+    // The handoff notice describes the text that ARRIVED. Once the reader
+    // edits the box, it is no longer a statement about what is in it.
+    handoffNotice.hidden = true;
+    handoffNotice.textContent = '';
+  });
   updateMeta();
+
+  /**
+   * Fills the paste box with text handed over by the bookmarklet.
+   *
+   * Nothing is submitted automatically: the reader still has to solve the
+   * Turnstile challenge and press Analyze, and one of this site's two free
+   * daily analyses is not something to spend on their behalf.
+   *
+   * @param {string} incoming
+   * @param {boolean} [cutAtSource] true when the sender already had to cut
+   *   the text to fit (the fragment transport does), which this side cannot
+   *   detect by length alone — the text arrives exactly at the cap
+   */
+  function receiveHandoff(incoming, cutAtSource = false) {
+    const truncated = cutAtSource || incoming.length > MAX_LEN;
+    textInput.value = truncated ? incoming.slice(0, MAX_LEN) : incoming;
+    updateMeta();
+    handoffNotice.hidden = !truncated;
+    handoffNotice.textContent = truncated ? T.handoffTruncated : '';
+    showState('form');
+    textInput.focus();
+  }
+
+  // Fallback transport first: if the text arrived in the URL fragment, the
+  // postMessage handshake either was not possible or already failed, and
+  // the fragment is erased from the address bar and history immediately —
+  // a fragment is never sent to a server, but it is shareable, and the
+  // reader did not choose to put an article in a link.
+  const fragment = readFragment(window.location.hash);
+  if (fragment) {
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    receiveHandoff(fragment.text, fragment.truncated);
+  } else if (isBookmarkletLaunch(window.location.search) && window.opener) {
+    // Primary transport. The listener is attached before the ready ping, so
+    // an instant reply cannot arrive before anything is listening.
+    //
+    // `event.source === window.opener` is the whole check on provenance;
+    // the ORIGIN is deliberately not checked, because it is whatever site
+    // the reader was reading. See src/lib/handoff.js — the text is treated
+    // as adversarial on both paths anyway.
+    window.addEventListener('message', (event) => {
+      if (event.source !== window.opener) return;
+      const incoming = parseTextMessage(event.data);
+      if (incoming === null) return;
+      receiveHandoff(incoming);
+    });
+    window.opener.postMessage({ type: READY_TYPE, v: PROTOCOL_VERSION }, '*');
+  }
 
   function resetTurnstile() {
     try {
