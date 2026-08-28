@@ -8,9 +8,11 @@
 // function of (document, selection text).
 //
 // **Readability.js is deliberately not inlined here.** 43 KB
-// percent-encoded lands in a disputed band for Firefox bookmark length, and
-// it buys extraction quality mostly on the heavy, script-driven sites where
-// the bookmarklet is most likely to be blocked by CSP and never run at all.
+// percent-encoded lands in a disputed band for Firefox bookmark length — a
+// size argument, and now the only one: the second half of this rationale
+// used to be "and those sites block the bookmarklet by CSP anyway", which
+// was measured false on 2026-08-28. The size argument alone still carries
+// the decision, but it is the one that has to hold.
 // The rule this heuristic follows instead: prefer what the reader selected,
 // then the paragraphs of the most text-dense container, then nothing —
 // never a page-furniture soup that would be analysed as if it were an

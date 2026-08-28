@@ -108,11 +108,20 @@ one source of truth — `src/lib/extract.js` (what text to send) and
 this site's own client script. A hand-minified literal would drift the first
 time either changed, silently, on someone else's page.
 
-**It silently does nothing on sites whose CSP has no `'unsafe-inline'` in
-`script-src`** — github.com among them. The body never executes, so no error
-handling in it can report the failure. Expectation-setting on the install
-page is the only available mitigation; do not add code that claims to detect
-this.
+**A Content-Security-Policy does not block it — that was measured, and it
+overturned the design's original premise.** On 2026-08-28 a real bookmark
+ran on github.com, whose `script-src` carries no `'unsafe-inline'`. Chrome
+implements the CSP 1.0 carve-out for user-supplied scripts: a bookmarklet
+body executes with CSP ignored. **CSP still governs anything a bookmarklet
+injects** — a created `<script>`, an `eval`, a remote resource. That is the
+live constraint on `src/lib/bookmarkletSource.js`: it injects nothing and
+evals nothing, and adding either would reintroduce a silent, unreportable
+failure on exactly the strict sites it now reaches.
+
+CSP 1.1 made that carve-out optional rather than required, so it is a
+per-browser fact and not a guarantee — Firefox carried a long-standing bug
+where CSP did break bookmarklets, and Safari is unverified here. Claim on
+the install page only what has been measured.
 
 **Transport: `window.open` + `postMessage` primary, URL fragment fallback**
 (plan task M3, decided from the COOP measurement in M1 — no
@@ -147,9 +156,10 @@ three chances to drift.
 `MAX_BOOKMARKLET_LENGTH` (8000 chars; it is ~2.7 KB today). That budget is
 deliberately far below any browser's real bookmark limit — raise it only
 against a measurement, never to make a bigger bookmarklet fit. It is also why
-Readability.js is not inlined: 43 KB encoded, in a disputed band for Firefox,
-buying extraction quality mostly on the heavy sites where CSP blocks the
-bookmarklet anyway.
+Readability.js is not inlined: 43 KB encoded, in a disputed band for Firefox.
+That size argument is now the *whole* case — the other half of it used to be
+"and CSP blocks the bookmarklet on those sites anyway", which M2 measured
+false.
 
 ## Development
 

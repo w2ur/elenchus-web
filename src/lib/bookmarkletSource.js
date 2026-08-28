@@ -9,11 +9,15 @@
 // point (esbuild `define`), which is what lets the EN and FR install pages
 // hand out bookmarklets pointing at their own analyzer.
 //
-// **This code silently does nothing on sites whose Content-Security-Policy
-// has no `'unsafe-inline'` in `script-src` — github.com among them.** The
-// body never executes, so no error handling here can report it; that
-// failure is addressed by saying so on the install page, which is the only
-// mitigation available for it.
+// **A Content-Security-Policy does not stop this code from running.**
+// Measured 2026-08-28 on github.com, whose `script-src` has no
+// `'unsafe-inline'`: the bookmarklet ran. Chrome implements the CSP 1.0
+// carve-out for user-supplied scripts, so a bookmarklet body executes with
+// CSP ignored. **What CSP still governs is anything a bookmarklet injects**
+// — a created `<script>`, an `eval`, a remote resource — which is why this
+// file does none of those and must keep doing none of them: adding one
+// would reintroduce exactly the silent, unreportable failure this design
+// was originally shaped around.
 //
 // Plain JS with JSDoc, not TypeScript — see CLAUDE.md.
 
