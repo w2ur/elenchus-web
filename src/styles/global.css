@@ -279,8 +279,11 @@ button {
   cursor: pointer;
 }
 
+/* white on --accent #4F8A8B measures 3.93:1 at 14px/600 — under the AA floor.
+   --accent-hover #3D6D6E measures 5.81:1 and was already proven as a hover
+   colour. Hover darkens one more step so the state stays distinguishable. */
 .btn-primary {
-  background: var(--accent);
+  background: var(--accent-hover);
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -290,13 +293,25 @@ button {
 }
 
 .btn-primary:hover {
-  background: var(--accent-hover);
+  background: color-mix(in srgb, var(--accent-hover) 85%, #000);
 }
 
 .btn-primary:disabled {
   background: var(--border);
   color: var(--text-muted);
   cursor: not-allowed;
+}
+
+/* --accent-hover is #8ec4c5 in dark mode — a light teal, not the dark teal it
+   is in light mode. White text on it measures 1.94:1, far under AA; --bg
+   (#0f1117) on it measures 9.75:1. Declared after the base .btn-primary rule
+   so source order (not just the media query) puts it on top: two rules of
+   equal specificity, and the later one wins even when the earlier one's
+   media query also matches. */
+@media (prefers-color-scheme: dark) {
+  .btn-primary {
+    color: var(--bg);
+  }
 }
 
 /* Text color uses --link, not --accent: same 3.93:1-on-white contrast
