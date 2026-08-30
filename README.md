@@ -19,6 +19,10 @@ Worker (a separate repo) over a `web` surface added specifically for this
 client — see `CLAUDE.md` for what that surface can and cannot assume about the
 caller.
 
+Elenchus is a member of the [Untilt](https://untilt.app/) suite, and shares
+its house shell (surface colours, type pairing, wordmark header) while
+keeping its own teal accent and status colour scale.
+
 **Status:** three ways in, in both languages.
 
 | Page | English | French |

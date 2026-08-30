@@ -53,10 +53,17 @@ const t = strings[lang] ?? strings.en;
     {frHref && <link rel="alternate" hreflang="fr" href={frHref} />}
     {/* English is x-default: it is the wider audience, and the site's own
         user-facing language per CLAUDE.md. */}
-    {enHref && <link rel="alternate" hreflang="x-default" href={enHref} />}
     <title>{title}</title>
   </head>
   <body>
+    <header class="house">
+      {/* The only thing on this page that says which house it belongs to.
+          The wordmark links out to the chapeau; the tool name is not a link,
+          because it names the page you are already on. */}
+      <a class="house-mark" href={t.houseUrl}>{t.houseLabel}</a>
+      <span class="house-sep" aria-hidden="true">/</span>
+      <span class="house-tool">Elenchus</span>
+    </header>
     <main>
       <slot />
     </main>

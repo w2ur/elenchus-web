@@ -1,17 +1,59 @@
-/* Design tokens mirror ~/Dev/elenchus/sidepanel/sidepanel.css: same structure
-   (light tokens on :root, dark tokens under prefers-color-scheme), swapped to
-   the teal accent the hub assigns Elenchus (#4F8A8B family) instead of the
-   side panel's blue. Severity/score tokens are semantic status colors
-   (amber/red/dark-red, green/amber/red) — they are not "the accent color",
-   so the portfolio's never-purple rule does not apply to them, and they are
-   copied verbatim from the extension's sidepanel.css so the same analysis
-   reads with the same colors on both surfaces. */
+/* Self-hosted, not linked from fonts.googleapis.com: the Google Fonts
+   stylesheet added a render-blocking cross-origin request that measured
+   Lighthouse performance at 94/100 on both pages (FCP/LCP), against a
+   gate of >=95. These are the same two families and the same weights
+   (Instrument Sans 500/600/700, DM Sans 400/500/700 + 400 italic) fetched
+   from fonts.googleapis.com's own woff2 latin-subset files, saved once
+   into public/fonts/ and served same-origin with font-display: swap.
+   Instrument Sans and DM Sans are themselves variable fonts, so the three
+   weight-labelled @font-face rules below for each family point at the
+   *same* file on purpose — Chrome resolves the requested numeric
+   font-weight against the file's own wght axis, exactly as it would have
+   from the Google-hosted stylesheet. */
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/dm-sans-latin.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/dm-sans-italic-latin.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Instrument Sans';
+  font-style: normal;
+  font-weight: 500 700;
+  font-display: swap;
+  src: url('/fonts/instrument-sans-latin.woff2') format('woff2');
+}
+
+/* Two token families, two different sources of truth.
+
+   SURFACES (--bg, --bg-card, --text, --text-muted, --border) are the Untilt
+   house shell, copied by hand from ~/Dev/untilt/client/src/index.css so that
+   elenchus.untilt.app and untilt.app read as one product. Pinned by
+   test/houseShell.test.js; there is no cross-repo drift check yet — extracting
+   untilt-kit is a tool-#3 decision.
+
+   ACCENT + STATUS (--accent, --accent-hover, --link, --severity-*, --score-*)
+   are Elenchus's own, and the severity/score scale is copied verbatim from
+   ~/Dev/elenchus/sidepanel/sidepanel.css so the same analysis reads with the
+   same colours in the extension and on the web. They are semantic status
+   colours, not "the accent colour", so the portfolio's never-purple rule does
+   not apply to them. Do not fold them into the house shell. */
 :root {
-  --bg: #ffffff;
-  --bg-card: #f5f5f5;
-  --text: #1a1a1a;
-  --text-muted: #666666;
-  --border: #e0e0e0;
+  --bg: #f8f9fb;
+  --bg-card: #ffffff;
+  --text: #1a1d23;
+  --text-muted: #5c6370;
+  --border: #d2d7df;
   --accent: #4f8a8b;
   --accent-hover: #3d6d6e;
   /* Text/link color, separate from --accent (C4 review). #4F8A8B on white is
@@ -22,7 +64,8 @@
      used as a background/border color, where a different contrast pair
      applies) — only text/links get the darker shade. Reuses the existing
      --accent-hover value, which already cleared 4.5:1 as a hover color;
-     measured here at 5.82:1 against #ffffff. */
+     measured at 5.52:1 against the house --bg #F8F9FB (was 5.82:1 against
+     the old #ffffff). */
   --link: #3d6d6e;
   --severity-minor: #d97706;
   --severity-significant: #dc2626;
@@ -34,15 +77,16 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #1a1a1a;
-    --bg-card: #262626;
-    --text: #e5e5e5;
-    --text-muted: #a3a3a3;
-    --border: #404040;
+    --bg: #0f1117;
+    --bg-card: #1a1d25;
+    --text: #eceef2;
+    --text-muted: #94a3b8;
+    --border: #2f333d;
     --accent: #6fb3b4;
     --accent-hover: #8ec4c5;
-    /* Dark mode was never flagged: #6FB3B4 on #1A1A1A measures 7.28:1,
-       already past AAA, so --link stays equal to --accent here. */
+    /* Dark mode was never flagged: #6FB3B4 on the house --bg #0F1117
+       measures 7.89:1, already past AAA (was 7.28:1 against the old
+       #1a1a1a), so --link stays equal to --accent here. */
     --link: #6fb3b4;
     --severity-minor: #fbbf24;
     --severity-significant: #f87171;
@@ -65,12 +109,17 @@ body {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
   line-height: 1.5;
   color: var(--text);
   background: var(--bg);
   display: flex;
   flex-direction: column;
+}
+
+h1, h2, h3 {
+  font-family: 'Instrument Sans', system-ui, -apple-system, sans-serif;
+  letter-spacing: -0.01em;
 }
 
 main {
@@ -101,6 +150,36 @@ footer {
 footer a {
   color: inherit;
   text-decoration: underline;
+}
+
+.house {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  font-family: 'Instrument Sans', system-ui, sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.house-mark {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.house-mark:hover {
+  text-decoration: underline;
+}
+
+.house-sep {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.house-tool {
+  color: var(--accent);
 }
 
 /* --- Analyzer (C3) --- */

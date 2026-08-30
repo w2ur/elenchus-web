@@ -21,6 +21,9 @@
 
 export const strings = {
   en: {
+    houseLabel: 'Untilt',
+    houseUrl: 'https://untilt.app/',
+
     heading: 'Elenchus',
     subtitle: 'Paste text, get a reasoning analysis back.',
     textareaLabel: 'Text to analyze',
@@ -136,6 +139,9 @@ export const strings = {
   },
 
   fr: {
+    houseLabel: 'Untilt',
+    houseUrl: 'https://untilt.app/fr/',
+
     heading: 'Elenchus',
     subtitle: 'Collez un texte, obtenez une analyse de sa rigueur logique.',
     textareaLabel: 'Texte à analyser',

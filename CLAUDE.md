@@ -77,13 +77,26 @@ header reach the Worker and come back as an opaque 403.
 
 ## Visual identity
 
-Mirrors `~/Dev/elenchus/sidepanel/sidepanel.css`: the same token structure
-(light values on `:root`, dark values under `@media (prefers-color-scheme:
-dark)`, no separate dark-mode toggle), the same font stack, the same card/
-button shapes. The one deliberate difference is the accent color — the
-portfolio hub assigns Elenchus the teal accent `#4F8A8B` (`src/styles/
-global.css`), not the side panel's blue. Stay in that teal family; never
-default to purple/violet/indigo (portfolio-wide rule).
+The surface tokens (`--bg`, `--bg-card`, `--text`, `--text-muted`,
+`--border` in `src/styles/global.css`) are copied from
+`untilt/client/src/index.css` and pinned by `test/houseShell.test.js`, so
+that `elenchus.untilt.app` reads as one product with `untilt.app`. The
+severity/score scale is copied verbatim from `~/Dev/elenchus/sidepanel/
+sidepanel.css` instead, and must not be folded into the house surface
+tokens — they are semantic status colours, not the house shell. The one
+deliberate difference from the house is the accent color — the portfolio
+hub assigns Elenchus the teal accent `#4F8A8B` (`src/styles/global.css`),
+not `untilt.app`'s blue-grey. Stay in that teal family; never default to
+purple/violet/indigo (portfolio-wide rule).
+
+The header wordmark (`.house` in `Layout.astro`) links to `houseUrl` in
+`src/lib/strings.js` (`https://untilt.app/` for English,
+`https://untilt.app/fr/` for French — a real prerendered page on the
+chapeau, not a language guess). Instrument Sans (headings, the header) and
+DM Sans (body) are self-hosted from `public/fonts/` rather than linked from
+fonts.googleapis.com — a render-blocking Google Fonts request measured
+Lighthouse performance at 94/100, against a >=95 gate; self-hosting with
+`font-display: swap` restored 100/100.
 
 Dark + light mode is `prefers-color-scheme` only — no toggle, matching the
 extension. Footer signature "Made with care by William" →
