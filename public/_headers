@@ -1,0 +1,12 @@
+# Netlify header rules. Copied verbatim from public/ into dist/ by Astro.
+#
+# Astro fingerprints its own output under /_astro/, so Netlify already serves
+# that immutably. public/fonts/*.woff2 are NOT fingerprinted — they were
+# revalidating on every navigation under Netlify's default
+# `cache-control: public,max-age=0,must-revalidate`, where fonts.gstatic.com
+# had served the same bytes `immutable` for a year (Lighthouse
+# `uses-long-cache-ttl` scored 0.5). The files are byte-frozen copies of a
+# specific Google Fonts release; replacing one means a new filename, not a
+# new revision of an existing one.
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable

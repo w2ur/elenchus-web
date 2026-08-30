@@ -8,9 +8,13 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const css = readFileSync(join(__dirname, '../src/styles/global.css'), 'utf-8');
 const layout = readFileSync(join(__dirname, '../src/layouts/Layout.astro'), 'utf-8');
 
-// The shared shell is copied by hand from untilt/client/src/index.css, where
-// src/lib/tokens.test.ts pins the same values. There is no cross-repo drift
-// check — a silent divergence is the failure mode, so each copy pins itself.
+// One definition of the term, shared with untilt/client/src/lib/tokens.test.ts:
+// the SHARED SHELL is the surfaces (background, card, text, muted text,
+// border) and nothing else; `--accent` AND `--link` are both PER-TOOL, set
+// independently by every tool under the chapeau. Values below are copied by
+// hand from untilt/client/src/index.css (whose names for the last two are
+// `--muted` and `--line`); there is no cross-repo drift check — a silent
+// divergence is the failure mode, so each copy pins itself.
 const HOUSE_LIGHT = {
   '--bg': '#F8F9FB',
   '--bg-card': '#FFFFFF',
@@ -44,7 +48,9 @@ describe('house shell', () => {
 
   // The Elenchus accent and the status colours are NOT house tokens: the
   // severity/score scale is copied verbatim from the extension's sidepanel so
-  // the same analysis reads identically on both Elenchus surfaces.
+  // the same analysis reads identically on both Elenchus surfaces. `--link`
+  // is per-tool for the same reason and is deliberately not pinned here —
+  // untilt's is #587089/#7B8FA4, this one is #3D6D6E/#6FB3B4.
   it('keeps the Elenchus accent and the extension status scale', () => {
     expect(light).toMatch(/--accent:\s*#4f8a8b;/i);
     expect(light).toMatch(/--severity-critical:\s*#7c2d12;/i);
@@ -68,11 +74,41 @@ describe('house shell', () => {
     expect(dark).toMatch(/--bg:\s*#0f1117;/i);
   });
 
-  it('every language names the house and links to it', () => {
-    for (const lang of ['en', 'fr']) {
+  // Assert the EXACT url per language, not a prefix. The prefix version of
+  // this guard could not fail: pointing the French houseUrl at
+  // `https://untilt.app/` — precisely the "language guess" that Layout.astro
+  // and CLAUDE.md claim is prevented — left the suite green, as did
+  // `https://untilt.app/no-such-page/`. Both are real prerendered pages on
+  // the chapeau — untilt's client/scripts/prerender.js writes every route
+  // twice, `/` and `/fr/` (the French basename), each to its own index.html.
+  // If either ever moves, this is the pin that says so.
+  const HOUSE_URLS = {
+    en: 'https://untilt.app/',
+    fr: 'https://untilt.app/fr/',
+  };
+
+  it('every language names the house', () => {
+    for (const lang of Object.keys(HOUSE_URLS)) {
       expect(strings[lang].houseLabel).toBeTruthy();
-      expect(strings[lang].houseUrl).toMatch(/^https:\/\/untilt\.app\//);
     }
+  });
+
+  it('every language links to the house page in its own language', () => {
+    for (const [lang, url] of Object.entries(HOUSE_URLS)) {
+      expect(strings[lang].houseUrl).toBe(url);
+    }
+  });
+
+  // The header tool name is the first place --accent would be used as TEXT,
+  // and --accent has never cleared AA in light mode as text (#4F8A8B on the
+  // house --bg #F8F9FB is 3.73:1 against a 4.5:1 floor at the 1rem/600 the
+  // header inherits). axe-core on the built page caught it; this is the pin
+  // that stops it coming back.
+  it('the header tool name uses --link, never --accent', () => {
+    const rule = css.slice(css.indexOf('.house-tool {'));
+    const body = rule.slice(0, rule.indexOf('}'));
+    expect(body).toMatch(/color:\s*var\(--link\)/);
+    expect(body).not.toMatch(/color:\s*var\(--accent\)/);
   });
 
   it('the header renders the house wordmark', () => {

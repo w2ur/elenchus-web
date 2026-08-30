@@ -77,10 +77,13 @@ header reach the Worker and come back as an opaque 403.
 
 ## Visual identity
 
-The surface tokens (`--bg`, `--bg-card`, `--text`, `--text-muted`,
-`--border` in `src/styles/global.css`) are copied from
-`untilt/client/src/index.css` and pinned by `test/houseShell.test.js`, so
-that `elenchus.untilt.app` reads as one product with `untilt.app`. The
+The surface tokens in `src/styles/global.css` carry the **values** of the
+Untilt house shell in `untilt/client/src/index.css`, but not all of its
+names: `--bg`, `--bg-card` and `--text` match, while untilt's `--muted` and
+`--line` are `--text-muted` and `--border` here (grepping untilt for
+`--text-muted` finds nothing). `test/houseShell.test.js` pins the values
+under this repo's names, so that `elenchus.untilt.app` reads as one product
+with `untilt.app`; a rename on either side is invisible to both suites. The
 severity/score scale is copied verbatim from `~/Dev/elenchus/sidepanel/
 sidepanel.css` instead, and must not be folded into the house surface
 tokens — they are semantic status colours, not the house shell. The one
@@ -102,6 +105,17 @@ since `untilt.app` itself still loads the same two families from the Google
 Fonts CDN rather than self-hosting them, so if untilt's font URL ever
 changes weights or versions, these local `public/fonts/` copies will not
 follow it.
+
+**Self-hosting also moved the caching onto us.** Astro fingerprints
+`_astro/*`, but `public/fonts/*.woff2` are copied through unhashed, so under
+Netlify's default `cache-control: public,max-age=0,must-revalidate` all
+three files revalidated on every navigation — where fonts.gstatic.com had
+served them `immutable` for a year. `public/_headers` sets `/fonts/*` to
+`max-age=31536000, immutable`; because the filenames are not fingerprinted,
+**replacing a font means a new filename, not new bytes at the old one**.
+That header only exists at the Netlify edge — `astro preview` does not apply
+`_headers`, so verify it after a deploy with `curl -I
+https://elenchus.untilt.app/fonts/dm-sans-latin.woff2`, never locally.
 
 Dark + light mode is `prefers-color-scheme` only — no toggle, matching the
 extension. Footer signature "Made with care by William" →
@@ -131,6 +145,19 @@ made to fail first — the same command scored 47 accessibility / 82 SEO on a
 deliberately broken control page (no `lang`, no meta description, an
 unlabelled link, an image with no alt, 1.1:1 text contrast) — so those
 hundreds are a measurement rather than a tool that always says yes.
+
+**Pin the colour scheme, or the accessibility score is about a page you did
+not test.** Headless Chrome inherits macOS's appearance, and dark mode here
+is 2–4 points clear of AA everywhere while light mode is where every
+contrast defect this repo has ever had actually lived — so a run made in
+inherited dark mode scores 100 without ever rendering the failing colours.
+Pass `--chrome-flags="--blink-settings=preferredColorScheme=1"` (1 = light,
+0 = dark) and confirm it took by decoding the report's `final-screenshot`:
+its top-left pixel must be the light `--bg`, not `#0F1117`. A run of
+`--only-categories=performance,accessibility,best-practices,seo
+--preset=desktop` against `astro preview` scores 100/100/100/100 on `/` and
+`/fr/` in light mode, with axe-core reporting zero violations in both
+schemes.
 
 **Two copy files, two jobs.** `src/lib/strings.js` is the analyzer UI's
 strings — labels, failure states, and the severity/score tables a
@@ -409,6 +436,13 @@ defect, same --link fix, since that button sits transparent directly on
 --bg. Its border stays --accent (non-text UI outline, 3:1 floor, already
 cleared) -- borders are not this rule's concern. Dark mode was already well
 past AA/AAA throughout and is unchanged.
+
+`.house-tool` (the "Elenchus" half of the header wordmark) follows the same
+rule, and is the reason the rule needs restating: adopting the house `--bg`
+`#F8F9FB` moved every `--accent`-on-background pair down a notch, so that
+text measured **3.73:1** there, not 3.93:1. **Any new use of `--accent` as
+text is a bug** — it has never cleared AA in light mode on any background
+this site uses. Reach for `--link`.
 
 ### Label drift-check
 

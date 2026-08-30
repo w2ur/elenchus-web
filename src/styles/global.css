@@ -5,11 +5,15 @@
    (Instrument Sans 500/600/700, DM Sans 400/500/700 + 400 italic) fetched
    from fonts.googleapis.com's own woff2 latin-subset files, saved once
    into public/fonts/ and served same-origin with font-display: swap.
-   Instrument Sans and DM Sans are themselves variable fonts, so the three
-   weight-labelled @font-face rules below for each family point at the
-   *same* file on purpose — Chrome resolves the requested numeric
+   Instrument Sans and DM Sans are themselves variable fonts, so each of the
+   three @font-face rules below declares a weight *range* rather than one
+   rule per discrete weight — Chrome resolves the requested numeric
    font-weight against the file's own wght axis, exactly as it would have
-   from the Google-hosted stylesheet. */
+   from the Google-hosted stylesheet, which split the same file across
+   several weight-labelled rules. Verified with fontTools: DM Sans carries
+   an fvar wght axis (100–1000) and Instrument Sans one of 400–700; the DM
+   Sans italic is a static 400 instance, which is why it alone declares a
+   single weight. */
 @font-face {
   font-family: 'DM Sans';
   font-style: normal;
@@ -38,9 +42,10 @@
 
    SURFACES (--bg, --bg-card, --text, --text-muted, --border) are the Untilt
    house shell, copied by hand from ~/Dev/untilt/client/src/index.css so that
-   elenchus.untilt.app and untilt.app read as one product. Pinned by
-   test/houseShell.test.js; there is no cross-repo drift check yet — extracting
-   untilt-kit is a tool-#3 decision.
+   elenchus.untilt.app and untilt.app read as one product. The values match;
+   two of the names do not — untilt calls the last two --muted and --line.
+   Pinned by test/houseShell.test.js; there is no cross-repo drift check yet
+   — extracting untilt-kit is a tool-#3 decision.
 
    ACCENT + STATUS (--accent, --accent-hover, --link, --severity-*, --score-*)
    are Elenchus's own, and the severity/score scale is copied verbatim from
@@ -179,7 +184,11 @@ footer a {
 }
 
 .house-tool {
-  color: var(--accent);
+  /* --link, not --accent: this is the first place --accent would have been
+     used as *text*, and #4F8A8B on the house --bg #F8F9FB measures 3.73:1 —
+     under the 4.5:1 AA floor for the 1rem/600 it inherits from .house.
+     --link (#3D6D6E) measures 5.52:1. Same split as .btn-secondary below. */
+  color: var(--link);
 }
 
 /* --- Analyzer (C3) --- */
