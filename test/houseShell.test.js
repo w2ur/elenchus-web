@@ -51,9 +51,21 @@ describe('house shell', () => {
     expect(dark).toMatch(/--accent:\s*#6fb3b4;/i);
   });
 
+  // The brief's original version of this guard sliced `light` to end at the
+  // first `@media`, then asserted `light` doesn't match `/@media/` — which
+  // cannot fail regardless of file content, since the slice bound already
+  // guarantees it. Assert on values instead of on the slice's own boundary:
+  // `light` must carry the light --bg and must NOT carry the dark --bg, and
+  // `dark` must carry both the media query and the dark --bg. If the slicing
+  // ever breaks (e.g. the dark block moves above `light`'s end index, or
+  // `:root {`/`@media` stop appearing where expected), these values-based
+  // assertions can and do go red — proven below by breaking the slice bounds
+  // on purpose (see the fix report for the before/after run).
   it('the two blocks are actually separated — the guard is not vacuous', () => {
-    expect(light).not.toMatch(/@media/);
+    expect(light).toMatch(/--bg:\s*#f8f9fb;/i);
+    expect(light).not.toMatch(/--bg:\s*#0f1117;/i);
     expect(dark).toMatch(/prefers-color-scheme:\s*dark/);
+    expect(dark).toMatch(/--bg:\s*#0f1117;/i);
   });
 
   it('every language names the house and links to it', () => {

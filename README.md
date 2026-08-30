@@ -23,6 +23,9 @@ Elenchus is a member of the [Untilt](https://untilt.app/) suite, and shares
 its house shell (surface colours, type pairing, wordmark header) while
 keeping its own teal accent and status colour scale.
 
+Instrument Sans and DM Sans, self-hosted under `public/fonts/`, are both
+SIL Open Font License 1.1 — see `public/fonts/OFL.txt`.
+
 **Status:** three ways in, in both languages.
 
 | Page | English | French |

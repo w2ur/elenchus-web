@@ -96,7 +96,12 @@ chapeau, not a language guess). Instrument Sans (headings, the header) and
 DM Sans (body) are self-hosted from `public/fonts/` rather than linked from
 fonts.googleapis.com — a render-blocking Google Fonts request measured
 Lighthouse performance at 94/100, against a >=95 gate; self-hosting with
-`font-display: swap` restored 100/100.
+`font-display: swap` restored 100/100. Like the surface tokens above, these
+are hand-copied files with no cross-repo drift check — but more sharply,
+since `untilt.app` itself still loads the same two families from the Google
+Fonts CDN rather than self-hosting them, so if untilt's font URL ever
+changes weights or versions, these local `public/fonts/` copies will not
+follow it.
 
 Dark + light mode is `prefers-color-scheme` only — no toggle, matching the
 extension. Footer signature "Made with care by William" →

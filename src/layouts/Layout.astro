@@ -53,6 +53,7 @@ const t = strings[lang] ?? strings.en;
     {frHref && <link rel="alternate" hreflang="fr" href={frHref} />}
     {/* English is x-default: it is the wider audience, and the site's own
         user-facing language per CLAUDE.md. */}
+    {enHref && <link rel="alternate" hreflang="x-default" href={enHref} />}
     <title>{title}</title>
   </head>
   <body>
