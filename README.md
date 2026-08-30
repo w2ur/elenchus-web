@@ -1,9 +1,9 @@
 ---
 name: "Elenchus"
-tagline_fr: "Collez un texte, obtenez une analyse de sa rigueur logique — sans compte, sans extension."
-tagline_en: "Paste text, get a reasoning analysis back — no account, no extension."
-facts_fr: "Site statique Astro, sans backend propre : appelle le Worker Cloudflare qui alimente déjà l'extension Elenchus. Trois portes d'entrée — champ de collage, bookmarklet, extension."
-facts_en: "Static Astro site with no backend of its own — calls the same Cloudflare Worker that already powers the Elenchus extension. Three ways in: paste box, bookmarklet, extension."
+tagline_fr: "L'outil de raisonnement de la suite Untilt — collez un texte, obtenez une analyse de sa rigueur logique, sans compte ni extension."
+tagline_en: "The reasoning tool in the Untilt suite — paste text, get a reasoning analysis back, no account or extension needed."
+facts_fr: "Site statique Astro, sans backend propre : appelle le Worker Cloudflare qui alimente déjà l'extension Elenchus. Membre de la suite Untilt, dont il partage l'habillage visuel et l'en-tête vers untilt.app. Trois portes d'entrée — champ de collage, bookmarklet, extension."
+facts_en: "Static Astro site with no backend of its own — calls the same Cloudflare Worker that already powers the Elenchus extension. A member of the Untilt suite, sharing its visual shell and wordmark header linking to untilt.app. Three ways in: paste box, bookmarklet, extension."
 ---
 
 # Elenchus (web)
