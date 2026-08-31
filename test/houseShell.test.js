@@ -116,3 +116,20 @@ describe('house shell', () => {
     expect(layout).toMatch(/houseUrl/);
   });
 });
+
+// Regression: .btn-primary painted white on var(--accent) (#4F8A8B), which
+// measures 3.93:1 at the 14px/600 it carries — under the 4.5:1 AA floor. The
+// same 3.93:1 defect the C4 review found on the extension link. --accent keeps
+// its value (it is a background/border colour elsewhere); only this button
+// darkens to --accent-hover #3D6D6E, which measures 5.81:1 on white.
+describe('regression: .btn-primary clears AA', () => {
+  it('does not use the bare --accent as its background', () => {
+    const rule = css.match(/\.btn-primary\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(rule).not.toMatch(/background:\s*var\(--accent\)\s*;/);
+  });
+
+  it('the rule was actually found — the guard is not vacuous', () => {
+    const rule = css.match(/\.btn-primary\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(rule).toMatch(/color:\s*#fff/);
+  });
+});
