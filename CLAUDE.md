@@ -77,6 +77,34 @@ header reach the Worker and come back as an opaque 403.
 
 ## Visual identity
 
+**Two stylesheets, and the split is the point.** `src/styles/house.css` is the
+Untilt house shell — fonts, surfaces, the `.house` lockup and the contour
+bloom — an **adapted copy** of `untilt/client/src/styles/house.css`. Read its
+header before touching it: it names the two things that deliberately differ
+(dark mode is `prefers-color-scheme` here, not untilt's `.dark` class; the
+chapeau furniture is omitted) and records why there is no `sync-house.sh`.
+`src/styles/global.css` imports it and holds only what is Elenchus's own —
+the teal accent and the severity/score scale. A shell token re-declared in
+`global.css` would win on source order and diverge silently, so
+`test/houseShell.test.js` fails if one appears there.
+
+**The wait is the contour bloom, not a spinner.** `#loading-state` in
+`Analyzer.astro` carries five `.house-bloom-ring` paths, byte-identical to
+untilt's `ContourBloom.tsx` and the extension's `sidepanel.html`. It loops and
+never fills — no percentage, no bar, no step count, because nothing about this
+wait is measurable. Two things about it that look like oversights:
+
+- **`.is-settled` is defined and never applied here.** Wiring it would put a
+  700ms gate on the result path — the highest-stakes branch in this repo and
+  the one with no automated coverage — to delay a result the visitor waited a
+  minute for. The rules stay in the copy because divergence between the three
+  copies is the failure mode this arrangement guards against. Known suite-wide:
+  it is applied in **zero** of the four places the design spec calls for.
+- **`vector-effect: non-scaling-stroke` is load-bearing.** `stroke-width`
+  otherwise resolves in viewBox user units and scales down with the SVG — a
+  400-unit viewBox at 64px turned 1.5 into a 0.24px haze upstream. Removing it
+  here reproduces that: 2012 painted pixels against the real 4818.
+
 The surface tokens carry both the **names and the values** of the Untilt
 house shell in `untilt/client/src/styles/house.css`. They used to carry only
 the values: `--muted` and `--line` were `--text-muted` and `--border` here
@@ -100,12 +128,15 @@ chapeau, not a language guess). Instrument Sans (headings, the header) and
 DM Sans (body) are self-hosted from `public/fonts/` rather than linked from
 fonts.googleapis.com — a render-blocking Google Fonts request measured
 Lighthouse performance at 94/100, against a >=95 gate; self-hosting with
-`font-display: swap` restored 100/100. Like the surface tokens above, these
-are hand-copied files with no cross-repo drift check — but more sharply,
-since `untilt.app` itself still loads the same two families from the Google
-Fonts CDN rather than self-hosting them, so if untilt's font URL ever
-changes weights or versions, these local `public/fonts/` copies will not
-follow it.
+`font-display: swap` restored 100/100. The three `@font-face` rules moved
+into `src/styles/house.css` in v0.2, since untilt self-hosts the same files
+under the same names and they are part of the shared shell. **They are
+byte-identical across the two repos today** — verified by md5 against
+`untilt/client/public/fonts/` — but like the surface tokens above they are
+hand-copied with no cross-repo drift check, so a re-subset on either side is
+invisible to the other. untilt no longer loads these families from the Google
+Fonts CDN; that claim was true until its own v0.1 self-hosting task and is the
+kind of cross-repo statement that goes stale silently.
 
 **Self-hosting also moved the caching onto us.** Astro fingerprints
 `_astro/*`, but `public/fonts/*.woff2` are copied through unhashed, so under

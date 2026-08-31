@@ -20,8 +20,10 @@ client — see `CLAUDE.md` for what that surface can and cannot assume about the
 caller.
 
 Elenchus is a member of the [Untilt](https://untilt.app/) suite, and shares
-its house shell (surface colours, type pairing, wordmark header) while
-keeping its own teal accent and status colour scale.
+its house shell — surface colours, type pairing, wordmark header, the contour
+icon and the contour-bloom waiting animation — while keeping its own teal
+accent and status colour scale. The shell lives in `src/styles/house.css`, an
+adapted copy of untilt's; its header records what differs and why.
 
 Instrument Sans and DM Sans, self-hosted under `public/fonts/`, are both
 SIL Open Font License 1.1 — see `public/fonts/OFL.txt`.
