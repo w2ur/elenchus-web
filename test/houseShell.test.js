@@ -12,22 +12,23 @@ const layout = readFileSync(join(__dirname, '../src/layouts/Layout.astro'), 'utf
 // the SHARED SHELL is the surfaces (background, card, text, muted text,
 // border) and nothing else; `--accent` AND `--link` are both PER-TOOL, set
 // independently by every tool under the chapeau. Values below are copied by
-// hand from untilt/client/src/index.css (whose names for the last two are
-// `--muted` and `--line`); there is no cross-repo drift check — a silent
+// hand from untilt/client/src/styles/house.css, under the same names it uses
+// — `--muted` and `--line` were `--text-muted` and `--border` here until the
+// v0.2 rename. There is no cross-repo drift check and no sync script; a silent
 // divergence is the failure mode, so each copy pins itself.
 const HOUSE_LIGHT = {
   '--bg': '#F8F9FB',
   '--bg-card': '#FFFFFF',
   '--text': '#1A1D23',
-  '--text-muted': '#5C6370',
-  '--border': '#D2D7DF',
+  '--muted': '#5C6370',
+  '--line': '#D2D7DF',
 };
 const HOUSE_DARK = {
   '--bg': '#0F1117',
   '--bg-card': '#1A1D25',
   '--text': '#ECEEF2',
-  '--text-muted': '#94A3B8',
-  '--border': '#2F333D',
+  '--muted': '#94A3B8',
+  '--line': '#2F333D',
 };
 
 describe('house shell', () => {

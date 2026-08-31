@@ -77,13 +77,14 @@ header reach the Worker and come back as an opaque 403.
 
 ## Visual identity
 
-The surface tokens in `src/styles/global.css` carry the **values** of the
-Untilt house shell in `untilt/client/src/index.css`, but not all of its
-names: `--bg`, `--bg-card` and `--text` match, while untilt's `--muted` and
-`--line` are `--text-muted` and `--border` here (grepping untilt for
-`--text-muted` finds nothing). `test/houseShell.test.js` pins the values
-under this repo's names, so that `elenchus.untilt.app` reads as one product
-with `untilt.app`; a rename on either side is invisible to both suites. The
+The surface tokens carry both the **names and the values** of the Untilt
+house shell in `untilt/client/src/styles/house.css`. They used to carry only
+the values: `--muted` and `--line` were `--text-muted` and `--border` here
+until the v0.2 rename, which is what now lets the two files be read against
+each other by eye. `test/houseShell.test.js` pins them, so that
+`elenchus.untilt.app` reads as one product with `untilt.app`; there is no
+cross-repo drift check, so a rename on either side is invisible to the other
+suite and each copy pins itself. The
 severity/score scale is copied verbatim from `~/Dev/elenchus/sidepanel/
 sidepanel.css` instead, and must not be folded into the house surface
 tokens — they are semantic status colours, not the house shell. The one

@@ -40,12 +40,14 @@
 
 /* Two token families, two different sources of truth.
 
-   SURFACES (--bg, --bg-card, --text, --text-muted, --border) are the Untilt
-   house shell, copied by hand from ~/Dev/untilt/client/src/index.css so that
-   elenchus.untilt.app and untilt.app read as one product. The values match;
-   two of the names do not — untilt calls the last two --muted and --line.
-   Pinned by test/houseShell.test.js; there is no cross-repo drift check yet
-   — extracting untilt-kit is a tool-#3 decision.
+   SURFACES (--bg, --bg-card, --text, --muted, --line) are the Untilt
+   house shell, copied by hand from ~/Dev/untilt/client/src/styles/house.css
+   so that elenchus.untilt.app and untilt.app read as one product. Both the
+   names and the values now match upstream — --muted and --line used to be
+   --text-muted and --border here, and the rename is what lets the two files
+   be read against each other by eye. Pinned by test/houseShell.test.js;
+   there is no cross-repo drift check and no sync script, so each copy pins
+   itself.
 
    ACCENT + STATUS (--accent, --accent-hover, --link, --severity-*, --score-*)
    are Elenchus's own, and the severity/score scale is copied verbatim from
@@ -57,8 +59,8 @@
   --bg: #f8f9fb;
   --bg-card: #ffffff;
   --text: #1a1d23;
-  --text-muted: #5c6370;
-  --border: #d2d7df;
+  --muted: #5c6370;
+  --line: #d2d7df;
   --accent: #4f8a8b;
   --accent-hover: #3d6d6e;
   /* Text/link color, separate from --accent (C4 review). #4F8A8B on white is
@@ -85,8 +87,8 @@
     --bg: #0f1117;
     --bg-card: #1a1d25;
     --text: #eceef2;
-    --text-muted: #94a3b8;
-    --border: #2f333d;
+    --muted: #94a3b8;
+    --line: #2f333d;
     --accent: #6fb3b4;
     --accent-hover: #8ec4c5;
     /* Dark mode was never flagged: #6FB3B4 on the house --bg #0F1117
@@ -146,10 +148,10 @@ a:hover {
 footer {
   margin-top: 24px;
   padding: 16px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--line);
   text-align: center;
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--muted);
 }
 
 footer a {
@@ -162,7 +164,7 @@ footer a {
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--line);
   font-family: 'Instrument Sans', system-ui, sans-serif;
   font-size: 1rem;
   font-weight: 600;
@@ -179,7 +181,7 @@ footer a {
 }
 
 .house-sep {
-  color: var(--text-muted);
+  color: var(--muted);
   font-weight: 400;
 }
 
@@ -199,7 +201,7 @@ h1 {
 }
 
 .subtitle {
-  color: var(--text-muted);
+  color: var(--muted);
   margin-bottom: 20px;
 }
 
@@ -215,11 +217,11 @@ h2 {
 .notice {
   margin-bottom: 20px;
   padding: 10px 12px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--line);
   border-radius: 6px;
   font-size: 12px;
   line-height: 1.45;
-  color: var(--text-muted);
+  color: var(--muted);
 }
 
 .notice a {
@@ -243,7 +245,7 @@ textarea#text-input {
   min-height: 220px;
   resize: vertical;
   padding: 12px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--bg-card);
   color: var(--text);
@@ -263,7 +265,7 @@ textarea#text-input:focus {
   align-items: center;
   margin: 6px 0 16px;
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--muted);
 }
 
 .textarea-meta .over-limit {
@@ -297,8 +299,8 @@ button {
 }
 
 .btn-primary:disabled {
-  background: var(--border);
-  color: var(--text-muted);
+  background: var(--line);
+  color: var(--muted);
   cursor: not-allowed;
 }
 
@@ -338,7 +340,7 @@ button {
 .spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid var(--border);
+  border: 3px solid var(--line);
   border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -357,7 +359,7 @@ button {
 }
 
 #loading-message {
-  color: var(--text-muted);
+  color: var(--muted);
   font-size: 13px;
   max-width: 26em;
   margin: 0 auto;
@@ -435,13 +437,13 @@ button {
   color: #fff;
 }
 .score-badge:not(.strong):not(.moderate):not(.weak) {
-  background: var(--border);
-  color: var(--text-muted);
+  background: var(--line);
+  color: var(--muted);
 }
 
 .count-badge {
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--muted);
   font-weight: 400;
 }
 
@@ -453,7 +455,7 @@ button {
 
 .flaw-card {
   background: var(--bg-card);
-  border: 1px solid var(--border);
+  border: 1px solid var(--line);
   border-radius: 8px;
   padding: 14px;
   margin-bottom: 10px;
@@ -491,8 +493,8 @@ button {
 
 .flaw-quote {
   font-style: italic;
-  color: var(--text-muted);
-  border-left: 3px solid var(--border);
+  color: var(--muted);
+  border-left: 3px solid var(--line);
   padding-left: 10px;
   margin: 8px 0;
   font-size: 13px;
@@ -514,7 +516,7 @@ button {
 
 #strengths-list li {
   background: var(--bg-card);
-  border: 1px solid var(--border);
+  border: 1px solid var(--line);
   border-radius: 6px;
   padding: 8px 12px;
   margin-bottom: 6px;
@@ -595,7 +597,7 @@ main a {
 .way {
   margin: 0;
   padding: 14px 16px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--bg-card);
 }
@@ -609,7 +611,7 @@ main a {
 .way p {
   margin: 0 0 10px;
   font-size: 13px;
-  color: var(--text-muted);
+  color: var(--muted);
 }
 
 .way-cta {
