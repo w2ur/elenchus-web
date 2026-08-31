@@ -8,6 +8,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const css = readFileSync(join(__dirname, '../src/styles/global.css'), 'utf-8');
 const houseCss = readFileSync(join(__dirname, '../src/styles/house.css'), 'utf-8');
 const layout = readFileSync(join(__dirname, '../src/layouts/Layout.astro'), 'utf-8');
+const analyzer = readFileSync(join(__dirname, '../src/components/Analyzer.astro'), 'utf-8');
 
 // Negative guards below must read the RULES, not the prose. house.css's header
 // names the rules it deliberately omits, so a guard run over the raw file
@@ -169,5 +170,61 @@ describe('regression: .btn-primary clears AA', () => {
   it('the rule was actually found — the guard is not vacuous', () => {
     const rule = css.match(/\.btn-primary\s*\{([^}]*)\}/)?.[1] ?? '';
     expect(rule).toMatch(/color:\s*#fff/);
+  });
+});
+
+
+// Regression: the wait used to be a generic border spinner, shared with
+// nothing. It is now the house contour bloom — the same five paths untilt's
+// ContourBloom.tsx and the extension's sidepanel.html carry, so the suite
+// looks like one product while it waits.
+describe('the wait is the contour bloom', () => {
+  it('renders five rings inside the loading block', () => {
+    const block = analyzer.slice(
+      analyzer.indexOf('<div id="loading-state"'),
+      analyzer.indexOf('<div id="error-state"'),
+    );
+    expect(block).toMatch(/class="house-bloom"/);
+    expect(block.match(/class="house-bloom-ring"/g) ?? []).toHaveLength(5);
+  });
+
+  it('the bloom is decorative — the status announcement is the wrapper', () => {
+    // Same split the extension sidepanel uses: one stable role="status"
+    // sentence, and the drawing aria-hidden so it is not announced twice.
+    const block = analyzer.slice(
+      analyzer.indexOf('<div id="loading-state"'),
+      analyzer.indexOf('<div id="error-state"'),
+    );
+    expect(block).toMatch(/<div id="loading-state" role="status"/);
+    expect(block).toMatch(/<svg class="house-bloom"[^>]*aria-hidden="true"/);
+  });
+
+  it('the spinner is gone from the stylesheet, not just from the markup', () => {
+    expect(stripComments(css)).not.toMatch(/\.spinner|@keyframes\s+spin\b/);
+    expect(analyzer).not.toMatch(/class="spinner"/);
+  });
+
+  it('the ring stroke is pinned to device pixels', () => {
+    // A 400-unit viewBox rendered at 64px scales stroke-width down by 6.25x:
+    // 1.5 user units became a 0.24px haze upstream before this was added.
+    const rule = houseRules.slice(houseRules.indexOf('.house-bloom-ring {'));
+    expect(rule.slice(0, rule.indexOf('}'))).toMatch(/vector-effect:\s*non-scaling-stroke/);
+  });
+
+  it('it loops and never fills — no progress vocabulary', () => {
+    // The Elenchus principle, held by every surface: name the method, never
+    // progress. A determinate indicator here would claim a measurement that
+    // does not exist.
+    expect(houseRules).toMatch(/animation:\s*bloom-draw 3s ease-in-out infinite/);
+    expect(houseRules).not.toMatch(/<progress|role="progressbar"/);
+  });
+
+  it('reduced motion stops the loop and leaves the drawing complete', () => {
+    const rm = houseRules.slice(houseRules.lastIndexOf('@media (prefers-reduced-motion'));
+    expect(rm).toMatch(/\.house-bloom-ring\s*\{\s*animation:\s*none/);
+    // dashoffset 0 is the RESTING value, so the clamp leaves full rings
+    // rather than a blank box.
+    const ring = houseRules.slice(houseRules.indexOf('.house-bloom-ring {'));
+    expect(ring.slice(0, ring.indexOf('}'))).toMatch(/stroke-dashoffset:\s*0;/);
   });
 });

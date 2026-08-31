@@ -135,3 +135,88 @@
      --link (#3D6D6E) measures 5.52:1. Same split as .btn-secondary. */
   color: var(--link);
 }
+
+/* --- Contour bloom: the shared waiting animation ---------------------------
+   The house signature in motion. The same five nested contours draw inward on
+   a staggered delay, LOOPING — never filling. This is the Elenchus principle
+   made visual: name the method, never progress. No percentage, no bar, no step
+   count, because nothing about these waits is measurable.
+   Stroke is currentColor, so each surface tints it by setting `color`.
+   The resting state is full stroke (dashoffset 0) so that the reduced-motion
+   clamp below leaves a complete, legible drawing rather than a blank. */
+
+.house-bloom {
+  width: 64px;
+  height: 64px;
+  /* Fallback matters here: a consumer that has not defined --accent would
+     otherwise make this declaration invalid at computed-value time, and the
+     ring would silently inherit. */
+  color: var(--accent, currentColor);
+}
+
+.house-bloom-sm {
+  width: 32px;
+  height: 32px;
+}
+
+.house-bloom-ring {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  /* Without this, stroke-width resolves in viewBox user units and scales
+     down with the SVG (400-unit viewBox rendered at 64px/32px), which made
+     the ring an invisible 0.24px/0.12px haze. This pins it to 1.5 device
+     pixels at any render size instead of a magic constant tuned to one. */
+  vector-effect: non-scaling-stroke;
+  /* Longer than any path in the set, so one value covers all five. */
+  stroke-dasharray: 1200;
+  stroke-dashoffset: 0;
+  animation: bloom-draw 3s ease-in-out infinite;
+}
+
+.house-bloom-ring:nth-child(1) { animation-delay: 0ms; }
+.house-bloom-ring:nth-child(2) { animation-delay: 120ms; }
+.house-bloom-ring:nth-child(3) { animation-delay: 240ms; }
+.house-bloom-ring:nth-child(4) { animation-delay: 360ms; }
+.house-bloom-ring:nth-child(5) { animation-delay: 480ms; }
+
+@keyframes bloom-draw {
+  0%   { stroke-dashoffset: 1200; opacity: 0.25; }
+  45%  { stroke-dashoffset: 0;    opacity: 1; }
+  75%  { stroke-dashoffset: 0;    opacity: 1; }
+  100% { stroke-dashoffset: 1200; opacity: 0.25; }
+}
+
+/* Completion: the loop stops and the drawing settles level, the same gesture
+   the chapeau hero makes on load. Same curve, so the house has one motion
+   signature rather than two.
+
+   NOT APPLIED ON THIS SITE, and that is a decision rather than an oversight.
+   showState('result') hides the loading block the instant the analysis lands,
+   so the gesture would need a 700ms gate on the result path — the
+   highest-stakes branch in this repo (see CLAUDE.md on proxyClient.js) and the
+   one with no automated coverage, delaying a result the visitor waited up to a
+   minute for. The rules are copied anyway because divergence between the three
+   copies is the failure mode this whole arrangement guards against.
+   Known suite-wide as of v0.2: `is-settled` is applied in ZERO of the four
+   places spec 5.2 calls for — untilt's ContourBloom takes a `settled` prop no
+   call site passes, and the extension's sidepanel.js never adds the class. */
+.house-bloom.is-settled .house-bloom-ring {
+  animation: none;
+  stroke-dashoffset: 0;
+  opacity: 1;
+}
+
+.house-bloom.is-settled {
+  animation: bloom-settle 700ms cubic-bezier(0.34, 1.36, 0.64, 1) both;
+}
+
+@keyframes bloom-settle {
+  from { transform: rotate(-3.2deg); }
+  to   { transform: rotate(0deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .house-bloom-ring { animation: none; }
+  .house-bloom.is-settled { animation: none; transform: none; }
+}

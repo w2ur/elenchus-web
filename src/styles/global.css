@@ -250,26 +250,20 @@ button {
 
 /* Loading — names the method, never progress. No percentage, no step count,
    no progress bar: nothing about this wait is measurable, matching the
-   extension's sidepanel.js / sidepanel.css. */
-.spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--line);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  margin: 24px auto 16px;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
+   extension's sidepanel.js / sidepanel.css. The border spinner that used to
+   sit here is gone; the wait is now the house contour bloom (.house-bloom in
+   house.css), the same drawing untilt.app and the extension sidepanel use, so
+   waiting looks the same everywhere in the suite. It is placed here, not in
+   house.css, because the centring and margins belong to this page's loading
+   block rather than to the shared shell. */
 #loading-state {
   text-align: center;
   padding: 20px 0;
+}
+
+#loading-state .house-bloom {
+  display: block;
+  margin: 8px auto 16px;
 }
 
 #loading-message {
@@ -277,12 +271,6 @@ button {
   font-size: 13px;
   max-width: 26em;
   margin: 0 auto;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .spinner {
-    animation-duration: 2.4s;
-  }
 }
 
 /* Error */
