@@ -46,7 +46,12 @@ const t = strings[lang] ?? strings.en;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
+    {/* The house contour, tinted teal — see public/favicon.svg's header. The
+        .ico is DECLARED rather than left to the browser's automatic
+        /favicon.ico probe, so the fallback is a deliberate file and not
+        whatever happens to sit at that path. */}
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico" />
     <meta name="generator" content={Astro.generator} />
     {canonical && <link rel="canonical" href={canonical} />}
     {enHref && <link rel="alternate" hreflang="en" href={enHref} />}

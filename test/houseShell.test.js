@@ -228,3 +228,29 @@ describe('the wait is the contour bloom', () => {
     expect(ring.slice(0, ring.indexOf('}'))).toMatch(/stroke-dashoffset:\s*0;/);
   });
 });
+
+
+// Regression: public/favicon.svg was the Astro starter's rocket logo, shipped
+// untouched from `npm create astro` until v0.2 — the one surface in the suite
+// still wearing another product's mark. It is now the house contour in
+// Elenchus teal, the same drawing as untilt's favicon and the extension's icon.
+describe('regression: the favicon is the house contour, not the Astro logo', () => {
+  const favicon = readFileSync(join(__dirname, '../public/favicon.svg'), 'utf-8');
+
+  it('is not the Astro starter logo', () => {
+    // The rocket's own path data. Present verbatim in the file this replaced.
+    expect(favicon).not.toMatch(/M50\.4 78\.5/);
+  });
+
+  it('carries the house rounded rect and two teal contours', () => {
+    expect(favicon).toMatch(/<rect width="512" height="512" rx="108" fill="#0F1117"\/>/);
+    expect(favicon.match(/<path d="M256 /g) ?? []).toHaveLength(2);
+    expect(favicon).toMatch(/stroke="#4F8A8B"/);
+    expect(favicon).toMatch(/stroke="#8EC4C5"/);
+  });
+
+  it('both icon files are declared, so neither is left to a browser probe', () => {
+    expect(layout).toMatch(/rel="icon" type="image\/svg\+xml" href="\/favicon\.svg"/);
+    expect(layout).toMatch(/rel="icon" type="image\/png" sizes="32x32" href="\/favicon\.ico"/);
+  });
+});
