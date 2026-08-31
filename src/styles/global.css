@@ -1,66 +1,19 @@
-/* Self-hosted, not linked from fonts.googleapis.com: the Google Fonts
-   stylesheet added a render-blocking cross-origin request that measured
-   Lighthouse performance at 94/100 on both pages (FCP/LCP), against a
-   gate of >=95. These are the same two families and the same weights
-   (Instrument Sans 500/600/700, DM Sans 400/500/700 + 400 italic) fetched
-   from fonts.googleapis.com's own woff2 latin-subset files, saved once
-   into public/fonts/ and served same-origin with font-display: swap.
-   Instrument Sans and DM Sans are themselves variable fonts, so each of the
-   three @font-face rules below declares a weight *range* rather than one
-   rule per discrete weight — Chrome resolves the requested numeric
-   font-weight against the file's own wght axis, exactly as it would have
-   from the Google-hosted stylesheet, which split the same file across
-   several weight-labelled rules. Verified with fontTools: DM Sans carries
-   an fvar wght axis (100–1000) and Instrument Sans one of 400–700; the DM
-   Sans italic is a static 400 instance, which is why it alone declares a
-   single weight. */
-@font-face {
-  font-family: 'DM Sans';
-  font-style: normal;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url('/fonts/dm-sans-latin.woff2') format('woff2');
-}
+@import './house.css';
 
-@font-face {
-  font-family: 'DM Sans';
-  font-style: italic;
-  font-weight: 400;
-  font-display: swap;
-  src: url('/fonts/dm-sans-italic-latin.woff2') format('woff2');
-}
+/* The house shell — surfaces, type and the lockup — is imported above from
+   house.css, an adapted copy of untilt/client/src/styles/house.css. Read that
+   file's header before touching it.
 
-@font-face {
-  font-family: 'Instrument Sans';
-  font-style: normal;
-  font-weight: 500 700;
-  font-display: swap;
-  src: url('/fonts/instrument-sans-latin.woff2') format('woff2');
-}
-
-/* Two token families, two different sources of truth.
-
-   SURFACES (--bg, --bg-card, --text, --muted, --line) are the Untilt
-   house shell, copied by hand from ~/Dev/untilt/client/src/styles/house.css
-   so that elenchus.untilt.app and untilt.app read as one product. Both the
-   names and the values now match upstream — --muted and --line used to be
-   --text-muted and --border here, and the rename is what lets the two files
-   be read against each other by eye. Pinned by test/houseShell.test.js;
-   there is no cross-repo drift check and no sync script, so each copy pins
-   itself.
-
-   ACCENT + STATUS (--accent, --accent-hover, --link, --severity-*, --score-*)
-   are Elenchus's own, and the severity/score scale is copied verbatim from
-   ~/Dev/elenchus/sidepanel/sidepanel.css so the same analysis reads with the
-   same colours in the extension and on the web. They are semantic status
-   colours, not "the accent colour", so the portfolio's never-purple rule does
-   not apply to them. Do not fold them into the house shell. */
+   What is left here is Elenchus's own: ACCENT + STATUS (--accent,
+   --accent-hover, --link, --severity-*, --score-*). The severity/score scale
+   is copied verbatim from ~/Dev/elenchus/sidepanel/sidepanel.css so the same
+   analysis reads with the same colours in the extension and on the web. They
+   are semantic status colours, not "the accent colour", so the portfolio's
+   never-purple rule does not apply to them. Do not fold them into the house
+   shell — a tool that adopted the shell would inherit an accent it has no use
+   for, and "restoring" --link from untilt would turn every Elenchus link from
+   teal to blue-grey. */
 :root {
-  --bg: #f8f9fb;
-  --bg-card: #ffffff;
-  --text: #1a1d23;
-  --muted: #5c6370;
-  --line: #d2d7df;
   --accent: #4f8a8b;
   --accent-hover: #3d6d6e;
   /* Text/link color, separate from --accent (C4 review). #4F8A8B on white is
@@ -84,11 +37,6 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0f1117;
-    --bg-card: #1a1d25;
-    --text: #eceef2;
-    --muted: #94a3b8;
-    --line: #2f333d;
     --accent: #6fb3b4;
     --accent-hover: #8ec4c5;
     /* Dark mode was never flagged: #6FB3B4 on the house --bg #0F1117
@@ -157,40 +105,6 @@ footer {
 footer a {
   color: inherit;
   text-decoration: underline;
-}
-
-.house {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--line);
-  font-family: 'Instrument Sans', system-ui, sans-serif;
-  font-size: 1rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-.house-mark {
-  color: var(--text);
-  text-decoration: none;
-}
-
-.house-mark:hover {
-  text-decoration: underline;
-}
-
-.house-sep {
-  color: var(--muted);
-  font-weight: 400;
-}
-
-.house-tool {
-  /* --link, not --accent: this is the first place --accent would have been
-     used as *text*, and #4F8A8B on the house --bg #F8F9FB measures 3.73:1 —
-     under the 4.5:1 AA floor for the 1rem/600 it inherits from .house.
-     --link (#3D6D6E) measures 5.52:1. Same split as .btn-secondary below. */
-  color: var(--link);
 }
 
 /* --- Analyzer (C3) --- */

@@ -6,7 +6,15 @@ import { strings } from '../src/lib/strings.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const css = readFileSync(join(__dirname, '../src/styles/global.css'), 'utf-8');
+const houseCss = readFileSync(join(__dirname, '../src/styles/house.css'), 'utf-8');
 const layout = readFileSync(join(__dirname, '../src/layouts/Layout.astro'), 'utf-8');
+
+// Negative guards below must read the RULES, not the prose. house.css's header
+// names the rules it deliberately omits, so a guard run over the raw file
+// matches its own explanation and fails on a correct file — which is exactly
+// what happened the first time this suite ran.
+const stripComments = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '');
+const houseRules = stripComments(houseCss);
 
 // One definition of the term, shared with untilt/client/src/lib/tokens.test.ts:
 // the SHARED SHELL is the surfaces (background, card, text, muted text,
@@ -32,8 +40,37 @@ const HOUSE_DARK = {
 };
 
 describe('house shell', () => {
-  const light = css.slice(css.indexOf(':root {'), css.indexOf('@media'));
-  const dark = css.slice(css.indexOf('@media'));
+  // The shell lives in house.css; global.css keeps only Elenchus's own accent
+  // and status scale. Slicing the wrong file is the mistake these two pairs of
+  // bounds exist to make impossible.
+  const light = houseCss.slice(houseCss.indexOf(':root {'), houseCss.indexOf('@media (prefers'));
+  const dark = houseCss.slice(houseCss.indexOf('@media (prefers'));
+  const toolLight = css.slice(css.indexOf(':root {'), css.indexOf('@media'));
+  const toolDark = css.slice(css.indexOf('@media'));
+
+  it('global.css imports the shell rather than restating it', () => {
+    expect(css).toMatch(/@import\s+'\.\/house\.css';/);
+    // The whole point of the extraction: one definition per token. A shell
+    // token re-declared here would win on source order and diverge silently.
+    for (const k of Object.keys(HOUSE_LIGHT)) {
+      expect(css).not.toMatch(new RegExp(`\\n\\s*${k}:`));
+    }
+  });
+
+  it('the shell carries no per-tool accent', () => {
+    // --accent and --link are per-tool. Upstream untilt sets #627D98/#587089;
+    // if either leaked into the shared file, adopting it would repaint every
+    // Elenchus link blue-grey.
+    expect(houseRules).not.toMatch(/^\s*--accent:/m);
+    expect(houseRules).not.toMatch(/^\s*--link:/m);
+  });
+
+  it('the chapeau furniture is omitted, not copied in dead', () => {
+    // [ADAPTED] 2 in house.css's header. There is no hero on this site.
+    expect(houseRules).not.toMatch(/\.house-cover|\.house-settle|\.house-field|house-drift/);
+    // ...and the file really was read: the lockup it DOES carry is present.
+    expect(houseRules).toMatch(/\.house-tool\s*\{/);
+  });
 
   it('uses the house surface values in light mode', () => {
     for (const [k, v] of Object.entries(HOUSE_LIGHT)) {
@@ -53,9 +90,9 @@ describe('house shell', () => {
   // is per-tool for the same reason and is deliberately not pinned here —
   // untilt's is #587089/#7B8FA4, this one is #3D6D6E/#6FB3B4.
   it('keeps the Elenchus accent and the extension status scale', () => {
-    expect(light).toMatch(/--accent:\s*#4f8a8b;/i);
-    expect(light).toMatch(/--severity-critical:\s*#7c2d12;/i);
-    expect(dark).toMatch(/--accent:\s*#6fb3b4;/i);
+    expect(toolLight).toMatch(/--accent:\s*#4f8a8b;/i);
+    expect(toolLight).toMatch(/--severity-critical:\s*#7c2d12;/i);
+    expect(toolDark).toMatch(/--accent:\s*#6fb3b4;/i);
   });
 
   // The brief's original version of this guard sliced `light` to end at the
@@ -106,7 +143,7 @@ describe('house shell', () => {
   // header inherits). axe-core on the built page caught it; this is the pin
   // that stops it coming back.
   it('the header tool name uses --link, never --accent', () => {
-    const rule = css.slice(css.indexOf('.house-tool {'));
+    const rule = houseCss.slice(houseCss.indexOf('.house-tool {'));
     const body = rule.slice(0, rule.indexOf('}'));
     expect(body).toMatch(/color:\s*var\(--link\)/);
     expect(body).not.toMatch(/color:\s*var\(--accent\)/);

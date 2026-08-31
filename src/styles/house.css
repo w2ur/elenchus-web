@@ -1,0 +1,137 @@
+/* THE UNTILT HOUSE SHELL — ADAPTED COPY, NOT VERBATIM.
+ *
+ * Source: ~/Dev/untilt/client/src/styles/house.css (the source of truth).
+ * Hand-copied; there is no sync script and no cross-repo drift check. Each
+ * side pins its own copy instead — test/houseShell.test.js here,
+ * client/src/lib/tokens.test.ts upstream — so this header is the only record
+ * of what deliberately differs.
+ *
+ * A sync script was considered for this phase and rejected. It could not be a
+ * copy: the three surfaces need three different transforms (see below, plus
+ * the elenchus extension's own two token renames), so it would be a code
+ * generator whose output in the one repo with no test framework at all would
+ * be unverified. Two divergences here, each marked [ADAPTED] at its site:
+ *
+ *   1. DARK MODE IS A MEDIA QUERY, NOT A CLASS. Upstream declares the dark
+ *      values under `.dark`, because untilt has a class toggle. This site has
+ *      none — CLAUDE.md fixes dark/light to prefers-color-scheme — so a
+ *      verbatim copy would ship a light-only site with a dark block that could
+ *      never match. Same rewrite ~/Dev/elenchus/styles/house.css makes.
+ *
+ *   2. THE CHAPEAU FURNITURE IS OMITTED. `.house-cover`, `.house-settle`,
+ *      `.house-field` and `house-drift` are the front door's hero: a 72svh
+ *      dark band and a scroll-timeline parallax field. There is no hero on
+ *      this site, so they are left out rather than copied in dead.
+ *
+ * The `.house` lockup rules below are NOT from upstream house.css — they
+ * originated here and were copied FROM here into the extension. That is why
+ * they carry no [ADAPTED] marker: this file is their source.
+ *
+ * WHAT IS NOT HERE, ON PURPOSE: --accent and --link. The shared shell is
+ * surfaces, text, borders and type, and nothing else. Both accents are PER
+ * TOOL and live in each surface's own stylesheet (Elenchus teal in
+ * global.css). Reading --link as shared is the live risk: "restoring" it from
+ * untilt would turn every Elenchus link from teal to blue-grey.
+ */
+
+/* Self-hosted, not linked from fonts.googleapis.com: the Google Fonts
+   stylesheet added a render-blocking cross-origin request that measured
+   Lighthouse performance at 94/100 on both pages (FCP/LCP), against a
+   gate of >=95. These are the same two families and the same weights
+   (Instrument Sans 500/600/700, DM Sans 400/500/700 + 400 italic) fetched
+   from fonts.googleapis.com's own woff2 latin-subset files, saved once
+   into public/fonts/ and served same-origin with font-display: swap.
+   Instrument Sans and DM Sans are themselves variable fonts, so each of the
+   three @font-face rules below declares a weight *range* rather than one
+   rule per discrete weight — Chrome resolves the requested numeric
+   font-weight against the file's own wght axis, exactly as it would have
+   from the Google-hosted stylesheet, which split the same file across
+   several weight-labelled rules. Verified with fontTools: DM Sans carries
+   an fvar wght axis (100–1000) and Instrument Sans one of 400–700; the DM
+   Sans italic is a static 400 instance, which is why it alone declares a
+   single weight. */
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/dm-sans-latin.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/dm-sans-italic-latin.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Instrument Sans';
+  font-style: normal;
+  font-weight: 500 700;
+  font-display: swap;
+  src: url('/fonts/instrument-sans-latin.woff2') format('woff2');
+}
+
+:root {
+  color-scheme: light;
+  --bg: #F8F9FB;
+  --bg-card: #FFFFFF;
+  --text: #1A1D23;
+  /* Muted/secondary text — WCAG AA on #F8F9FB and #FFFFFF (≈5.7:1) */
+  --muted: #5C6370;
+  /* Borders/dividers — visible without competing with content */
+  --line: #D2D7DF;
+}
+
+/* [ADAPTED] upstream declares these under `.dark`. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #0F1117;
+    --bg-card: #1A1D25;
+    --text: #ECEEF2;
+    --muted: #94A3B8; /* ≈7:1 on #0F1117 / #1A1D25 */
+    --line: #2F333D;
+  }
+}
+
+/* --- The house lockup -----------------------------------------------------
+   The only thing on the page that says which house it belongs to. The
+   wordmark links out to the chapeau; the tool name is not a link, because it
+   names the page you are already on. */
+
+.house {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--line);
+  font-family: 'Instrument Sans', system-ui, sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.house-mark {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.house-mark:hover {
+  text-decoration: underline;
+}
+
+.house-sep {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.house-tool {
+  /* --link, not --accent: this is the first place --accent would have been
+     used as *text*, and #4F8A8B on the house --bg #F8F9FB measures 3.73:1 —
+     under the 4.5:1 AA floor for the 1rem/600 it inherits from .house.
+     --link (#3D6D6E) measures 5.52:1. Same split as .btn-secondary. */
+  color: var(--link);
+}
