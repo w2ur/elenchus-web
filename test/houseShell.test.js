@@ -227,6 +227,27 @@ describe('the contract header', () => {
     // would silently collapse to a plain 0.5rem on a notched phone.
     expect(layout).toMatch(/<meta name="viewport" content="[^"]*viewport-fit=cover[^"]*"/);
   });
+  it('a hovered or focused nav item still reads clearly (Item 6)', () => {
+    expect(css).toMatch(/\.tool-nav a:hover,\s*\n?\s*\.tool-nav a:focus-visible\s*\{[^}]*color:\s*var\(--text\)/s);
+  });
+  it('the desktop pill nav resets the bar-only treatment it shares the element with (Item 7)', () => {
+    const desktopBlock = css.slice(css.indexOf('@media (min-width: 768px)'));
+    const toolNavBlock = desktopBlock.slice(desktopBlock.indexOf('.tool-nav {'), desktopBlock.indexOf('.tool-nav svg'));
+    expect(toolNavBlock).toMatch(/padding:\s*0;/);
+    expect(toolNavBlock).toMatch(/background:\s*transparent;/);
+    expect(toolNavBlock).toMatch(/justify-content:\s*flex-start;/);
+    expect(toolNavBlock).toMatch(/z-index:\s*auto;/);
+  });
+  it('the mobile bar carries an icon above each label, hidden at >=768px (Item 9)', () => {
+    const nav = readFileSync('src/components/ToolNav.astro', 'utf-8');
+    expect(nav.match(/<svg /g)?.length).toBe(3);
+    for (const svg of nav.match(/<svg [^>]*>/g) ?? []) {
+      expect(svg).toMatch(/aria-hidden="true"/);
+      expect(svg).toMatch(/stroke="currentColor"/);
+    }
+    const desktopBlock = css.slice(css.indexOf('@media (min-width: 768px)'));
+    expect(desktopBlock).toMatch(/\.tool-nav svg\s*\{[^}]*display:\s*none/s);
+  });
   it('Layout renders the header component, not an inline header', () => {
     expect(layout).toMatch(/<HouseHeader /); expect(layout).not.toMatch(/<header class="house">/);
   });

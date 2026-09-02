@@ -153,11 +153,23 @@ footer a {
   text-decoration: none;
   font-size: 0.9rem;
   white-space: nowrap;
+  /* Column so the icon (Item 9) sits above the label on the mobile bar; at
+     >=768px the icon is hidden below, leaving a single centred text child —
+     visually the same plain pill this was before icons existed. */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
 }
 
 .tool-nav a[aria-current='page'] {
   color: var(--link);
   background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.tool-nav a:hover,
+.tool-nav a:focus-visible {
+  color: var(--text);
 }
 
 .tool-nav-bar {
@@ -199,6 +211,22 @@ footer a {
     display: flex;
     position: static;
     border-top: none;
+    /* The shared-element price (Item 7): .tool-nav-bar's mobile treatment
+       (padding, background, the space-around justification, and its
+       stacking z-index) leaks onto this element too, since one <nav>
+       carries both classes at once. Reset all four explicitly rather than
+       relying on values .tool-nav never declared in the first place. */
+    padding: 0;
+    background: transparent;
+    justify-content: flex-start;
+    z-index: auto;
+  }
+
+  /* Item 9: the mobile bar's icons (see ToolNav.astro) have no place in the
+     desktop pill nav — .tool-nav a's flex-column layout (icon above label)
+     collapses back to a single centred text child once the icon is hidden. */
+  .tool-nav svg {
+    display: none;
   }
 
   main {

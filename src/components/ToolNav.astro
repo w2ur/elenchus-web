@@ -37,7 +37,31 @@ const isBookmarkletActive = path === '/bookmarklet/';
 ---
 
 <nav class="tool-nav tool-nav-bar" aria-label={t.navLabel}>
-  <a href={t.navAnalyseHref} aria-current={isAnalyseActive ? 'page' : undefined}>{t.navAnalyse}</a>
-  <a href={bookmarkletHref} aria-current={isBookmarkletActive ? 'page' : undefined}>{t.navBookmarklet}</a>
-  <a href={CHROME_WEB_STORE_URL} target="_blank" rel="noopener noreferrer">{t.navExtension}</a>
+  {/* Contract §6: icons + labels on the mobile bar, hidden at >=768px (see
+      the `.tool-nav svg{display:none}` rule in global.css's desktop block —
+      the desktop pill nav is text-only). Hand-drawn to ThemeToggle.astro's
+      inline-SVG convention (24x24 viewBox, 20px rendered, currentColor
+      stroke, round caps) rather than pulled from a dependency — this repo
+      has no icon library. Decorative: the label beside each icon already
+      carries the meaning, so aria-hidden is correct rather than a fix for
+      an unlabelled graphic. */}
+  <a href={t.navAnalyseHref} aria-current={isAnalyseActive ? 'page' : undefined}>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="7"></circle>
+      <path d="m20 20-4.3-4.3"></path>
+    </svg>
+    {t.navAnalyse}
+  </a>
+  <a href={bookmarkletHref} aria-current={isBookmarkletActive ? 'page' : undefined}>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M6 4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v16l-6-4-6 4Z"></path>
+    </svg>
+    {t.navBookmarklet}
+  </a>
+  <a href={CHROME_WEB_STORE_URL} target="_blank" rel="noopener noreferrer">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M4 9h2.5a1.5 1.5 0 0 0 0-3H4V4a1 1 0 0 1 1-1h4v2.5a1.5 1.5 0 0 0 3 0V3h4a1 1 0 0 1 1 1v4h-2.5a1.5 1.5 0 0 0 0 3H17v4a1 1 0 0 1-1 1h-4v-2.5a1.5 1.5 0 0 0-3 0V17H5a1 1 0 0 1-1-1v-4h2.5a1.5 1.5 0 0 0 0-3H4Z"></path>
+    </svg>
+    {t.navExtension}
+  </a>
 </nav>
