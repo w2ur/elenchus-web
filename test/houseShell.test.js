@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'fs';
+import { readFileSync, statSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { strings } from '../src/lib/strings.js';
@@ -45,7 +45,8 @@ const HOUSE_DARK = {
 // bounds exist to make impossible. Module-scoped (not just inside 'house
 // shell' below) so the token/contrast describes further down can reuse them.
 const light = houseCss.slice(houseCss.indexOf(':root {'), houseCss.indexOf('@media (prefers'));
-const dark = houseCss.slice(houseCss.indexOf('@media (prefers'));
+const dark = houseCss.slice(houseCss.indexOf('@media (prefers'), houseCss.indexOf(':root.light {'));
+const explicitDark = houseCss.slice(houseCss.indexOf(':root.dark {'));
 const toolLight = css.slice(css.indexOf(':root {'), css.indexOf('@media'));
 const toolDark = css.slice(css.indexOf('@media'));
 
@@ -144,6 +145,38 @@ describe('house shell', () => {
   it('the header renders the house wordmark', () => {
     expect(layout).toMatch(/<header/);
     expect(layout).toMatch(/houseUrl/);
+  });
+});
+
+describe('the v2 shell', () => {
+  it('declares the three invariant tokens once and never under any dark block', () => {
+    for (const [t, v] of [['--face-display', "'Instrument Serif', 'Instrument Serif Fallback', Georgia, serif"], ['--hero-fg', '#FFFFFF'], ['--hero-muted', 'rgba\\(255, 255, 255, 0\\.82\\)']]) {
+      expect(light).toMatch(new RegExp(`${t}:\\s*${v};`));
+      expect(dark).not.toMatch(new RegExp(`${t}:`));
+    }
+  });
+  it('ships Instrument Serif with the metric fallback, under budget', () => {
+    const a = statSync('public/fonts/instrument-serif-latin.woff2').size, b = statSync('public/fonts/instrument-serif-italic-latin.woff2').size;
+    expect(a + b).toBeLessThan(60_000);
+    expect(houseCss).toMatch(/font-family:\s*'Instrument Serif';\s*font-style:\s*normal;[^}]*instrument-serif-latin\.woff2/);
+    expect(houseCss).toMatch(/font-family:\s*'Instrument Serif Fallback';[^}]*local\('Georgia'\);[^}]*size-adjust:/);
+    expect(readFileSync('public/fonts/OFL.txt', 'utf-8')).toMatch(/Copyright 2022 The Instrument Serif Project Authors/);
+  });
+  it('explicit theme classes override the media query in both directions', () => {
+    expect(houseCss).toMatch(/:root\.dark\s*\{[^}]*--bg:\s*#0F1117;/i);
+    expect(houseCss).toMatch(/:root\.light\s*\{[^}]*--bg:\s*#F8F9FB;/i);
+    // the class blocks come AFTER the media query, so order never decides
+    expect(houseCss.indexOf(':root.dark {')).toBeGreaterThan(houseCss.indexOf('@media (prefers-color-scheme: dark)'));
+  });
+  it('the explicit dark class carries the same surface values as the media query', () => {
+    // explicitDark is sliced from `:root.dark {` to EOF; it must restate the
+    // same five values the media query declares, never drift from them.
+    for (const [k, v] of Object.entries(HOUSE_DARK)) {
+      expect(explicitDark).toMatch(new RegExp(`${k}:\\s*${v};`, 'i'));
+    }
+  });
+  it('the shell still carries no per-tool token', () => {
+    for (const t of ['--accent', '--on-accent', '--accent-hover', '--band', '--link', '--link-hover']) expect(houseCss).not.toMatch(new RegExp(`${t}:`));
   });
 });
 

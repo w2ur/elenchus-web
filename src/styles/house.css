@@ -10,18 +10,24 @@
  * copy: the three surfaces need three different transforms (see below, plus
  * the elenchus extension's own two token renames), so it would be a code
  * generator whose output in the one repo with no test framework at all would
- * be unverified. Two divergences here, each marked [ADAPTED] at its site:
+ * be unverified. Three divergences here, each marked [ADAPTED] at its site:
  *
- *   1. DARK MODE IS A MEDIA QUERY, NOT A CLASS. Upstream declares the dark
- *      values under `.dark`, because untilt has a class toggle. This site has
- *      none — CLAUDE.md fixes dark/light to prefers-color-scheme — so a
- *      verbatim copy would ship a light-only site with a dark block that could
- *      never match. Same rewrite ~/Dev/elenchus/styles/house.css makes.
+ *   1. DARK MODE IS A MEDIA QUERY FOR *SYSTEM* PREFERENCE. Upstream declares
+ *      the dark values under `.dark`, because untilt has a class toggle. This
+ *      site has none for the system case — CLAUDE.md fixes dark/light to
+ *      prefers-color-scheme — so a verbatim copy would ship a light-only site
+ *      with a dark block that could never match. Same rewrite
+ *      ~/Dev/elenchus/styles/house.css makes.
  *
  *   2. THE CHAPEAU FURNITURE IS OMITTED. `.house-cover`, `.house-settle`,
  *      `.house-field` and `house-drift` are the front door's hero: a 72svh
  *      dark band and a scroll-timeline parallax field. There is no hero on
  *      this site, so they are left out rather than copied in dead.
+ *
+ *   3. EXPLICIT THEME CLASSES, ADDED IN v2. `:root.dark` / `:root.light`
+ *      restate the same two blocks' values so a toggle-driven theme choice
+ *      overrides the system media query in both directions — see the divider
+ *      comment at their site for the specificity argument.
  *
  * The `.house` lockup rules below are NOT from upstream house.css — they
  * originated here and were copied FROM here into the extension. That is why
@@ -32,6 +38,9 @@
  * TOOL and live in each surface's own stylesheet (Elenchus teal in
  * global.css). Reading --link as shared is the live risk: "restoring" it from
  * untilt would turn every Elenchus link from teal to blue-grey.
+ *
+ * This copy carries Instrument Serif and the three invariant tokens since v2;
+ * the contract is ~/Dev/untilt/docs/house-contract.md.
  */
 
 /* Self-hosted, not linked from fonts.googleapis.com: the Google Fonts
@@ -74,6 +83,34 @@
   src: url('/fonts/instrument-sans-latin.woff2') format('woff2');
 }
 
+/* The display face, v2. One roman and one italic static instance — the
+   family has no other weights. The fallback is Georgia with metric overrides
+   so an 8rem headline does not reflow when the real face swaps in. */
+@font-face {
+  font-family: 'Instrument Serif';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/instrument-serif-latin.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Instrument Serif';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/instrument-serif-italic-latin.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Instrument Serif Fallback';
+  src: local('Georgia');
+  size-adjust: 95.92%;
+  ascent-override: 103.21%;
+  descent-override: 32.32%;
+  line-gap-override: 0.00%;
+}
+
 :root {
   color-scheme: light;
   --bg: #F8F9FB;
@@ -83,6 +120,14 @@
   --muted: #5C6370;
   /* Borders/dividers — visible without competing with content */
   --line: #D2D7DF;
+  /* Scheme-invariant, declared once — nothing below overrides them under
+     dark, and houseShell.test.js pins that absence. --face-display is the
+     display stack; --hero-fg / --hero-muted are ink for BANDS (see the
+     contract, section 5) — not used on this site (no hero), carried anyway
+     because the contract requires every copy to. */
+  --face-display: 'Instrument Serif', 'Instrument Serif Fallback', Georgia, serif;
+  --hero-fg: #FFFFFF;
+  --hero-muted: rgba(255, 255, 255, 0.82);
 }
 
 /* [ADAPTED] upstream declares these under `.dark`. */
@@ -96,6 +141,13 @@
     --line: #2F333D;
   }
 }
+
+/* [ADAPTED] Explicit choice. The theme toggle sets one of these classes on
+   <html> before first paint; :root.light / :root.dark (0,2,0) outrank the
+   media-query :root (0,1,0) in both directions, so source order never
+   decides. Values are copies of the two blocks above — keep them equal. */
+:root.dark { color-scheme: dark; --bg: #0F1117; --bg-card: #1A1D25; --text: #ECEEF2; --muted: #94A3B8; --line: #2F333D; }
+:root.light { color-scheme: light; --bg: #F8F9FB; --bg-card: #FFFFFF; --text: #1A1D23; --muted: #5C6370; --line: #D2D7DF; }
 
 /* --- The house lockup -----------------------------------------------------
    The only thing on the page that says which house it belongs to. The
@@ -129,7 +181,7 @@
 }
 
 .house-tool {
-  /* --link, not --accent: this is the first place --accent would have been
+  /* --link, not --accent — this is the first place --accent would have been
      used as *text*, and it has never cleared the 4.5:1 AA floor as text in
      light mode (see global.css's --accent comment for the current numbers).
      Same split as .btn-secondary. */
