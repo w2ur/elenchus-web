@@ -3,6 +3,7 @@ import { readFileSync, statSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { strings } from '../src/lib/strings.js';
+import { THEME_KEY } from '../src/lib/theme.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const css = readFileSync(join(__dirname, '../src/styles/global.css'), 'utf-8');
@@ -51,7 +52,13 @@ const HOUSE_DARK = {
 // shell' below) so the token/contrast describes further down can reuse them.
 const light = houseCss.slice(houseCss.indexOf(':root {'), houseCss.indexOf('@media (prefers'));
 const dark = houseCss.slice(houseCss.indexOf('@media (prefers'), houseCss.indexOf(':root.light {'));
-const explicitDark = houseCss.slice(houseCss.indexOf(':root.dark {'));
+// Bounded at ':root.light {' (item 12): unbounded, explicitDark ran to EOF
+// and would have silently swallowed every rule after it, including
+// :root.light itself, into "the dark block".
+const explicitDark = houseCss.slice(houseCss.indexOf(':root.dark {'), houseCss.indexOf(':root.light {'));
+// Mirror of explicitDark, bounded at the next real rule ('.house {') so it
+// does not run to EOF either.
+const explicitLight = houseCss.slice(houseCss.indexOf(':root.light {'), houseCss.indexOf('.house {'));
 const toolLight = css.slice(css.indexOf(':root {'), css.indexOf('@media'));
 const toolDark = css.slice(css.indexOf('@media'));
 
@@ -171,6 +178,13 @@ describe('house shell', () => {
     const body = layout.slice(layout.indexOf('<body>'));
     expect(body).not.toMatch(/elenchus:theme/);
   });
+
+  it('the inline script duplicates THEME_KEY exactly, not a hand-typed guess', () => {
+    // is:inline cannot import src/lib/theme.js (it must run before any
+    // bundled JS), so the key is duplicated as a literal on purpose — this
+    // pin is what stops that literal drifting from THEME_KEY silently.
+    expect(layout).toContain(THEME_KEY);
+  });
 });
 
 describe('the contract header', () => {
@@ -223,15 +237,116 @@ describe('the v2 shell', () => {
     expect(houseCss.indexOf(':root.dark {')).toBeGreaterThan(houseCss.indexOf('@media (prefers-color-scheme: dark)'));
   });
   it('the explicit dark class carries the same surface values as the media query', () => {
-    // explicitDark is sliced from `:root.dark {` to EOF; it must restate the
-    // same five values the media query declares, never drift from them.
+    // explicitDark is bounded at ':root.light {'; it must restate the same
+    // five values the media query declares, never drift from them.
     for (const [k, v] of Object.entries(HOUSE_DARK)) {
       expect(explicitDark).toMatch(new RegExp(`${k}:\\s*${v};`, 'i'));
+    }
+  });
+
+  it('the explicit light class carries the same surface values as the top-level :root', () => {
+    // Mirror of the dark assertion above (item 12): explicitLight is bounded
+    // at '.house {' so it does not run to EOF either.
+    for (const [k, v] of Object.entries(HOUSE_LIGHT)) {
+      expect(explicitLight).toMatch(new RegExp(`${k}:\\s*${v};`, 'i'));
     }
   });
   it('the shell still carries no per-tool token', () => {
     for (const t of ['--accent', '--on-accent', '--accent-hover', '--band', '--link', '--link-hover']) expect(houseCss).not.toMatch(new RegExp(`${t}:`));
   });
+});
+
+// Derived set-equality guard (item 2): rather than hand-listing which tokens
+// the explicit :root.dark / :root.light blocks must restate — the kind of
+// list that silently goes stale the next time a token is added — parse the
+// actual `--name:` declarations out of each block and compare the SETS.
+// `declaredTokens` and `setsEqual` are exported from nowhere on purpose:
+// this file is their only caller, so proving them on a fixture right here is
+// the whole test for them.
+function declaredTokens(cssBlockText) {
+  const tokens = new Set();
+  const re = /--([\w-]+)\s*:/g;
+  let m;
+  while ((m = re.exec(cssBlockText))) tokens.add(`--${m[1]}`);
+  return tokens;
+}
+
+function setsEqual(a, b) {
+  if (a.size !== b.size) return false;
+  for (const x of a) if (!b.has(x)) return false;
+  return true;
+}
+
+function minus(set, names) {
+  const out = new Set(set);
+  for (const n of names) out.delete(n);
+  return out;
+}
+
+describe('declaredTokens/setsEqual: the comparison helper itself', () => {
+  it('parses every --name: out of a CSS block', () => {
+    const s = declaredTokens('--foo: 1px; --bar-baz: 2px; color: red;');
+    expect(s).toEqual(new Set(['--foo', '--bar-baz']));
+  });
+
+  it('non-vacuity: a fixture with one token missing fails the comparison', () => {
+    const complete = declaredTokens('--foo: 1; --bar: 2;');
+    const missingOne = declaredTokens('--foo: 1;');
+    expect(setsEqual(complete, missingOne)).toBe(false);
+    expect(setsEqual(complete, declaredTokens('--foo: 1; --bar: 2;'))).toBe(true);
+  });
+});
+
+describe('explicit theme classes restate every media-query token (derived, not hand-listed)', () => {
+  // global.css: bounded the same way the module-scope toolLight/toolDark
+  // slices are, but tightened at both ends so declaredTokens() only ever
+  // sees the one block each name claims to.
+  const gExplicitDark = css.slice(css.indexOf(':root.dark {'), css.indexOf(':root.light {'));
+  const gExplicitLight = css.slice(css.indexOf(':root.light {'), css.indexOf('* {'));
+  const gDarkMedia = css.slice(css.indexOf('@media'), css.indexOf(':root.dark {'));
+  const gRoot = css.slice(css.indexOf(':root {'), css.indexOf('@media'));
+
+  it('global.css :root.dark declares exactly the tokens the dark media block declares', () => {
+    expect(setsEqual(declaredTokens(gExplicitDark), declaredTokens(gDarkMedia))).toBe(true);
+  });
+
+  it('global.css :root.light declares exactly the top-level :root tokens, minus --band', () => {
+    // --band is scheme-invariant by design (declared once, never
+    // overridden) and is deliberately absent from :root.light too.
+    const rootMinusBand = minus(declaredTokens(gRoot), ['--band']);
+    expect(setsEqual(declaredTokens(gExplicitLight), rootMinusBand)).toBe(true);
+  });
+
+  it('house.css :root.dark declares exactly the tokens the dark media block declares', () => {
+    expect(setsEqual(declaredTokens(explicitDark), declaredTokens(dark))).toBe(true);
+  });
+
+  it('house.css :root.light declares exactly the top-level :root tokens, minus the three invariants', () => {
+    // --face-display / --hero-fg / --hero-muted are scheme-invariant (see
+    // 'the v2 shell' above) and deliberately absent from :root.light too.
+    const rootMinusInvariants = minus(declaredTokens(light), ['--face-display', '--hero-fg', '--hero-muted']);
+    expect(setsEqual(declaredTokens(explicitLight), rootMinusInvariants)).toBe(true);
+  });
+});
+
+// Restores the pin on the six status-scale VALUES (both schemes) that the
+// branch deleted. Semantic status colours, not house-shell or per-tool
+// accent tokens — see global.css's file header.
+const STATUS = {
+  '--severity-minor': ['#d97706', '#fbbf24'],
+  '--severity-significant': ['#dc2626', '#f87171'],
+  '--severity-critical': ['#7c2d12', '#fca5a5'],
+  '--score-strong': ['#16a34a', '#4ade80'],
+  '--score-moderate': ['#d97706', '#fbbf24'],
+  '--score-weak': ['#dc2626', '#f87171'],
+};
+describe('status scale tokens, both schemes', () => {
+  for (const [t, [l, d]] of Object.entries(STATUS)) {
+    it(`${t} is ${l} light / ${d} dark`, () => {
+      expect(toolLight).toMatch(new RegExp(`${t}:\\s*${l};`, 'i'));
+      expect(toolDark).toMatch(new RegExp(`${t}:\\s*${d};`, 'i'));
+    });
+  }
 });
 
 const TOOL = {
@@ -241,7 +356,6 @@ const TOOL = {
   '--link': ['#176763', '#5FC2BC'],
   '--link-hover': ['#0F5552', '#7FD0CB'],
 };
-const INVARIANT = { '--band': '#176763' };
 
 describe('Elenchus tokens, both schemes', () => {
   for (const [t, [l, d]] of Object.entries(TOOL)) {

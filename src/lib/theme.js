@@ -5,10 +5,13 @@
 // `:root.dark` overrides (see src/styles/house.css's v2 header), which
 // outrank the media query in both directions.
 //
-// This module is imported both by the inline head script (for the
-// before-first-paint read — see Layout.astro) and by ThemeToggle.astro's
-// client script (for the click handler), so the key and the cycle order
-// live in exactly one place.
+// Layout.astro's inline head script is `is:inline`, so it cannot import this
+// module — it runs before first paint, ahead of any bundled JS. It
+// duplicates THEME_KEY as a literal string on purpose. test/houseShell.test.js
+// pins the two equal (`expect(layout).toContain(THEME_KEY)`), so a rename
+// here cannot silently desync from the inline copy. ThemeToggle.astro's
+// client script, by contrast, is a real module and imports THEME_KEY (via
+// readTheme/applyTheme) and syncIcons below normally.
 
 export const THEME_KEY = 'elenchus:theme';
 const ORDER = ['system', 'light', 'dark'];
@@ -34,5 +37,23 @@ export function applyTheme(t) {
     localStorage.setItem(THEME_KEY, t);
   } catch {
     /* private mode */
+  }
+}
+
+// Regression: `hidden` is inert on an <svg> — it is not an HTMLElement IDL
+// attribute (SVGElement does not reflect it), and the UA stylesheet rule
+// `[hidden]{display:none}` does not match SVG in Chromium, so setting it on
+// the icon <svg>s directly left all three rendered at once. ThemeToggle.astro
+// now wraps each icon in a plain <span data-theme-icon="…"> (an HTMLElement),
+// and this toggles a `data-on` attribute instead — global.css hides
+// `.theme-icon` by default and shows only the one carrying `[data-on]`.
+/**
+ * @param {HTMLElement} btn
+ * @param {string} theme
+ */
+export function syncIcons(btn, theme) {
+  for (const icon of btn.querySelectorAll('[data-theme-icon]')) {
+    if (icon.dataset.themeIcon === theme) icon.setAttribute('data-on', '');
+    else icon.removeAttribute('data-on');
   }
 }

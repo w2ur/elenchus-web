@@ -52,11 +52,17 @@
 }
 
 /* [ADAPTED] Explicit choice, same class-override twins house.css carries for
-   the shell tokens. --band and the status scale stay out of both: --band is
-   scheme-invariant (declared once above, never overridden), and the status
-   scale already reads correctly in both schemes via the media query alone. */
-:root.dark { --accent: #5FC2BC; --on-accent: #0F1117; --accent-hover: #7FD0CB; --link: #5FC2BC; --link-hover: #7FD0CB; }
-:root.light { --accent: #1E7A76; --on-accent: #FFFFFF; --accent-hover: #176763; --link: #176763; --link-hover: #0F5552; }
+   the shell tokens. --band stays out of both: it is scheme-invariant
+   (declared once above, never overridden). The status scale, by contrast,
+   MUST be restated here: it is declared only in the unconditional top-level
+   :root and in the dark media query, both specificity (0,1,0); an explicit
+   :root.dark/.light class carries the wrong scheme's status colours whenever
+   it disagrees with the OS's own prefers-color-scheme, because nothing here
+   outranks the plain :root rule for those tokens otherwise. Values copied
+   from the two blocks above — keep them equal (test/houseShell.test.js pins
+   the sets, derived, not hand-listed). */
+:root.dark { --accent: #5FC2BC; --on-accent: #0F1117; --accent-hover: #7FD0CB; --link: #5FC2BC; --link-hover: #7FD0CB; --severity-minor: #fbbf24; --severity-significant: #f87171; --severity-critical: #fca5a5; --score-strong: #4ade80; --score-moderate: #fbbf24; --score-weak: #f87171; }
+:root.light { --accent: #1E7A76; --on-accent: #FFFFFF; --accent-hover: #176763; --link: #176763; --link-hover: #0F5552; --severity-minor: #d97706; --severity-significant: #dc2626; --severity-critical: #7c2d12; --score-strong: #16a34a; --score-moderate: #d97706; --score-weak: #dc2626; }
 
 * {
   margin: 0;
@@ -296,6 +302,19 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Regression: `hidden` on an <svg> is inert in Chromium (not an HTMLElement
+   IDL attribute; the UA `[hidden]{display:none}` rule does not match SVG),
+   so all three theme icons used to render at once. `.theme-icon` spans
+   (real HTMLElements) carry the show/hide instead, toggled by
+   src/lib/theme.js's syncIcons() setting/removing `data-on`. */
+.theme-icon {
+  display: none;
+}
+
+.theme-icon[data-on] {
+  display: inline-flex;
 }
 
 /* Fill takes --accent, ink takes --on-accent — never a bare white. --accent

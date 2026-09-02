@@ -30,22 +30,29 @@ const t = strings[lang] ?? strings.en;
   data-label-light={t.themeLight}
   data-label-dark={t.themeDark}
 >
-  <svg data-theme-icon="system" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <rect x="2" y="4" width="20" height="13" rx="2"></rect>
-    <path d="M8 21h8M12 17v4"></path>
-  </svg>
-  <svg data-theme-icon="light" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden>
-    <circle cx="12" cy="12" r="4"></circle>
-    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>
-  </svg>
-  <svg data-theme-icon="dark" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden>
-    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"></path>
-  </svg>
+  <span class="theme-icon" data-theme-icon="system" data-on>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="2" y="4" width="20" height="13" rx="2"></rect>
+      <path d="M8 21h8M12 17v4"></path>
+    </svg>
+  </span>
+  <span class="theme-icon" data-theme-icon="light">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="4"></circle>
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>
+    </svg>
+  </span>
+  <span class="theme-icon" data-theme-icon="dark">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"></path>
+    </svg>
+  </span>
 </button>
+<span class="sr-only" aria-live="polite" data-theme-status></span>
 
 <script type="module">
   // Vanilla JS, not TypeScript — see CLAUDE.md ("Vanilla JS with JSDoc").
-  import { applyTheme, nextTheme, readTheme } from '../lib/theme.js';
+  import { applyTheme, nextTheme, readTheme, syncIcons } from '../lib/theme.js';
 
   /**
    * @param {HTMLElement} btn
@@ -53,10 +60,14 @@ const t = strings[lang] ?? strings.en;
    */
   function paint(btn, theme) {
     const key = `label${theme.charAt(0).toUpperCase()}${theme.slice(1)}`;
-    btn.setAttribute('aria-label', btn.dataset[key] ?? theme);
-    for (const icon of btn.querySelectorAll('[data-theme-icon]')) {
-      icon.hidden = icon.dataset.themeIcon !== theme;
-    }
+    const label = btn.dataset[key] ?? theme;
+    btn.setAttribute('aria-label', label);
+    syncIcons(btn, theme);
+    // The sr-only live region next to the button (Item 15): announces the
+    // new state on every click, for a screen-reader user who cannot see the
+    // icon swap the sighted click handler above already performs.
+    const status = btn.nextElementSibling;
+    if (status?.hasAttribute('data-theme-status')) status.textContent = label;
   }
 
   for (const btn of document.querySelectorAll('[data-theme-toggle]')) {
