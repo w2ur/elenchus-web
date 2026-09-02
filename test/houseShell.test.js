@@ -146,6 +146,23 @@ describe('house shell', () => {
     expect(layout).toMatch(/<header/);
     expect(layout).toMatch(/houseUrl/);
   });
+
+  // Regression: the theme toggle (test/theme.test.js) applies a stored
+  // light/dark class before house.css's --bg/--text tokens are even parsed.
+  // If the global.css import ever moved back to a frontmatter `import`
+  // above the inline script, or the script moved after it, a stored choice
+  // would flash the wrong scheme for one frame on every navigation. The
+  // `global.css` import lives in a `<style is:global>` tag rather than a
+  // frontmatter `import` for exactly this reason — a frontmatter import is
+  // hoisted, and its emitted output could land anywhere in <head>.
+  it('the head applies the stored theme before any stylesheet', () => {
+    expect(layout).toMatch(/<script is:inline>[^<]*elenchus:theme/);
+    const scriptPos = layout.indexOf('elenchus:theme');
+    const cssPos = layout.indexOf('global.css');
+    expect(scriptPos).toBeGreaterThan(-1);
+    expect(cssPos).toBeGreaterThan(-1);
+    expect(scriptPos).toBeLessThan(cssPos);
+  });
 });
 
 describe('the v2 shell', () => {

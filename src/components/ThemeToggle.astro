@@ -1,0 +1,70 @@
+---
+// ThemeToggle.astro — cycles system → light → dark → system, one press at a
+// time (src/lib/theme.js owns the cycle order and the localStorage key).
+//
+// Server-rendered with the SYSTEM icon and the generic themeLabel: no theme
+// choice is known at prerender time, and Layout.astro's head script already
+// applies any stored explicit choice before first paint — so the button's
+// own client script (below) only has to correct the ICON and the aria-label
+// to match on load, not fight a flash of the wrong one.
+//
+// Icons are hand-drawn to the extension's inline-SVG convention (24x24
+// viewBox, currentColor stroke, round caps) rather than pulled from a
+// dependency — this repo has no icon library.
+import { strings } from '../lib/strings.js';
+
+interface Props {
+  lang?: string;
+}
+
+const { lang = 'en' } = Astro.props;
+const t = strings[lang] ?? strings.en;
+---
+
+<button
+  type="button"
+  class="chrome-btn"
+  aria-label={t.themeLabel}
+  data-theme-toggle
+  data-label-system={t.themeSystem}
+  data-label-light={t.themeLight}
+  data-label-dark={t.themeDark}
+>
+  <svg data-theme-icon="system" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <rect x="2" y="4" width="20" height="13" rx="2"></rect>
+    <path d="M8 21h8M12 17v4"></path>
+  </svg>
+  <svg data-theme-icon="light" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden>
+    <circle cx="12" cy="12" r="4"></circle>
+    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>
+  </svg>
+  <svg data-theme-icon="dark" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden>
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"></path>
+  </svg>
+</button>
+
+<script type="module">
+  // Vanilla JS, not TypeScript — see CLAUDE.md ("Vanilla JS with JSDoc").
+  import { applyTheme, nextTheme, readTheme } from '../lib/theme.js';
+
+  /**
+   * @param {HTMLElement} btn
+   * @param {string} theme
+   */
+  function paint(btn, theme) {
+    const key = `label${theme.charAt(0).toUpperCase()}${theme.slice(1)}`;
+    btn.setAttribute('aria-label', btn.dataset[key] ?? theme);
+    for (const icon of btn.querySelectorAll('[data-theme-icon]')) {
+      icon.hidden = icon.dataset.themeIcon !== theme;
+    }
+  }
+
+  for (const btn of document.querySelectorAll('[data-theme-toggle]')) {
+    paint(btn, readTheme());
+    btn.addEventListener('click', () => {
+      const next = nextTheme(readTheme());
+      applyTheme(next);
+      paint(btn, next);
+    });
+  }
+</script>

@@ -149,8 +149,14 @@ That header only exists at the Netlify edge — `astro preview` does not apply
 `_headers`, so verify it after a deploy with `curl -I
 https://elenchus.untilt.app/fonts/dm-sans-latin.woff2`, never locally.
 
-Dark + light mode is `prefers-color-scheme` only — no toggle, matching the
-extension. Footer signature "Made with care by William" →
+Dark/light/system is a three-state toggle (`src/lib/theme.js`, mounted via
+`src/components/ThemeToggle.astro`): 'system' is the absence of a class on
+`<html>` and falls through to `prefers-color-scheme`; an explicit 'light' or
+'dark' choice sets that class, persisted under the `elenchus:theme`
+localStorage key and applied by an `is:inline` script that must stay the
+first child of `<head>` in `Layout.astro`, before the `global.css` import's
+output, so the stored choice never flashes the wrong scheme (pinned by
+`test/houseShell.test.js`). Footer signature "Made with care by William" →
 `https://william.revah.paris` is in `src/layouts/Layout.astro`; do not
 duplicate it elsewhere.
 

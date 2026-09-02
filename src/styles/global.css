@@ -201,6 +201,22 @@ button {
   cursor: pointer;
 }
 
+/* Minimal styling for now — a 44px tap target and the house surface/border,
+   nothing else. Task 4 gives this its hover/focus treatment when it moves
+   into HouseHeader.astro alongside the language switch; ThemeToggle.astro is
+   its first user. */
+.chrome-btn {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--bg-card);
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Fill takes --accent, ink takes --on-accent — never a bare white. --accent
    is legal as a fill (5.12:1 white on it in light, --on-accent flips to ink
    in dark because the dark accent goes pale). Hover darkens/lightens one step

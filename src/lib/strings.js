@@ -65,6 +65,16 @@ export const strings = {
     // this page recognises.
     otherLangLabel: 'Français',
 
+    // The three-state theme toggle (src/lib/theme.js, ThemeToggle.astro).
+    // themeLabel is the button's accessible name before any client script
+    // has run (prerendered markup, and the fallback if JS never loads); the
+    // client script then swaps in themeSystem/Light/Dark so a screen reader
+    // announces the CURRENT state, updated on every click.
+    themeLabel: 'Theme',
+    themeSystem: 'System theme',
+    themeLight: 'Light theme',
+    themeDark: 'Dark theme',
+
     analyzeBtn: 'Analyze',
     retryBtn: 'Retry',
     newAnalysisBtn: 'Analyze again',
@@ -166,6 +176,12 @@ export const strings = {
 
     // Voir le commentaire du bloc `en`.
     otherLangLabel: 'English',
+
+    // Voir le commentaire du bloc `en`.
+    themeLabel: 'Thème',
+    themeSystem: 'Thème du système',
+    themeLight: 'Thème clair',
+    themeDark: 'Thème sombre',
 
     analyzeBtn: 'Analyser',
     retryBtn: 'Réessayer',

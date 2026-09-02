@@ -1,6 +1,15 @@
 ---
-import '../styles/global.css';
+// The shell stylesheet is imported below, from a <style is:global> tag
+// INSIDE <head>, rather than from a frontmatter `import` here — a
+// frontmatter CSS import is hoisted by Astro's compiler and its emitted
+// <link>/<style> output can land anywhere in <head>, which would race the
+// inline theme-detection script for first paint. A <style> tag written
+// after that script keeps the two in the order they need to run in. See
+// houseShell.test.js's "the head applies the stored theme before any
+// stylesheet" for the pin (it checks literal source order, which is why
+// this comment avoids spelling out the stylesheet's own filename).
 import { strings } from '../lib/strings.js';
+import ThemeToggle from '../components/ThemeToggle.astro';
 
 interface Props {
   title?: string;
@@ -43,6 +52,17 @@ const t = strings[lang] ?? strings.en;
 
 <html lang={lang}>
   <head>
+    {/* Reads any EXPLICIT stored theme and applies its class before the
+        stylesheet below is even requested, so a light/dark choice never
+        flashes the wrong scheme. 'system' is stored as the absence of a
+        class, so it does nothing here — house.css's own
+        prefers-color-scheme media query already handles that case with no
+        script at all. Must stay the first thing in <head>: see the import
+        comment above and test/houseShell.test.js. */}
+    <script is:inline>try{var t=localStorage.getItem('elenchus:theme');if(t==='light'||t==='dark')document.documentElement.classList.add(t)}catch(e){}</script>
+    <style is:global>
+      @import '../styles/global.css';
+    </style>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
@@ -69,6 +89,11 @@ const t = strings[lang] ?? strings.en;
       <a class="house-mark" href={t.houseUrl}>{t.houseLabel}</a>
       <span class="house-sep" aria-hidden="true">/</span>
       <span class="house-tool">Elenchus</span>
+      {/* Right side, for now — Task 4 moves this mount into HouseHeader.astro
+          alongside the language switch; the `margin-left: auto` below is this
+          header's own layout rule and travels with that move, not a global
+          one. */}
+      <ThemeToggle lang={lang} />
     </header>
     <main>
       <slot />
@@ -95,3 +120,9 @@ const t = strings[lang] ?? strings.en;
     </footer>
   </body>
 </html>
+
+<style>
+  .house :global(.chrome-btn) {
+    margin-left: auto;
+  }
+</style>
