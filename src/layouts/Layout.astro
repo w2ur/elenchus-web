@@ -1,13 +1,5 @@
 ---
-// The shell stylesheet is imported below, from a <style is:global> tag
-// INSIDE <head>, rather than from a frontmatter `import` here — a
-// frontmatter CSS import is hoisted by Astro's compiler and its emitted
-// <link>/<style> output can land anywhere in <head>, which would race the
-// inline theme-detection script for first paint. A <style> tag written
-// after that script keeps the two in the order they need to run in. See
-// houseShell.test.js's "the head applies the stored theme before any
-// stylesheet" for the pin (it checks literal source order, which is why
-// this comment avoids spelling out the stylesheet's own filename).
+import '../styles/global.css';
 import { strings } from '../lib/strings.js';
 import { twinFor } from '../lib/twin.js';
 import HouseHeader from '../components/HouseHeader.astro';
@@ -58,17 +50,16 @@ const t = strings[lang] ?? strings.en;
 
 <html lang={lang}>
   <head>
-    {/* Reads any EXPLICIT stored theme and applies its class before the
-        stylesheet below is even requested, so a light/dark choice never
-        flashes the wrong scheme. 'system' is stored as the absence of a
-        class, so it does nothing here — house.css's own
-        prefers-color-scheme media query already handles that case with no
-        script at all. Must stay the first thing in <head>: see the import
-        comment above and test/houseShell.test.js. */}
     <script is:inline>try{var t=localStorage.getItem('elenchus:theme');if(t==='light'||t==='dark')document.documentElement.classList.add(t)}catch(e){}</script>
-    <style is:global>
-      @import '../styles/global.css';
-    </style>
+    {/* The script above reads any EXPLICIT stored theme and applies its
+        class before the stylesheet is even parsed, so a light/dark choice
+        never flashes the wrong scheme. 'system' is stored as the absence of
+        a class, so it does nothing here — house.css's own
+        prefers-color-scheme media query already handles that case with no
+        script at all. Must stay the FIRST CHILD of <head>: Astro emits the
+        bundled stylesheet's <link> at the end of <head> regardless of where
+        the CSS is imported from, so this script's position is what actually
+        guarantees it runs first — see test/houseShell.test.js. */}
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />

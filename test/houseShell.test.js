@@ -157,19 +157,19 @@ describe('house shell', () => {
 
   // Regression: the theme toggle (test/theme.test.js) applies a stored
   // light/dark class before house.css's --bg/--text tokens are even parsed.
-  // If the global.css import ever moved back to a frontmatter `import`
-  // above the inline script, or the script moved after it, a stored choice
-  // would flash the wrong scheme for one frame on every navigation. The
-  // `global.css` import lives in a `<style is:global>` tag rather than a
-  // frontmatter `import` for exactly this reason — a frontmatter import is
-  // hoisted, and its emitted output could land anywhere in <head>.
-  it('the head applies the stored theme before any stylesheet', () => {
-    expect(layout).toMatch(/<script is:inline>[^<]*elenchus:theme/);
-    const scriptPos = layout.indexOf('elenchus:theme');
-    const cssPos = layout.indexOf('global.css');
-    expect(scriptPos).toBeGreaterThan(-1);
-    expect(cssPos).toBeGreaterThan(-1);
-    expect(scriptPos).toBeLessThan(cssPos);
+  // Astro emits the bundled stylesheet's <link> at the end of <head>, so
+  // first-child placement is what guarantees the class lands before any CSS
+  // applies; verified on dist/index.html of both import styles. A plain
+  // frontmatter `import '../styles/global.css'` is fine because of that —
+  // the import style was never the load-bearing part, the script's position
+  // inside <head> is.
+  it('the theme script is the first child of <head>', () => {
+    expect(layout).toMatch(/<head>\s*<script is:inline>[^<]*elenchus:theme/);
+    // Non-vacuity: the same literal script text is not merely present
+    // somewhere in the file (e.g. duplicated in <body>), which would let
+    // the regex above match on a coincidence rather than actual placement.
+    const body = layout.slice(layout.indexOf('<body>'));
+    expect(body).not.toMatch(/elenchus:theme/);
   });
 });
 

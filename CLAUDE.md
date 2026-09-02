@@ -81,7 +81,9 @@ header reach the Worker and come back as an opaque 403.
 Untilt house shell — fonts, surfaces, the `.house` lockup and the contour
 bloom — an **adapted copy** of `untilt/client/src/styles/house.css`. Read its
 header before touching it: it names the two things that deliberately differ
-(dark mode is `prefers-color-scheme` here, not untilt's `.dark` class; the
+(dark mode here is `prefers-color-scheme` for the system default, plus
+`:root.light`/`:root.dark` classes set by the theme toggle for an explicit
+choice — a third mechanism, distinct from untilt's `.dark`-only class; the
 chapeau furniture is omitted) and records why there is no `sync-house.sh`.
 `src/styles/global.css` imports it and holds only what is Elenchus's own —
 the teal accent and the severity/score scale. A shell token re-declared in
