@@ -117,7 +117,7 @@ severity/score scale is copied verbatim from `~/Dev/elenchus/sidepanel/
 sidepanel.css` instead, and must not be folded into the house surface
 tokens — they are semantic status colours, not the house shell. The one
 deliberate difference from the house is the accent color — the portfolio
-hub assigns Elenchus the teal accent `#4F8A8B` (`src/styles/global.css`),
+hub assigns Elenchus the teal accent `#1E7A76` (`src/styles/global.css`),
 not `untilt.app`'s blue-grey. Stay in that teal family; never default to
 purple/violet/indigo (portfolio-wide rule).
 
@@ -456,25 +456,36 @@ the deliberately quiet visual treatment in the one channel that cannot see
 it. `aria-atomic="false"` on the result panel because an analysis can be
 long, and atomic would re-read the whole thing as one block.
 
-**Link/text contrast**: `--accent` (`#4F8A8B`) stays the portfolio's teal
-identity, used for backgrounds/borders/buttons. Body text and links use a
-separate `--link` token (`#3D6D6E` in light mode, reusing the existing
-`--accent-hover` value — measured 5.82:1 on white, clearing the 4.5:1 AA
-floor for 13px text; `#4F8A8B` alone measured 3.93:1, which is why it was
-split out) so the extension link inside the `ip`/`service` block — the
-primary call to action of the state most visitors will see — is legible.
-Also applied to .btn-secondary's text (Retry/Analyze again): same 3.93:1
-defect, same --link fix, since that button sits transparent directly on
---bg. Its border stays --accent (non-text UI outline, 3:1 floor, already
-cleared) -- borders are not this rule's concern. Dark mode was already well
-past AA/AAA throughout and is unchanged.
+**Link/text contrast**: `--accent` moved to `#1E7A76` light / `#5FC2BC` dark
+(pushed a step darker/further from the retired `#4F8A8B` family so a fill
+carrying white clears 3:1 with margin), and every fill now pairs with a
+scheme-paired ink token, `--on-accent` — white in light, `#0F1117` in dark —
+instead of a bare `#fff`, because the dark accent goes pale enough that white
+on it is only 2.12:1 (`.btn-primary`'s old dark-mode override existed for
+exactly this and is gone now that `--on-accent` does it generically).
+`--accent` is legal as a **fill**: white on it measures 5.12:1 in light,
+`#0F1117` on it 8.92:1 in dark. As **text** it is not: 4.86:1 on the
+page and 3.73:1 on its own `/20` tint, both under the 4.5:1 AA floor — so
+text still takes `--link`, now `#176763` light / `#5FC2BC` dark, with
+`--link-hover` at `#0F5552` light / `#7FD0CB` dark. `--accent-hover` also
+moved to `#176763` light / `#7FD0CB` dark, doubling as `--band` (the
+ToolHero fill, scheme-**invariant** — always `#176763` — so the shell's
+`--hero-fg`/`--hero-muted` are legal on it in both schemes: 6.65:1 and
+5.08:1). All of it is pinned in `test/houseShell.test.js`, including the
+retired `#4F8A8B`/`#3D6D6E`/`#6FB3B4`/`#8EC4C5` family failing the same 4.5:1
+sum, so a regression can't silently reintroduce it. Also applied to
+`.btn-secondary`'s text (Retry/Analyze again), which sits transparent
+directly on `--bg` — its border stays `--accent` (non-text UI outline, 3:1
+floor, already cleared) — borders are not this rule's concern.
 
 `.house-tool` (the "Elenchus" half of the header wordmark) follows the same
 rule, and is the reason the rule needs restating: adopting the house `--bg`
-`#F8F9FB` moved every `--accent`-on-background pair down a notch, so that
-text measured **3.73:1** there, not 3.93:1. **Any new use of `--accent` as
-text is a bug** — it has never cleared AA in light mode on any background
-this site uses. Reach for `--link`.
+`#F8F9FB` moves every `--accent`-on-background pair down a notch. **Any new
+use of `--accent` as text is a bug** — it has never cleared AA in light mode
+on any background this site uses. Reach for `--link`. The general ink rule
+this section pins: **a fill takes `--on-accent`, never a bare white or a
+bare ink** — the fill's own scheme decides which one is legal, and only
+`--on-accent` tracks that automatically.
 
 ### Label drift-check
 

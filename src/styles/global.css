@@ -14,19 +14,18 @@
    for, and "restoring" --link from untilt would turn every Elenchus link from
    teal to blue-grey. */
 :root {
-  --accent: #4f8a8b;
-  --accent-hover: #3d6d6e;
-  /* Text/link color, separate from --accent (C4 review). #4F8A8B on white is
-     3.93:1 — below the 4.5:1 AA floor for the 13px body text it is used at,
-     and the extension link in the ip/service dry-state notice is now the
-     primary call to action of the state most visitors will see. --accent
-     itself stays #4F8A8B (the teal the portfolio hub assigns Elenchus,
-     used as a background/border color, where a different contrast pair
-     applies) — only text/links get the darker shade. Reuses the existing
-     --accent-hover value, which already cleared 4.5:1 as a hover color;
-     measured at 5.52:1 against the house --bg #F8F9FB (was 5.82:1 against
-     the old #ffffff). */
-  --link: #3d6d6e;
+  /* Elenchus accent, v2. Legal as a FILL (5.12:1 white on it) but as text only
+     at 4.86 on the page and 3.73 on its own /20 tint — so text takes --link.
+     --on-accent is the ink for every fill: white in light, ink in dark, because
+     the dark accent goes pale (white on #5FC2BC is 2.12:1). --band is the
+     ToolHero fill, scheme-INVARIANT so the shell's --hero-fg/--hero-muted are
+     legal on it in both schemes (6.65 / 5.08). Pinned by test/houseShell.test.js. */
+  --accent: #1E7A76;
+  --on-accent: #FFFFFF;
+  --accent-hover: #176763;
+  --band: #176763;
+  --link: #176763;
+  --link-hover: #0F5552;
   --severity-minor: #d97706;
   --severity-significant: #dc2626;
   --severity-critical: #7c2d12;
@@ -37,12 +36,12 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --accent: #6fb3b4;
-    --accent-hover: #8ec4c5;
-    /* Dark mode was never flagged: #6FB3B4 on the house --bg #0F1117
-       measures 7.89:1, already past AAA (was 7.28:1 against the old
-       #1a1a1a), so --link stays equal to --accent here. */
-    --link: #6fb3b4;
+    --accent: #5FC2BC;
+    --on-accent: #0F1117;
+    --accent-hover: #7FD0CB;
+    --link: #5FC2BC;
+    --link-hover: #7FD0CB;
+    /* status scale unchanged */
     --severity-minor: #fbbf24;
     --severity-significant: #f87171;
     --severity-critical: #fca5a5;
@@ -195,12 +194,13 @@ button {
   cursor: pointer;
 }
 
-/* white on --accent #4F8A8B measures 3.93:1 at 14px/600 — under the AA floor.
-   --accent-hover #3D6D6E measures 5.81:1 and was already proven as a hover
-   colour. Hover darkens one more step so the state stays distinguishable. */
+/* Fill takes --accent, ink takes --on-accent — never a bare white. --accent
+   is legal as a fill (5.12:1 white on it in light, --on-accent flips to ink
+   in dark because the dark accent goes pale). Hover darkens/lightens one step
+   with --accent-hover, keeping the same paired ink. */
 .btn-primary {
-  background: var(--accent-hover);
-  color: #fff;
+  background: var(--accent);
+  color: var(--on-accent);
   border: none;
   border-radius: 8px;
   padding: 10px 20px;
@@ -209,7 +209,7 @@ button {
 }
 
 .btn-primary:hover {
-  background: color-mix(in srgb, var(--accent-hover) 85%, #000);
+  background: var(--accent-hover);
 }
 
 .btn-primary:disabled {
@@ -218,20 +218,8 @@ button {
   cursor: not-allowed;
 }
 
-/* --accent-hover is #8ec4c5 in dark mode — a light teal, not the dark teal it
-   is in light mode. White text on it measures 1.94:1, far under AA; --bg
-   (#0f1117) on it measures 9.75:1. Declared after the base .btn-primary rule
-   so source order (not just the media query) puts it on top: two rules of
-   equal specificity, and the later one wins even when the earlier one's
-   media query also matches. */
-@media (prefers-color-scheme: dark) {
-  .btn-primary {
-    color: var(--bg);
-  }
-}
-
-/* Text color uses --link, not --accent: same 3.93:1-on-white contrast
-   defect the C4 review found on the ip/service extension link, on a
+/* Text color uses --link, not --accent: --accent has never cleared AA in
+   light mode as text (4.86:1 on the page, 3.73:1 on its own /20 tint), on a
    button sitting directly on --bg. Border stays --accent (a non-text
    UI-component outline; 3:1 is the relevant floor there, already cleared). */
 .btn-secondary {

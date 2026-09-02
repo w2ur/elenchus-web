@@ -40,15 +40,16 @@ const HOUSE_DARK = {
   '--line': '#2F333D',
 };
 
-describe('house shell', () => {
-  // The shell lives in house.css; global.css keeps only Elenchus's own accent
-  // and status scale. Slicing the wrong file is the mistake these two pairs of
-  // bounds exist to make impossible.
-  const light = houseCss.slice(houseCss.indexOf(':root {'), houseCss.indexOf('@media (prefers'));
-  const dark = houseCss.slice(houseCss.indexOf('@media (prefers'));
-  const toolLight = css.slice(css.indexOf(':root {'), css.indexOf('@media'));
-  const toolDark = css.slice(css.indexOf('@media'));
+// The shell lives in house.css; global.css keeps only Elenchus's own accent
+// and status scale. Slicing the wrong file is the mistake these two pairs of
+// bounds exist to make impossible. Module-scoped (not just inside 'house
+// shell' below) so the token/contrast describes further down can reuse them.
+const light = houseCss.slice(houseCss.indexOf(':root {'), houseCss.indexOf('@media (prefers'));
+const dark = houseCss.slice(houseCss.indexOf('@media (prefers'));
+const toolLight = css.slice(css.indexOf(':root {'), css.indexOf('@media'));
+const toolDark = css.slice(css.indexOf('@media'));
 
+describe('house shell', () => {
   it('global.css imports the shell rather than restating it', () => {
     expect(css).toMatch(/@import\s+'\.\/house\.css';/);
     // The whole point of the extraction: one definition per token. A shell
@@ -83,17 +84,6 @@ describe('house shell', () => {
     for (const [k, v] of Object.entries(HOUSE_DARK)) {
       expect(dark).toMatch(new RegExp(`${k}:\\s*${v};`, 'i'));
     }
-  });
-
-  // The Elenchus accent and the status colours are NOT house tokens: the
-  // severity/score scale is copied verbatim from the extension's sidepanel so
-  // the same analysis reads identically on both Elenchus surfaces. `--link`
-  // is per-tool for the same reason and is deliberately not pinned here —
-  // untilt's is #587089/#7B8FA4, this one is #3D6D6E/#6FB3B4.
-  it('keeps the Elenchus accent and the extension status scale', () => {
-    expect(toolLight).toMatch(/--accent:\s*#4f8a8b;/i);
-    expect(toolLight).toMatch(/--severity-critical:\s*#7c2d12;/i);
-    expect(toolDark).toMatch(/--accent:\s*#6fb3b4;/i);
   });
 
   // The brief's original version of this guard sliced `light` to end at the
@@ -139,9 +129,10 @@ describe('house shell', () => {
   });
 
   // The header tool name is the first place --accent would be used as TEXT,
-  // and --accent has never cleared AA in light mode as text (#4F8A8B on the
-  // house --bg #F8F9FB is 3.73:1 against a 4.5:1 floor at the 1rem/600 the
-  // header inherits). axe-core on the built page caught it; this is the pin
+  // and --accent has never cleared AA in light mode as text (v2's #1E7A76 on
+  // the house --bg #F8F9FB is 4.86:1 on the page but 3.73:1 on its own /20
+  // tint, against a 4.5:1 floor at the 1rem/600 the header inherits).
+  // axe-core on the built page caught the original defect; this is the pin
   // that stops it coming back.
   it('the header tool name uses --link, never --accent', () => {
     const rule = houseCss.slice(houseCss.indexOf('.house-tool {'));
@@ -156,20 +147,60 @@ describe('house shell', () => {
   });
 });
 
-// Regression: .btn-primary painted white on var(--accent) (#4F8A8B), which
-// measures 3.93:1 at the 14px/600 it carries — under the 4.5:1 AA floor. The
-// same 3.93:1 defect the C4 review found on the extension link. --accent keeps
-// its value (it is a background/border colour elsewhere); only this button
-// darkens to --accent-hover #3D6D6E, which measures 5.81:1 on white.
-describe('regression: .btn-primary clears AA', () => {
-  it('does not use the bare --accent as its background', () => {
-    const rule = css.match(/\.btn-primary\s*\{([^}]*)\}/)?.[1] ?? '';
-    expect(rule).not.toMatch(/background:\s*var\(--accent\)\s*;/);
-  });
+const TOOL = {
+  '--accent': ['#1E7A76', '#5FC2BC'],
+  '--on-accent': ['#FFFFFF', '#0F1117'],
+  '--accent-hover': ['#176763', '#7FD0CB'],
+  '--link': ['#176763', '#5FC2BC'],
+  '--link-hover': ['#0F5552', '#7FD0CB'],
+};
+const INVARIANT = { '--band': '#176763' };
 
-  it('the rule was actually found — the guard is not vacuous', () => {
-    const rule = css.match(/\.btn-primary\s*\{([^}]*)\}/)?.[1] ?? '';
-    expect(rule).toMatch(/color:\s*#fff/);
+describe('Elenchus tokens, both schemes', () => {
+  for (const [t, [l, d]] of Object.entries(TOOL)) {
+    it(`${t} is ${l} light / ${d} dark`, () => {
+      expect(toolLight).toMatch(new RegExp(`${t}:\\s*${l};`, 'i'));
+      expect(toolDark).toMatch(new RegExp(`${t}:\\s*${d};`, 'i'));
+    });
+  }
+  it('--band is declared once and never overridden', () => {
+    expect(toolLight).toMatch(/--band:\s*#176763;/i);
+    expect(toolDark).not.toMatch(/--band:/);
+  });
+  it('the retired teal is gone from every stylesheet and the favicon', () => {
+    for (const src of [css, houseCss, readFileSync('public/favicon.svg', 'utf-8')]) expect(src).not.toMatch(/4F8A8B|3D6D6E|6FB3B4|8EC4C5/i);
+  });
+});
+
+describe('every text token clears 4.5:1 on its darkest surface, both schemes', () => {
+  const lum = (h) => { const c = [1,3,5].map((i) => parseInt(h.slice(i,i+2),16)/255).map((v) => v<=.03928? v/12.92 : ((v+.055)/1.055)**2.4); return .2126*c[0]+.7152*c[1]+.0722*c[2]; };
+  const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x+.05)/(y+.05); };
+  const tint = (fg, bg, a) => '#' + [1,3,5].map((i) => Math.round(a*parseInt(fg.slice(i,i+2),16) + (1-a)*parseInt(bg.slice(i,i+2),16)).toString(16).padStart(2,'0')).join('');
+  const ROWS = [
+    ['--link light on its /20 over the page', '#176763', tint('#1E7A76', '#F8F9FB', .2)],
+    ['--link light on a card', '#176763', '#FFFFFF'],
+    ['--link dark on its /20 over a card', '#5FC2BC', tint('#5FC2BC', '#1A1D25', .2)],
+    ['--link-hover light on a card', '#0F5552', '#FFFFFF'],
+    ['--link-hover dark on the page', '#7FD0CB', '#0F1117'],
+    ['--on-accent light on --accent', '#FFFFFF', '#1E7A76'],
+    ['--on-accent light on --accent-hover', '#FFFFFF', '#176763'],
+    ['--on-accent dark on --accent', '#0F1117', '#5FC2BC'],
+    ['--on-accent dark on --accent-hover', '#0F1117', '#7FD0CB'],
+    ['--hero-fg on --band', '#FFFFFF', '#176763'],
+    ['--hero-muted on --band', tint('#FFFFFF', '#176763', .82), '#176763'],
+  ];
+  for (const [name, fg, bg] of ROWS) it(name, () => expect(ratio(fg, bg)).toBeGreaterThanOrEqual(4.5));
+  it('the retired values fail the same sum — not vacuous', () => {
+    expect(ratio('#FFFFFF', '#4F8A8B')).toBeLessThan(4.5);
+    expect(ratio('#1E7A76', tint('#1E7A76', '#F8F9FB', .2))).toBeLessThan(4.5);
+    expect(ratio('#FFFFFF', '#5FC2BC')).toBeLessThan(4.5);
+  });
+});
+
+describe('fills carry the paired ink, never a bare white', () => {
+  it('.btn-primary uses --on-accent', () => {
+    expect(css).toMatch(/\.btn-primary\s*\{[^}]*background:\s*var\(--accent\);[^}]*color:\s*var\(--on-accent\);/s);
+    expect(css).not.toMatch(/\.btn-primary\s*\{[^}]*color:\s*(#fff|#ffffff|white)\b/is);
   });
 });
 
@@ -245,8 +276,8 @@ describe('regression: the favicon is the house contour, not the Astro logo', () 
   it('carries the house rounded rect and two teal contours', () => {
     expect(favicon).toMatch(/<rect width="512" height="512" rx="108" fill="#0F1117"\/>/);
     expect(favicon.match(/<path d="M256 /g) ?? []).toHaveLength(2);
-    expect(favicon).toMatch(/stroke="#4F8A8B"/);
-    expect(favicon).toMatch(/stroke="#8EC4C5"/);
+    expect(favicon).toMatch(/stroke="#1E7A76"/);
+    expect(favicon).toMatch(/stroke="#5FC2BC"/);
   });
 
   it('both icon files are declared, so neither is left to a browser probe', () => {

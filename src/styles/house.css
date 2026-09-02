@@ -130,9 +130,9 @@
 
 .house-tool {
   /* --link, not --accent: this is the first place --accent would have been
-     used as *text*, and #4F8A8B on the house --bg #F8F9FB measures 3.73:1 —
-     under the 4.5:1 AA floor for the 1rem/600 it inherits from .house.
-     --link (#3D6D6E) measures 5.52:1. Same split as .btn-secondary. */
+     used as *text*, and it has never cleared the 4.5:1 AA floor as text in
+     light mode (see global.css's --accent comment for the current numbers).
+     Same split as .btn-secondary. */
   color: var(--link);
 }
 
