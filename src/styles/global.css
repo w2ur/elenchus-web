@@ -169,8 +169,14 @@ footer a {
   justify-content: space-around;
   border-top: 1px solid var(--line);
   background: var(--bg);
+  /* Regression: `padding-bottom: env(safe-area-inset-bottom, 12px)` REPLACED
+     the 0.5rem every other edge of this bar keeps, rather than adding to it
+     — on a non-notched phone (env() = 0, ignoring the fallback since the
+     env var IS supported) the bar's bottom padding silently dropped to 0.
+     calc() keeps the base 0.5rem on every edge and adds the inset on top,
+     so a home-indicator phone gets MORE bottom padding, never less. */
   padding: 0.5rem;
-  padding-bottom: env(safe-area-inset-bottom, 12px);
+  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
   z-index: 40;
 }
 
@@ -426,6 +432,20 @@ button {
   margin-bottom: 4px;
 }
 
+/* Regression: .strong/.moderate/.weak each carried a bare `color: #fff`,
+   which measured 1.67-1.74:1 in dark (the dark fills are pale:
+   #4ade80/#fbbf24/#f87171). Ink is per SCHEME here, not per variant, because
+   the light fills split two ways: --score-weak (#dc2626) clears 4.5:1 with
+   white, but --score-strong (#16a34a, white 3.30:1) and --score-moderate
+   (#d97706, white 3.19:1) do not. #0F1117 ink clears >=7:1 on every fill in
+   both schemes except light .weak, so it is the default here and .weak
+   overrides it to white in light only — flipped back to ink in dark below,
+   where --score-weak itself goes pale. All six fill x ink x scheme ratios
+   are pinned in test/houseShell.test.js, with the must-fail twin (white on
+   light --score-strong, 3.30:1). See CLAUDE.md's ink rule: status badges are
+   the one case where the paired ink is per-scheme rather than the token
+   tracking it automatically, because no single token here is legal as ink
+   in both schemes for every variant. */
 .score-badge {
   display: inline-block;
   padding: 4px 12px;
@@ -435,15 +455,14 @@ button {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 20px;
+  color: #0F1117;
 }
 
 .score-badge.strong {
   background: var(--score-strong);
-  color: #fff;
 }
 .score-badge.moderate {
   background: var(--score-moderate);
-  color: #fff;
 }
 .score-badge.weak {
   background: var(--score-weak);
@@ -452,6 +471,20 @@ button {
 .score-badge:not(.strong):not(.moderate):not(.weak) {
   background: var(--line);
   color: var(--muted);
+}
+
+/* .weak's light-mode white (4.83:1 on --score-weak's light value) fails once
+   --score-weak itself goes pale in dark (#f87171) — flip back to the base
+   ink there, in both the system-preference and the explicit-choice form
+   (see src/lib/theme.js's file header for why both exist). */
+@media (prefers-color-scheme: dark) {
+  .score-badge.weak {
+    color: #0F1117;
+  }
+}
+
+:root.dark .score-badge.weak {
+  color: #0F1117;
 }
 
 .count-badge {
@@ -582,12 +615,17 @@ main a {
 /* The link is meant to be DRAGGED, not clicked, and nothing else on this
    site is. `grab` is the one affordance that says so before the sentence
    underneath does; `inline-block` is what gives the anchor the button
-   padding at all. */
+   padding at all.
+
+   Regression: this rule also carried `color: #fff`. The anchor is
+   `class="btn-primary bookmarklet-link"` (BookmarkletInstall.astro), so this
+   selector's later source position let a bare white win over --on-accent —
+   2.12:1 in dark, where the accent fill goes pale. No `color` here at all,
+   so .btn-primary's paired ink applies unchanged. */
 .bookmarklet-link {
   display: inline-block;
   cursor: grab;
   text-decoration: none;
-  color: #fff;
 }
 
 .bookmarklet-link:active {

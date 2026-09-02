@@ -23,6 +23,12 @@ const houseHeader = readFileSync(join(__dirname, '../src/components/HouseHeader.
 const stripComments = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '');
 const houseRules = stripComments(houseCss);
 
+// WCAG relative-luminance / contrast-ratio helpers, module-scoped so both
+// 'every text token clears 4.5:1...' and the score-badge ink pins below can
+// share one definition rather than two copies drifting apart.
+const lum = (h) => { const c = [1,3,5].map((i) => parseInt(h.slice(i,i+2),16)/255).map((v) => v<=.03928? v/12.92 : ((v+.055)/1.055)**2.4); return .2126*c[0]+.7152*c[1]+.0722*c[2]; };
+const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x+.05)/(y+.05); };
+
 // One definition of the term, shared with untilt/client/src/lib/tokens.test.ts:
 // the SHARED SHELL is the surfaces (background, card, text, muted text,
 // border) and nothing else; `--accent` AND `--link` are both PER-TOOL, set
@@ -209,7 +215,17 @@ describe('the contract header', () => {
   it('the mobile bar exists, is the same three items, and is hidden on desktop', () => {
     expect(css).toMatch(/\.tool-nav-bar\s*\{[^}]*position:\s*fixed;[^}]*bottom:\s*0/s);
     expect(css).toMatch(/@media \(min-width: 768px\)\s*\{[^}]*\.tool-nav-bar\s*\{[^}]*display:\s*none/s);
-    expect(css).toMatch(/padding-bottom:\s*env\(safe-area-inset-bottom/);
+    // Item 4: the bar's own padding is 0.5rem, and only the BOTTOM edge adds
+    // the safe-area inset on top of that — a bare `env(...)` alone (the
+    // pre-fix shape) throws away the 0.5rem the top/left/right edges keep,
+    // leaving a notched phone with less bottom padding than every other
+    // edge of the same bar.
+    expect(css).toMatch(/padding-bottom:\s*calc\(0\.5rem \+ env\(safe-area-inset-bottom,\s*0px\)\)/);
+  });
+  it('the viewport meta opts into safe-area insets (viewport-fit=cover)', () => {
+    // env(safe-area-inset-*) resolves to 0 without this — the calc() above
+    // would silently collapse to a plain 0.5rem on a notched phone.
+    expect(layout).toMatch(/<meta name="viewport" content="[^"]*viewport-fit=cover[^"]*"/);
   });
   it('Layout renders the header component, not an inline header', () => {
     expect(layout).toMatch(/<HouseHeader /); expect(layout).not.toMatch(/<header class="house">/);
@@ -374,8 +390,6 @@ describe('Elenchus tokens, both schemes', () => {
 });
 
 describe('every text token clears 4.5:1 on its darkest surface, both schemes', () => {
-  const lum = (h) => { const c = [1,3,5].map((i) => parseInt(h.slice(i,i+2),16)/255).map((v) => v<=.03928? v/12.92 : ((v+.055)/1.055)**2.4); return .2126*c[0]+.7152*c[1]+.0722*c[2]; };
-  const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x+.05)/(y+.05); };
   const tint = (fg, bg, a) => '#' + [1,3,5].map((i) => Math.round(a*parseInt(fg.slice(i,i+2),16) + (1-a)*parseInt(bg.slice(i,i+2),16)).toString(16).padStart(2,'0')).join('');
   const ROWS = [
     ['--link light on its /20 over the page', '#176763', tint('#1E7A76', '#F8F9FB', .2)],
@@ -398,10 +412,77 @@ describe('every text token clears 4.5:1 on its darkest surface, both schemes', (
   });
 });
 
-describe('fills carry the paired ink, never a bare white', () => {
+// A rule's body, from its selector's opening '{' to its matching '}'. Used
+// below for selector-scoped assertions the same way '.house-tool {' and
+// '.house-bloom-ring {' are already sliced elsewhere in this file.
+function ruleBody(text, selectorStart) {
+  const i = text.indexOf(selectorStart);
+  if (i === -1) throw new Error(`selector not found: ${selectorStart}`);
+  const braceStart = text.indexOf('{', i);
+  const braceEnd = text.indexOf('}', braceStart);
+  return text.slice(braceStart, braceEnd);
+}
+const BARE_WHITE = /color:\s*(#fff\b|#ffffff\b|white\b)/i;
+
+describe('fills carry the paired ink, never a bare white (item 3, widened)', () => {
   it('.btn-primary uses --on-accent', () => {
     expect(css).toMatch(/\.btn-primary\s*\{[^}]*background:\s*var\(--accent\);[^}]*color:\s*var\(--on-accent\);/s);
-    expect(css).not.toMatch(/\.btn-primary\s*\{[^}]*color:\s*(#fff|#ffffff|white)\b/is);
+    expect(ruleBody(css, '.btn-primary {')).not.toMatch(BARE_WHITE);
+  });
+
+  it('.bookmarklet-link never sets a bare white (regression: it overrode --on-accent, 2.12:1 in dark)', () => {
+    expect(ruleBody(css, '.bookmarklet-link {')).not.toMatch(BARE_WHITE);
+  });
+
+  // .score-badge and its .strong/.moderate variants never set a bare white.
+  // .weak is the one deliberate exception — its light-mode white is legal
+  // (4.83:1 on --score-weak's light value) and is verified by exact ratio,
+  // not by this blanket ban, in 'score-badge ink pairs per scheme' below.
+  it('.score-badge (the base rule) never sets a bare white', () => {
+    expect(ruleBody(css, '.score-badge {')).not.toMatch(BARE_WHITE);
+  });
+  it('.score-badge.strong never sets a bare white', () => {
+    expect(ruleBody(css, '.score-badge.strong {')).not.toMatch(BARE_WHITE);
+  });
+  it('.score-badge.moderate never sets a bare white', () => {
+    expect(ruleBody(css, '.score-badge.moderate {')).not.toMatch(BARE_WHITE);
+  });
+});
+
+// Item 5: .score-badge.strong/.moderate/.weak carried a bare `color: #fff`
+// each, which measured 1.67-1.74:1 in dark (the dark fills are pale:
+// #4ade80/#fbbf24/#f87171). Ink is per scheme, not per variant, because the
+// light fills split two ways: --score-weak (#dc2626) clears 4.5:1 with
+// white, but --score-strong (#16a34a, white 3.30:1) and --score-moderate
+// (#d97706, white 3.19:1) do not and need ink instead.
+describe('score-badge ink pairs per scheme, both directions verified by ratio', () => {
+  const ROWS = [
+    ['light .strong: ink on --score-strong', '#0F1117', '#16a34a'],
+    ['light .moderate: ink on --score-moderate', '#0F1117', '#d97706'],
+    ['light .weak: white on --score-weak', '#FFFFFF', '#dc2626'],
+    ['dark .strong: ink on --score-strong', '#0F1117', '#4ade80'],
+    ['dark .moderate: ink on --score-moderate', '#0F1117', '#fbbf24'],
+    ['dark .weak: ink on --score-weak', '#0F1117', '#f87171'],
+  ];
+  for (const [name, fg, bg] of ROWS) {
+    it(name, () => expect(ratio(fg, bg)).toBeGreaterThanOrEqual(4.5));
+  }
+
+  it('the must-fail twin: white on light --score-strong is not vacuous', () => {
+    expect(ratio('#FFFFFF', '#16a34a')).toBeLessThan(4.5);
+  });
+
+  it('the base rule sets the ink default, .weak overrides to white in light and back to ink in dark', () => {
+    expect(ruleBody(css, '.score-badge {')).toMatch(/color:\s*#0F1117/i);
+    expect(ruleBody(css, '.score-badge.weak {')).toMatch(/color:\s*#fff\b/i);
+    // The dark override lives inside the prefers-color-scheme media block
+    // and the explicit :root.dark class, mirroring how every other
+    // scheme-dependent value in this file is doubled (theme.js's file
+    // header explains why an explicit choice needs its own copy).
+    const darkSection = css.slice(css.indexOf('@media (prefers-color-scheme: dark)'));
+    expect(darkSection).toMatch(/\.score-badge\.weak\s*\{[^}]*color:\s*#0F1117/is);
+    const explicitDarkSection = css.slice(css.indexOf(':root.dark {'));
+    expect(explicitDarkSection).toMatch(/\.score-badge\.weak\s*\{[^}]*color:\s*#0F1117/is);
   });
 });
 

@@ -504,7 +504,8 @@ use of `--accent` as text is a bug** — it has never cleared AA in light mode
 on any background this site uses. Reach for `--link`. The general ink rule
 this section pins: **a fill takes `--on-accent`, never a bare white or a
 bare ink** — the fill's own scheme decides which one is legal, and only
-`--on-accent` tracks that automatically.
+`--on-accent` tracks that automatically (status badges pair their own ink
+per scheme, pinned in `houseShell.test.js`).
 
 ### Label drift-check
 

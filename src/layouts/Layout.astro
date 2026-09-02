@@ -61,7 +61,10 @@ const t = strings[lang] ?? strings.en;
         the CSS is imported from, so this script's position is what actually
         guarantees it runs first — see test/houseShell.test.js. */}
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {/* viewport-fit=cover is what makes env(safe-area-inset-bottom) resolve
+        to anything other than 0 — see .tool-nav-bar in global.css, which
+        adds that inset on top of its own padding rather than replacing it. */}
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="description" content={description} />
     {/* The house contour, tinted teal — see public/favicon.svg's header. The
         .ico is DECLARED rather than left to the browser's automatic
