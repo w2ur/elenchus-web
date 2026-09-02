@@ -88,7 +88,10 @@ main {
   width: 100%;
   max-width: 720px;
   margin: 0 auto;
-  padding: 32px 16px;
+  /* Bottom padding clears the fixed .tool-nav-bar below 768px (see the
+     header nav section below) so the last line of content is never hidden
+     behind it; the 768px+ media query there restores the plain 32px. */
+  padding: 32px 16px calc(4rem + env(safe-area-inset-bottom));
 }
 
 a {
@@ -111,6 +114,84 @@ footer {
 footer a {
   color: inherit;
   text-decoration: underline;
+}
+
+/* --- Header nav (Task 4: the contract header + mobile bottom bar) --------
+   `.house` (the lockup + nav + controls row) is per-tool layout on top of
+   house.css's shared `.house` rule — its gap only, so the tool nav and the
+   controls have room to sit beside the lockup.
+
+   ToolNav.astro's <nav> carries BOTH `.tool-nav` and `.tool-nav-bar` at
+   once (see that file's comment for why): the two blocks below are two CSS
+   treatments of the SAME element, and the cascade — not two different
+   elements — is what decides which one actually applies at a given width.
+   Order here is load-bearing: for a property declared in both blocks, the
+   LATER declaration wins on an element carrying both classes, in BOTH the
+   unqualified rules below and inside the @media block further down. */
+.house {
+  gap: 1rem;
+}
+
+.tool-nav {
+  /* Below 768px this loses to .tool-nav-bar's `display: flex` (declared
+     after it), which is what makes the bar visible on mobile at all. */
+  display: none;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.tool-nav a {
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.tool-nav a[aria-current='page'] {
+  color: var(--link);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.tool-nav-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: space-around;
+  border-top: 1px solid var(--line);
+  background: var(--bg);
+  padding: 0.5rem;
+  padding-bottom: env(safe-area-inset-bottom, 12px);
+  z-index: 40;
+}
+
+.house-controls {
+  margin-left: auto;
+  display: flex;
+  gap: 0.4rem;
+}
+
+@media (min-width: 768px) {
+  /* .tool-nav-bar first, .tool-nav second: on the shared element, .tool-nav's
+     `display: flex; position: static` below must be the LAST word for both
+     properties, overriding the fixed-bottom-bar look this same element
+     carries by default. */
+  .tool-nav-bar {
+    display: none;
+  }
+
+  .tool-nav {
+    display: flex;
+    position: static;
+    border-top: none;
+  }
+
+  main {
+    padding-bottom: 32px;
+  }
 }
 
 /* --- Analyzer (C3) --- */

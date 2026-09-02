@@ -1,0 +1,43 @@
+---
+// ToolNav.astro — the contract header's tool nav (docs/house-contract.md §1
+// in the untilt repo) and its mobile twin (§6: "The nav becomes a bottom tab
+// bar"). One <nav> carries BOTH `.tool-nav` and `.tool-nav-bar`: the pill
+// row and the fixed bottom bar are two CSS treatments of the SAME three
+// anchors below, not two copies of the markup. That is a deliberate choice,
+// not a shortcut — it is what makes "is the same three items" (see
+// test/houseShell.test.js) literally true rather than "looks the same",
+// and it means the page never carries two `<nav>` landmarks at once for a
+// screen reader to puzzle over: only one of the two classes' `display` wins
+// at any given width (global.css), so exactly one is ever in the a11y tree.
+import { strings } from '../lib/strings.js';
+
+interface Props {
+  lang?: string;
+  path?: string;
+}
+
+const { lang = 'en', path } = Astro.props;
+const t = strings[lang] ?? strings.en;
+
+const bookmarkletHref = lang === 'fr' ? '/fr/bookmarklet/' : '/bookmarklet/';
+
+// The Chrome Web Store listing, `?hl=` matching the per-language form used
+// elsewhere (see the CHROME_WEB_STORE_URL comment in Analyzer.astro). It is
+// the one item that is never "current" — it opens in a new tab, onto a page
+// this site doesn't own.
+const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/bodfmokjnmkkdobfcnfbplnbplgdbfgl?hl=${lang}`;
+
+// "Current" is checked against `strings.en.navAnalyseHref`, not against
+// `t.navAnalyseHref` — `path` is always the page's ENGLISH canonical path
+// (see twin.js's file comment), so the check must compare against the
+// English-canonical value regardless of `lang`. That also means the check
+// keeps working unchanged once sub-project 2c flips navAnalyseHref to '/'.
+const isAnalyseActive = path === strings.en.navAnalyseHref;
+const isBookmarkletActive = path === '/bookmarklet/';
+---
+
+<nav class="tool-nav tool-nav-bar" aria-label={t.navLabel}>
+  <a href={t.navAnalyseHref} aria-current={isAnalyseActive ? 'page' : undefined}>{t.navAnalyse}</a>
+  <a href={bookmarkletHref} aria-current={isBookmarkletActive ? 'page' : undefined}>{t.navBookmarklet}</a>
+  <a href={CHROME_WEB_STORE_URL} target="_blank" rel="noopener noreferrer">{t.navExtension}</a>
+</nav>

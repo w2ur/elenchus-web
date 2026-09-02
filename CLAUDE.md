@@ -121,10 +121,21 @@ hub assigns Elenchus the teal accent `#1E7A76` (`src/styles/global.css`),
 not `untilt.app`'s blue-grey. Stay in that teal family; never default to
 purple/violet/indigo (portfolio-wide rule).
 
-The header wordmark (`.house` in `Layout.astro`) links to `houseUrl` in
-`src/lib/strings.js` (`https://untilt.app/` for English,
+The header (`.house`, rendered by `src/components/HouseHeader.astro`, not
+`Layout.astro` — the layout only mounts it) follows the suite's tool-chrome
+contract (`docs/house-contract.md` in the untilt repo, §1): lockup · nav ·
+theme · language, in that fixed order, with the language toggle living in
+the header itself rather than only in the footer. The wordmark links to
+`houseUrl` in `src/lib/strings.js` (`https://untilt.app/` for English,
 `https://untilt.app/fr/` for French — a real prerendered page on the
-chapeau, not a language guess). Instrument Sans (headings, the header) and
+chapeau, not a language guess); the other-language link (header and footer
+both) is derived by `src/lib/twin.js`'s `twinFor(lang, path)`, so the two
+can't disagree about where it points. `src/components/ToolNav.astro` is the
+three-item nav — Analyse, Bookmarklet, Extension — and doubles as the
+mobile bottom bar (§6): one `<nav>` carries both `.tool-nav` and
+`.tool-nav-bar`, and CSS alone decides which look applies at a given width
+(see that file's comment for why, and `test/houseShell.test.js`'s "the
+contract header" for the pin). Instrument Sans (headings, the header) and
 DM Sans (body) are self-hosted from `public/fonts/` rather than linked from
 fonts.googleapis.com — a render-blocking Google Fonts request measured
 Lighthouse performance at 94/100, against a >=95 gate; self-hosting with

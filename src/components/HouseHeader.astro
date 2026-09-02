@@ -1,0 +1,45 @@
+---
+// HouseHeader.astro — the contract header (docs/house-contract.md §1 in the
+// untilt repo): lockup · nav · theme · language, in that fixed order. The
+// language toggle lives HERE, in the header, never only in a footer — a
+// French twin reachable only from a 12px footer link reads as English-only,
+// which is exactly the defect §1 exists to remove (the footer keeps its own
+// copy of the same link, for the crawlable path — see Layout.astro).
+//
+// The bar itself is neutral (`--bg`, `--line` border) on every page — no
+// tinted or fused header — matching §1's "the colour lives in the band
+// below it," even though this site has no hero band today.
+import { strings } from '../lib/strings.js';
+import { twinFor } from '../lib/twin.js';
+import ThemeToggle from './ThemeToggle.astro';
+import ToolNav from './ToolNav.astro';
+
+interface Props {
+  lang?: string;
+  path?: string;
+}
+
+const { lang = 'en', path } = Astro.props;
+const t = strings[lang] ?? strings.en;
+const { otherHref, otherLang, otherLabel } = twinFor(lang, path);
+---
+
+<header class="house">
+  {/* The only thing on the page that says which house it belongs to. The
+      wordmark links out to the chapeau; the tool name is not a link,
+      because it names the page you are already on. */}
+  <a class="house-mark" href={t.houseUrl}>{t.houseLabel}</a>
+  <span class="house-sep" aria-hidden="true">/</span>
+  <span class="house-tool">Elenchus</span>
+  <ToolNav lang={lang} path={path} />
+  <div class="house-controls">
+    <ThemeToggle lang={lang} />
+    {
+      otherHref && (
+        <a data-lang-toggle class="chrome-btn" href={otherHref} hreflang={otherLang} lang={otherLang}>
+          {otherLabel}
+        </a>
+      )
+    }
+  </div>
+</header>

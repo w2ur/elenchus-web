@@ -9,7 +9,8 @@
 // stylesheet" for the pin (it checks literal source order, which is why
 // this comment avoids spelling out the stylesheet's own filename).
 import { strings } from '../lib/strings.js';
-import ThemeToggle from '../components/ThemeToggle.astro';
+import { twinFor } from '../lib/twin.js';
+import HouseHeader from '../components/HouseHeader.astro';
 
 interface Props {
   title?: string;
@@ -37,9 +38,14 @@ const enHref = path ? new URL(path, Astro.site).href : null;
 const frHref = path ? new URL(path === '/' ? '/fr/' : `/fr${path}`, Astro.site).href : null;
 const canonical = lang === 'fr' ? frHref : enHref;
 
-const otherLang = lang === 'fr' ? 'en' : 'fr';
-const otherHref = lang === 'fr' ? enHref : frHref;
-const otherLabel = (strings[lang] ?? strings.en).otherLangLabel;
+// The footer's (and HouseHeader's) other-language twin — factored into
+// src/lib/twin.js so the header and the footer cannot disagree about it.
+// It is a SEPARATE computation from enHref/frHref above: those feed the
+// <link rel="alternate"> hreflang tags, which need Astro.site to produce
+// absolute URLs at build time; twinFor is a plain function with no Astro
+// context, so it carries its own copy of the site origin (see its file
+// comment) rather than sharing Astro.site.
+const { otherHref, otherLang, otherLabel } = twinFor(lang, path);
 
 // The privacy policy is LINKED, never restated here. The canonical pages live
 // in the portfolio hub because they are the only copy a user can reach — the
@@ -82,19 +88,7 @@ const t = strings[lang] ?? strings.en;
     <title>{title}</title>
   </head>
   <body>
-    <header class="house">
-      {/* The only thing on this page that says which house it belongs to.
-          The wordmark links out to the chapeau; the tool name is not a link,
-          because it names the page you are already on. */}
-      <a class="house-mark" href={t.houseUrl}>{t.houseLabel}</a>
-      <span class="house-sep" aria-hidden="true">/</span>
-      <span class="house-tool">Elenchus</span>
-      {/* Right side, for now — Task 4 moves this mount into HouseHeader.astro
-          alongside the language switch; the `margin-left: auto` below is this
-          header's own layout rule and travels with that move, not a global
-          one. */}
-      <ThemeToggle lang={lang} />
-    </header>
+    <HouseHeader lang={lang} path={path} />
     <main>
       <slot />
     </main>
@@ -120,9 +114,3 @@ const t = strings[lang] ?? strings.en;
     </footer>
   </body>
 </html>
-
-<style>
-  .house :global(.chrome-btn) {
-    margin-left: auto;
-  }
-</style>

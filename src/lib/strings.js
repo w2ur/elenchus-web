@@ -75,6 +75,17 @@ export const strings = {
     themeLight: 'Light theme',
     themeDark: 'Dark theme',
 
+    // ToolNav.astro (the contract header's nav, docs/house-contract.md §1 in
+    // the untilt repo). navLabel names the nav landmark itself — "Elenchus",
+    // the product, not translated (matches `heading` above). navAnalyseHref
+    // is `/analyze/` for now; sub-project 2c makes `/` the analyzer page and
+    // flips this value — nothing else needs to change when it does.
+    navLabel: 'Elenchus',
+    navAnalyseHref: '/analyze/',
+    navAnalyse: 'Analyse',
+    navBookmarklet: 'Bookmarklet',
+    navExtension: 'Extension',
+
     analyzeBtn: 'Analyze',
     retryBtn: 'Retry',
     newAnalysisBtn: 'Analyze again',
@@ -182,6 +193,15 @@ export const strings = {
     themeSystem: 'Thème du système',
     themeLight: 'Thème clair',
     themeDark: 'Thème sombre',
+
+    // See the EN block. navAnalyseHref carries the /fr prefix here because,
+    // unlike Layout.astro's own `path` prop, this is the actual href the
+    // reader clicks — it must land on the French analyze page.
+    navLabel: 'Elenchus',
+    navAnalyseHref: '/fr/analyze/',
+    navAnalyse: 'Analyser',
+    navBookmarklet: 'Bookmarklet',
+    navExtension: 'Extension',
 
     analyzeBtn: 'Analyser',
     retryBtn: 'Réessayer',

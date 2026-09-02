@@ -9,6 +9,11 @@ const css = readFileSync(join(__dirname, '../src/styles/global.css'), 'utf-8');
 const houseCss = readFileSync(join(__dirname, '../src/styles/house.css'), 'utf-8');
 const layout = readFileSync(join(__dirname, '../src/layouts/Layout.astro'), 'utf-8');
 const analyzer = readFileSync(join(__dirname, '../src/components/Analyzer.astro'), 'utf-8');
+// The header moved out of Layout.astro and into its own component in Task 4
+// (contract header + mobile bottom bar) — see 'the header renders the house
+// wordmark' below, and the 'the contract header' describe block further
+// down, which reads this same file under its own local name.
+const houseHeader = readFileSync(join(__dirname, '../src/components/HouseHeader.astro'), 'utf-8');
 
 // Negative guards below must read the RULES, not the prose. house.css's header
 // names the rules it deliberately omits, so a guard run over the raw file
@@ -143,8 +148,11 @@ describe('house shell', () => {
   });
 
   it('the header renders the house wordmark', () => {
-    expect(layout).toMatch(/<header/);
-    expect(layout).toMatch(/houseUrl/);
+    // Moved from Layout.astro to HouseHeader.astro in Task 4 (see the
+    // 'Layout renders the header component, not an inline header' guard in
+    // 'the contract header' below, which pins the other side of this move).
+    expect(houseHeader).toMatch(/<header/);
+    expect(houseHeader).toMatch(/houseUrl/);
   });
 
   // Regression: the theme toggle (test/theme.test.js) applies a stored
@@ -162,6 +170,35 @@ describe('house shell', () => {
     expect(scriptPos).toBeGreaterThan(-1);
     expect(cssPos).toBeGreaterThan(-1);
     expect(scriptPos).toBeLessThan(cssPos);
+  });
+});
+
+describe('the contract header', () => {
+  const layout = readFileSync('src/layouts/Layout.astro', 'utf-8');
+  const header = readFileSync('src/components/HouseHeader.astro', 'utf-8');
+  it('orders lockup · nav · theme · language', () => {
+    const i = (s) => header.indexOf(s);
+    expect(i('class="house-mark"')).toBeLessThan(i('<ToolNav'));
+    expect(i('<ToolNav')).toBeLessThan(i('<ThemeToggle'));
+    expect(i('<ThemeToggle')).toBeLessThan(i('data-lang-toggle'));
+  });
+  it('the language toggle is in the header and points at the twin page', () => {
+    expect(header).toMatch(/data-lang-toggle[^>]*href=\{otherHref\}/);
+    expect(header).toMatch(/hreflang=\{otherLang\}/);
+  });
+  it('nav has exactly three items and the extension one opens the store', () => {
+    const nav = readFileSync('src/components/ToolNav.astro', 'utf-8');
+    expect(nav.match(/<a /g)?.length).toBe(3);
+    expect(nav).toMatch(/chromewebstore\.google\.com/);
+    expect(nav).toMatch(/hl=\$\{lang\}|hl=\{lang\}/);
+  });
+  it('the mobile bar exists, is the same three items, and is hidden on desktop', () => {
+    expect(css).toMatch(/\.tool-nav-bar\s*\{[^}]*position:\s*fixed;[^}]*bottom:\s*0/s);
+    expect(css).toMatch(/@media \(min-width: 768px\)\s*\{[^}]*\.tool-nav-bar\s*\{[^}]*display:\s*none/s);
+    expect(css).toMatch(/padding-bottom:\s*env\(safe-area-inset-bottom/);
+  });
+  it('Layout renders the header component, not an inline header', () => {
+    expect(layout).toMatch(/<HouseHeader /); expect(layout).not.toMatch(/<header class="house">/);
   });
 });
 
