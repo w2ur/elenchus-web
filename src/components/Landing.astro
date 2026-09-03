@@ -1,12 +1,15 @@
 ---
-// The landing page, shared by / and /fr/ so the two languages cannot drift
-// structurally — only the copy (src/lib/pageCopy.js) differs.
+// The landing content below the analyzer, shared by / and /fr/ so the two
+// languages cannot drift structurally — only the copy (src/lib/pageCopy.js)
+// differs.
 //
-// This is the site's SEO surface and, for most visitors, the first thing
-// they read. Two things earn their place above everything else: what the
-// tool does, and that it does NOT fact-check — every reasoning tool gets
-// mistaken for a fact-checker, and a visitor holding that expectation reads
-// a good score on a well-argued falsehood as a defect.
+// Sub-project 2c, Task 3 moved the page's h1, intro and "it does not
+// fact-check" paragraph into ToolHero.astro — the front page is now the
+// analyzer itself, band first, and CLAUDE.md's rule that the fact-check
+// claim precede every call to action means it belongs there, above the
+// paste box, not further down a page it no longer opens. What is left here
+// is the rest of the landing content: the three ways to use the tool, what
+// you get back, the free-tier limits and the privacy/house links.
 import { landingCopy } from '../lib/pageCopy.js';
 import { strings } from '../lib/strings.js';
 
@@ -33,12 +36,6 @@ const ways = C.ways.map((way) => ({
 
 const HOUSE_URL = 'https://untilt.app/';
 ---
-
-<h1>{C.heading}</h1>
-<p class="subtitle">{C.intro}</p>
-
-<h2>{C.notFactCheckHeading}</h2>
-<p>{C.notFactCheck}</p>
 
 <h2>{C.waysHeading}</h2>
 <ul class="ways">

@@ -17,9 +17,19 @@ interface Props {
   proxyUrl: string;
   webKey: string;
   turnstileSiteKey: string;
+  /**
+   * False on the front page (sub-project 2c, Task 3): ToolHero already
+   * renders the page's one <h1> (the "*hold up?*" title) and its lede
+   * already carries this component's own T.heading/T.subtitle in longer
+   * form, so rendering both would put two <h1>s on one page and repeat the
+   * same claim twice back to back. /analyze and /fr/analyze still compose
+   * Analyzer with no ToolHero above it, so they keep the default (true) and
+   * still have exactly one heading of their own.
+   */
+  showHeading?: boolean;
 }
 
-const { lang, proxyUrl, webKey, turnstileSiteKey } = Astro.props;
+const { lang, proxyUrl, webKey, turnstileSiteKey, showHeading = true } = Astro.props;
 const T = strings[lang];
 
 // The free-tier notice's "use your own API key" link must point somewhere
@@ -40,8 +50,14 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
 // "15000" is three chances to drift.
 ---
 
-<h1>{T.heading}</h1>
-<p class="subtitle">{T.subtitle}</p>
+{
+  showHeading && (
+    <>
+      <h1>{T.heading}</h1>
+      <p class="subtitle">{T.subtitle}</p>
+    </>
+  )
+}
 
 <p class="notice" id="free-tier-notice">
   {T.freeTierNoticeText}<a

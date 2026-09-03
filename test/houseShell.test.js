@@ -15,6 +15,14 @@ const analyzer = readFileSync(join(__dirname, '../src/components/Analyzer.astro'
 // wordmark' below, and the 'the contract header' describe block further
 // down, which reads this same file under its own local name.
 const houseHeader = readFileSync(join(__dirname, '../src/components/HouseHeader.astro'), 'utf-8');
+// Task 3: the front page composes the hero band + analyzer + landing.
+const indexPage = readFileSync(join(__dirname, '../src/pages/index.astro'), 'utf-8');
+const frIndexPage = readFileSync(join(__dirname, '../src/pages/fr/index.astro'), 'utf-8');
+const bookmarkletInstall = readFileSync(
+  join(__dirname, '../src/components/BookmarkletInstall.astro'),
+  'utf-8',
+);
+const netlifyToml = readFileSync(join(__dirname, '../netlify.toml'), 'utf-8');
 
 // Negative guards below must read the RULES, not the prose. house.css's header
 // names the rules it deliberately omits, so a guard run over the raw file
@@ -605,5 +613,87 @@ describe('export row and print', () => {
   it('print hides chrome, Turnstile and the paste box', () => {
     const print = css.slice(css.indexOf('@media print'));
     for (const sel of ['.house', '.tool-nav-bar', '#turnstile-container', '#analyze-form', '.export-row']) expect(print).toMatch(new RegExp(`${sel.replace(/[.#]/g, '\\$&')}[^}]*display:\\s*none`));
+  });
+  // Task 3: ToolHero.astro now exists, so the print sheet must neutralise its
+  // band — otherwise a printed page burns the hero's dark fill (and the
+  // white-on-band text riding on it) straight onto paper.
+  it('print neutralises the hero band to plain text on white', () => {
+    const print = css.slice(css.indexOf('@media print'));
+    expect(print).toMatch(/\.tool-hero\s*\{[^}]*background:\s*none[^}]*color:\s*var\(--text\)/);
+  });
+});
+
+describe('the front page is the analyzer', () => {
+  it('composes ToolHero then Analyzer then the landing sections, in both languages', () => {
+    for (const src of [indexPage, frIndexPage]) {
+      const i = (s) => src.indexOf(s);
+      expect(i('<ToolHero')).toBeGreaterThan(0);
+      expect(i('<ToolHero')).toBeLessThan(i('<Analyzer'));
+      expect(i('<Analyzer')).toBeLessThan(i('<Landing'));
+    }
+  });
+
+  it('the fact-check claim is the hero lede — above the textarea', () => {
+    const hero = readFileSync(join(__dirname, '../src/components/ToolHero.astro'), 'utf-8');
+    expect(hero).toMatch(/lede/);
+    const copy = readFileSync(join(__dirname, '../src/lib/pageCopy.js'), 'utf-8');
+    expect(copy).toMatch(/heroLede:\s*'Elenchus does not check facts/);
+    expect(copy).toMatch(/heroLede:\s*'Elenchus ne vérifie pas les faits/);
+  });
+
+  it('the hero title carries one emphasised word per language', () => {
+    const copy = readFileSync(join(__dirname, '../src/lib/pageCopy.js'), 'utf-8');
+    const matches = [...copy.matchAll(/heroTitle:\s*'([^']+)'/g)];
+    expect(matches.length).toBe(2);
+    for (const m of matches) expect((m[1].match(/\*/g) ?? []).length).toBe(2);
+  });
+
+  it('/analyze is a forced 301 to the root in both languages, query preserved (no explicit query in the rule)', () => {
+    expect(netlifyToml).toMatch(
+      /from = "\/analyze"\s*\n\s*to = "\/"\s*\n\s*status = 301\s*\n\s*force = true/,
+    );
+    expect(netlifyToml).toMatch(
+      /from = "\/fr\/analyze"\s*\n\s*to = "\/fr\/"\s*\n\s*status = 301\s*\n\s*force = true/,
+    );
+    expect(netlifyToml).not.toMatch(/query\s*=/);
+  });
+
+  // The plan names a `scripts/build-bookmarklet.mjs` file that does not
+  // exist in this repo (no such npm script either — see package.json). The
+  // real build is src/lib/buildBookmarklet.js, an esbuild wrapper
+  // parametrised by whatever URL its caller passes in — there is no
+  // hardcoded analyzer URL inside it to grep for. The actual call site,
+  // and the thing that must change so the bookmarklet targets the root, is
+  // BookmarkletInstall.astro's `analyzePath` constant.
+  it('new bookmarklets target the root and the nav says so', () => {
+    expect(strings.en.navAnalyseHref).toBe('/');
+    expect(strings.fr.navAnalyseHref).toBe('/fr/');
+    expect(bookmarkletInstall).toMatch(/analyzePath\s*=\s*lang === 'fr' \? '\/fr\/' : '\/'/);
+  });
+
+  it('the analyze pages carry a noindex meta now that they only exist to redirect', () => {
+    const analyze = readFileSync(join(__dirname, '../src/pages/analyze.astro'), 'utf-8');
+    const frAnalyze = readFileSync(join(__dirname, '../src/pages/fr/analyze.astro'), 'utf-8');
+    for (const src of [analyze, frAnalyze]) expect(src).toMatch(/noindex/);
+    expect(layout).toMatch(/noindex/);
+  });
+
+  // Regression: composing ToolHero (its own <h1>) with Analyzer's UNCHANGED
+  // <h1>{T.heading}</h1> would put two <h1>s on the front page — a real
+  // heading-hierarchy defect, caught by actually building the page (RED:
+  // `grep -c '<h1' dist/index.html` was 2) rather than by any of the
+  // source-level checks above, none of which look at heading count. Fixed
+  // with an opt-out prop rather than deleting Analyzer's own heading,
+  // because /analyze and /fr/analyze still compose Analyzer with no
+  // ToolHero above it and still need exactly one heading of their own.
+  it('the front page renders exactly one <h1> (ToolHero\'s), not a second one from Analyzer', () => {
+    expect(analyzer).toMatch(/showHeading\s*&&/);
+    for (const src of [indexPage, frIndexPage]) expect(src).toMatch(/showHeading=\{false\}/);
+    const analyze = readFileSync(join(__dirname, '../src/pages/analyze.astro'), 'utf-8');
+    const frAnalyze = readFileSync(join(__dirname, '../src/pages/fr/analyze.astro'), 'utf-8');
+    // /analyze and /fr/analyze carry no ToolHero, so they must keep
+    // Analyzer's default (showHeading unset -> true) rather than also
+    // passing showHeading={false}, which would leave them with none.
+    for (const src of [analyze, frAnalyze]) expect(src).not.toMatch(/showHeading/);
   });
 });

@@ -1,11 +1,29 @@
 ---
+// Same reasoning as src/pages/index.astro (its EN twin) — see that file's
+// header comment.
+import Analyzer from '../../components/Analyzer.astro';
 import Landing from '../../components/Landing.astro';
+import ToolHero from '../../components/ToolHero.astro';
 import Layout from '../../layouts/Layout.astro';
+import { ELENCHUS_PROXY_URL, ELENCHUS_WEB_KEY, TURNSTILE_SITE_KEY } from '../../lib/config.js';
 import { landingCopy } from '../../lib/pageCopy.js';
 
 const C = landingCopy.fr;
 ---
 
 <Layout title={C.title} description={C.description} lang="fr" path="/">
+  <ToolHero
+    eyebrow={C.heroEyebrow}
+    title={C.heroTitle}
+    lede={C.heroLede}
+    chips={C.heroChips}
+  />
+  <Analyzer
+    lang="fr"
+    proxyUrl={ELENCHUS_PROXY_URL}
+    webKey={ELENCHUS_WEB_KEY}
+    turnstileSiteKey={TURNSTILE_SITE_KEY}
+    showHeading={false}
+  />
   <Landing lang="fr" />
 </Layout>

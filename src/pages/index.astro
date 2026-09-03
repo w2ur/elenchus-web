@@ -1,11 +1,37 @@
 ---
+// The front page IS the analyzer (sub-project 2c, Task 3): the ToolHero
+// band (title + the "does not fact-check" lede + chips), the paste box
+// beneath it, then the rest of the landing content. /analyze stays as a
+// thin page (test/configFailLoud.test.js hard-codes it) and now forced-301s
+// here — see netlify.toml.
+import Analyzer from '../components/Analyzer.astro';
 import Landing from '../components/Landing.astro';
+import ToolHero from '../components/ToolHero.astro';
 import Layout from '../layouts/Layout.astro';
+// Same reasoning as src/pages/analyze.astro: imported in frontmatter, which
+// runs in Node during `astro build`, so a missing PUBLIC_ env var fails the
+// BUILD rather than a visitor's browser. The front page is now the surface
+// most visitors land on, so it needs this gate at least as much as
+// /analyze does.
+import { ELENCHUS_PROXY_URL, ELENCHUS_WEB_KEY, TURNSTILE_SITE_KEY } from '../lib/config.js';
 import { landingCopy } from '../lib/pageCopy.js';
 
 const C = landingCopy.en;
 ---
 
 <Layout title={C.title} description={C.description} lang="en" path="/">
+  <ToolHero
+    eyebrow={C.heroEyebrow}
+    title={C.heroTitle}
+    lede={C.heroLede}
+    chips={C.heroChips}
+  />
+  <Analyzer
+    lang="en"
+    proxyUrl={ELENCHUS_PROXY_URL}
+    webKey={ELENCHUS_WEB_KEY}
+    turnstileSiteKey={TURNSTILE_SITE_KEY}
+    showHeading={false}
+  />
   <Landing lang="en" />
 </Layout>

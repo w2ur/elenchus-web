@@ -18,7 +18,13 @@ const { lang } = Astro.props;
 const C = bookmarkletCopy[lang];
 const T = strings[lang];
 
-const analyzePath = lang === 'fr' ? '/fr/analyze' : '/analyze';
+// Sub-project 2c, Task 3: the analyzer moved from /analyze to the front
+// page, so the bookmarklet's target — baked into the built `javascript:`
+// URL as its postMessage origin and its launch/fragment URL — moves with
+// it. Already ends in a trailing slash (unlike the old '/analyze'/
+// '/fr/analyze' constants), so the fallback link below no longer appends
+// one of its own.
+const analyzePath = lang === 'fr' ? '/fr/' : '/';
 const analyzeUrl = new URL(analyzePath, Astro.site).href;
 
 // Runs in Node during `astro build`. It throws on a non-absolute analyzer
@@ -62,7 +68,7 @@ const bookmarkletHref = await buildBookmarklet(analyzeUrl);
 
 <h2>{C.fallbackHeading}</h2>
 <p>
-  {C.fallbackText}<a href={`${analyzePath}/`}>{C.fallbackLink}</a>{C.fallbackEnd}
+  {C.fallbackText}<a href={analyzePath}>{C.fallbackLink}</a>{C.fallbackEnd}
 </p>
 
 <h2>{C.privacyHeading}</h2>

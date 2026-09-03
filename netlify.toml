@@ -6,3 +6,22 @@
   # Netlify's own cap; keep in sync with the "Node 24 max" rule in CLAUDE.md —
   # never point this at a local Node newer than what Netlify offers.
   NODE_VERSION = "24"
+
+# Sub-project 2c, Task 3: /analyze moved to the front page. `force = true`
+# because both paths also resolve to real files under dist/ (the pages
+# still exist, kept thin, so test/configFailLoud.test.js's hard-coded env
+# gate keeps working) — without `force`, Netlify's own asset match would win
+# over this redirect and the old page would keep serving instead of
+# forwarding. No `query` clause: the bookmarklet's `?src=bm` launch param and
+# any other query string ride along unmodified by default.
+[[redirects]]
+  from = "/analyze"
+  to = "/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/fr/analyze"
+  to = "/fr/"
+  status = 301
+  force = true

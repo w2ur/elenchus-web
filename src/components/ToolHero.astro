@@ -1,0 +1,53 @@
+---
+// The band at the top of the front page (sub-project 2c, Task 3). This is
+// where CLAUDE.md's "it does not fact-check" claim lives now: the front
+// page IS the analyzer, so the claim that used to open the landing content
+// further down is the hero's lede instead — above the paste box, before any
+// call to action, per the rule that this claim must precede every one.
+//
+// `title` carries exactly one `*word*` marker (src/lib/pageCopy.js
+// heroTitle), turned into <em> by emTitle — see that file's header for why
+// `set:html` is safe here: emTitle escapes everything it did not itself
+// wrap in <em>, so this can never render anything the copy did not put
+// there.
+//
+// The five contour paths in the background SVG are the same house-bloom
+// rings Analyzer.astro's loading state draws (src/styles/house.css), reused
+// here as a static, decorative watermark rather than the looping wait
+// animation — hence a different class name (.tool-hero-rings) and no
+// stroke-dasharray/animation. aria-hidden: it carries no information a
+// screen reader needs, the same call CLAUDE.md documents for the bloom.
+import { emTitle } from '../lib/emTitle.js';
+
+interface Props {
+  eyebrow: string;
+  title: string;
+  lede: string;
+  chips: string[];
+}
+
+const { eyebrow, title, lede, chips } = Astro.props;
+---
+
+<section class="tool-hero" aria-labelledby="hero-title">
+  <svg
+    class="tool-hero-rings"
+    viewBox="0 0 400 400"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+  >
+    <path d="M200 380C200 380 60 340 40 220C20 100 120 40 200 20C280 0 380 60 360 180C340 300 200 380 200 380Z" />
+    <path d="M200 340C200 340 90 305 75 210C60 115 140 65 200 50C260 35 340 85 325 180C310 275 200 340 200 340Z" />
+    <path d="M200 300C200 300 115 270 105 200C95 130 155 90 200 80C245 70 305 110 295 180C285 250 200 300 200 300Z" />
+    <path d="M200 260C200 260 140 240 133 190C126 140 165 115 200 108C235 101 274 130 268 182C262 234 200 260 200 260Z" />
+    <path d="M200 225C200 225 162 212 158 185C154 158 175 140 200 135C225 130 246 150 243 178C240 206 200 225 200 225Z" />
+  </svg>
+  <div class="tool-hero-inner">
+    <p class="eyebrow">{eyebrow}</p>
+    <h1 id="hero-title" set:html={emTitle(title)} />
+    <p class="lede">{lede}</p>
+    <ul class="chips">
+      {chips.map((c) => <li>{c}</li>)}
+    </ul>
+  </div>
+</section>

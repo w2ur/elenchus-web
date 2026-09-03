@@ -32,18 +32,28 @@ fixed bottom bar below 768px.
 Instrument Sans and DM Sans, self-hosted under `public/fonts/`, are both
 SIL Open Font License 1.1 — see `public/fonts/OFL.txt`.
 
-**Status:** three ways in, in both languages.
+**Status:** three ways in, in both languages. The front page is the
+analyzer: a ToolHero band (title + the "does not fact-check" disclaimer as
+its lede) directly above the paste box, then the rest of the landing content
+below.
 
 | Page | English | French |
 |---|---|---|
-| Landing | `/` | `/fr/` |
-| Paste analyzer | `/analyze` | `/fr/analyze` |
+| Front page = analyzer | `/` | `/fr/` |
+| `/analyze` | 301 → `/` | 301 → `/fr/` |
 | Bookmarklet | `/bookmarklet` | `/fr/bookmarklet` |
 
+`/analyze` and `/fr/analyze` still exist as real pages under
+`src/pages/` — `test/configFailLoud.test.js` hard-codes them as the two
+files that import `src/lib/config.js` from frontmatter — but they carry a
+`noindex` meta and a forced Netlify redirect (`netlify.toml`) sends every
+visitor and the bookmarklet straight to the front page instead.
+
 The bookmarklet takes the page you are reading — or the passage you selected —
-and opens the analyzer with it already filled in. It is built at build time
-from `src/lib/bookmarkletSource.js`, so it shares its extraction and handoff
-code with the site itself rather than being a hand-minified copy.
+and opens the analyzer (the front page) with it already filled in. It is
+built at build time from `src/lib/bookmarkletSource.js`, so it shares its
+extraction and handoff code with the site itself rather than being a
+hand-minified copy.
 
 A Content-Security-Policy does **not** stop it: measured on github.com, whose
 `script-src` carries no `'unsafe-inline'`. Chrome implements the CSP 1.0
@@ -86,11 +96,14 @@ it renders, and whether Retry is offered — see `CLAUDE.md`, "Failure-state
 copy"), `src/lib/proxyClient.js` (the Worker call — in particular that an
 unparseable or wrong-shaped 2xx body is a failure, never a result),
 `test/configFailLoud.test.js` (the build-time env gate, which nothing else
-can catch), and `test/exportMarkdown.test.js` (`src/lib/exportMarkdown.js`,
+can catch), `test/exportMarkdown.test.js` (`src/lib/exportMarkdown.js`,
 the Markdown export of a result — property-tested with `fast-check` that
 every quote line stays blockquoted and every model string survives verbatim
-modulo the line-start escape). There is no UI/e2e test runner — the analyzer
-flow itself is exercised manually and by `npm run build`.
+modulo the line-start escape), and `test/emTitle.test.js`
+(`src/lib/emTitle.js`, the hero title's one-`*word*`-emphasis marker —
+including that it escapes HTML before ever inserting `<em>`, which is what
+makes `ToolHero.astro`'s `set:html` safe). There is no UI/e2e test runner —
+the analyzer flow itself is exercised manually and by `npm run build`.
 
     npm run check:labels-sync
 

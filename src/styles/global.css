@@ -712,11 +712,92 @@ main a {
   margin-top: 1.25rem;
 }
 
+/* --- ToolHero: the band atop the front page (sub-project 2c, Task 3) ------
+   --band/--hero-fg/--hero-muted come from house.css, scheme-invariant so
+   this band looks the same in light and dark (see house.css's comment on
+   --band). The rings are a static decorative watermark, not the looping
+   house-bloom wait animation Analyzer.astro's loading state draws — same
+   five contour paths, but stroke fixed to white and no dasharray/animation,
+   because a resting hero has nothing to signal progress on. */
+.tool-hero {
+  position: relative;
+  overflow: hidden;
+  background: var(--band);
+  color: var(--hero-fg);
+  margin: 0 -1rem;
+  padding: 2.5rem 1rem 3rem;
+}
+
+.tool-hero-inner {
+  max-width: 48rem;
+  margin: 0 auto;
+  position: relative;
+}
+
+.tool-hero .eyebrow,
+.tool-hero .lede {
+  color: var(--hero-muted);
+}
+
+.tool-hero h1 {
+  font-family: var(--face-display);
+  font-weight: 400;
+  font-size: clamp(2.5rem, 7vw, 4.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  margin: 0.25rem 0 1rem;
+}
+
+.tool-hero .lede {
+  max-width: 38rem;
+  margin: 0 0 1.25rem;
+}
+
+.tool-hero .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tool-hero .chips li {
+  background: #fff;
+  color: #0f1117;
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  font: 600 0.75rem/1 'Instrument Sans', sans-serif;
+}
+
+.tool-hero-rings {
+  position: absolute;
+  right: -22%;
+  bottom: -62%;
+  width: 55%;
+  max-width: 560px;
+  aspect-ratio: 1;
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+.tool-hero-rings path {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.5;
+  /* Same reasoning as .house-bloom-ring: without this, stroke-width
+     resolves in the 400-unit viewBox's user units and scales down with the
+     SVG, rendering an invisible haze instead of a visible ring. */
+  vector-effect: non-scaling-stroke;
+}
+
 /* A reader who prints (or "Save as PDF"s) a result wants the analysis, not
    the site around it: the house header/nav, the Turnstile widget and the
    paste form are all either meaningless on paper or already spent. The
-   .tool-hero neutralise rule is Task 3's — that component doesn't exist on
-   this branch yet — so it is intentionally absent here and added there. */
+   hero band is the same story from a different cause — its dark fill and
+   white-on-band text would burn ink for a decorative watermark and reduce
+   the actual title to low-contrast paper: neutralised to plain text on
+   white instead. */
 @media print {
   .house,
   .tool-nav-bar,
@@ -725,6 +806,15 @@ main a {
   .export-row,
   footer,
   #free-tier-notice {
+    display: none;
+  }
+
+  .tool-hero {
+    background: none;
+    color: var(--text);
+  }
+
+  .tool-hero-rings {
     display: none;
   }
 

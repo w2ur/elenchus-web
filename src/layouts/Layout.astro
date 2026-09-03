@@ -17,6 +17,14 @@ interface Props {
    * rather than emitted wrong.
    */
   path?: string;
+  /**
+   * True on a page that exists only to be redirected away from (Netlify's
+   * forced 301 does that at the edge, so a crawler would only ever see this
+   * meta if it somehow reached the origin page directly — belt and braces).
+   * Sub-project 2c, Task 3: /analyze and /fr/analyze became this once the
+   * front page took over as the analyzer.
+   */
+  noindex?: boolean;
 }
 
 const {
@@ -24,6 +32,7 @@ const {
   description = 'Paste any text and get a structured analysis of its logical flaws, reasoning score and strengths.',
   lang = 'en',
   path,
+  noindex = false,
 } = Astro.props;
 
 const enHref = path ? new URL(path, Astro.site).href : null;
@@ -66,6 +75,7 @@ const t = strings[lang] ?? strings.en;
         adds that inset on top of its own padding rather than replacing it. */}
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex" />}
     {/* The house contour, tinted teal — see public/favicon.svg's header. The
         .ico is DECLARED rather than left to the browser's automatic
         /favicon.ico probe, so the fallback is a deliberate file and not

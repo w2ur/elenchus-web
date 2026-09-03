@@ -173,22 +173,32 @@ output, so the stored choice never flashes the wrong scheme (pinned by
 `https://william.revah.paris` is in `src/layouts/Layout.astro`; do not
 duplicate it elsewhere.
 
-The analyzer UI (paste box, Turnstile widget, results panel, the enum clamp
-on model output) lives at `src/pages/analyze.astro` and
-`src/pages/fr/analyze.astro`, sharing markup and client wiring via
-`src/components/Analyzer.astro`. The bookmarklet install page is
+The front page (`src/pages/index.astro` + `src/pages/fr/index.astro`) IS the
+analyzer, since sub-project 2c: `<ToolHero>` (band, title, the "does not
+fact-check" lede, chips), then `<Analyzer>` (paste box, Turnstile widget,
+results panel, the enum clamp on model output), then `<Landing>` (the
+remaining ways-to-use-it / what-you-get / limits / privacy content).
+`src/pages/analyze.astro` and `src/pages/fr/analyze.astro` still exist —
+`test/configFailLoud.test.js` hard-codes them as the build-time env gate —
+but now carry a `noindex` meta and a forced Netlify 301 to the front page
+(`netlify.toml`); they compose the same `Analyzer` component with no
+`ToolHero` above it. The bookmarklet install page is
 `src/pages/bookmarklet.astro` + `src/pages/fr/bookmarklet.astro` over
-`src/components/BookmarkletInstall.astro`. `src/lib/clamp.js`,
-`src/lib/render.js` and `src/lib/strings.js` hold the testable logic. The
-landing page is `src/pages/index.astro` + `src/pages/fr/index.astro` over
-`src/components/Landing.astro`.
+`src/components/BookmarkletInstall.astro`, and its built `javascript:` URL
+now targets the front page, not `/analyze`. `src/lib/clamp.js`,
+`src/lib/render.js`, `src/lib/strings.js` and `src/lib/emTitle.js` (the hero
+title's one-emphasised-word marker) hold the testable logic.
 
-**The landing page says "it does not fact-check" before it says anything
+**The front page says "it does not fact-check" before it says anything
 about how to use the tool.** Every reasoning tool gets mistaken for a
 fact-checker, and a visitor holding that expectation reads a good score on a
 well-argued falsehood as a defect rather than as the tool doing its job.
-That paragraph is the page's load-bearing claim; do not demote it below the
-calls to action.
+That claim is `ToolHero`'s lede (`pageCopy.js`'s `heroLede`) — it is the
+page's load-bearing claim and sits above the paste box, before any call to
+action; do not demote it below one. `Analyzer.astro`'s own `<h1>`/subtitle
+are suppressed on the front page (`showHeading={false}`) precisely so this
+lede is the thing a visitor reads first, not a second heading repeating the
+same claim in shorter form right below it.
 
 Measured with Lighthouse against the local preview build: SEO,
 accessibility and best-practices all **100** on `/` and `/fr/`. The run was

@@ -22,17 +22,17 @@ export const landingCopy = {
     description:
       'Paste any text and get a structured analysis of its reasoning: where the logic breaks, how strong the case is, and what it gets right. Elenchus examines reasoning — it does not fact-check.',
 
-    heading: 'Does this argument hold up?',
-    intro:
-      'Elenchus reads a text and reports how its reasoning holds together: where the logic breaks, how strong the case is, and what it gets right.',
-
-    // The single most important paragraph on this page. Every reasoning
-    // tool gets mistaken for a fact-checker, and a visitor who expects one
-    // will read a good score on a well-argued falsehood as the tool being
-    // wrong. Said before the calls to action, not in a footnote.
-    notFactCheckHeading: 'It does not fact-check',
-    notFactCheck:
-      'Elenchus does not know whether a claim is true. It examines whether the conclusions follow from what came before — circular reasoning, false dilemmas, unsupported leaps, loaded framing. A tight argument built on false premises will score well here, and a true conclusion argued badly will not. That is the tool working, not failing.',
+    // The page's h1/intro/"it does not fact-check" paragraph used to open
+    // this page (Landing.astro). Sub-project 2c, Task 3 moved them into the
+    // ToolHero band instead (heroTitle/heroLede below) — the front page is
+    // now the analyzer, and CLAUDE.md's rule that this claim precede every
+    // call to action means it belongs in the hero, above the paste box, not
+    // in a heading further down a page that no longer opens with it.
+    heroEyebrow: 'For arguments',
+    heroTitle: 'Does this argument *hold up?*',
+    heroLede:
+      'Elenchus does not check facts. It checks whether the conclusions follow from what came before — circular reasoning, false dilemmas, unsupported leaps, loaded framing. A tight argument on false premises scores well here; that is the tool working, not failing.',
+    heroChips: ['Any text', 'Nothing to install', 'No account'],
 
     getHeading: 'What you get back',
     getItems: [
@@ -85,15 +85,13 @@ export const landingCopy = {
     description:
       'Collez un texte et obtenez une analyse structurée de son raisonnement : où la logique cède, la solidité de l’ensemble, et ce qui tient. Elenchus examine le raisonnement — il ne vérifie pas les faits.',
 
-    heading: 'Cet argument tient-il debout ?',
-    intro:
-      'Elenchus lit un texte et rend compte de la tenue de son raisonnement : où la logique cède, la solidité de l’ensemble, et ce qu’il fait bien.',
-
-    // Voir le commentaire du bloc `en` : c'est le paragraphe le plus
-    // important de la page.
-    notFactCheckHeading: 'Il ne vérifie pas les faits',
-    notFactCheck:
-      'Elenchus ignore si une affirmation est vraie. Il examine si les conclusions découlent de ce qui les précède — raisonnement circulaire, faux dilemmes, sauts non justifiés, cadrage orienté. Un argument serré bâti sur des prémisses fausses obtiendra un bon score ; une conclusion vraie mal défendue, un mauvais. C’est l’outil qui fonctionne, pas qui échoue.',
+    // Voir le commentaire du bloc `en` : ce contenu vit désormais dans le
+    // bandeau ToolHero (heroTitle/heroLede), pas dans un titre plus bas.
+    heroEyebrow: 'Pour les arguments',
+    heroTitle: 'Cet argument *tient-il debout ?*',
+    heroLede:
+      'Elenchus ne vérifie pas les faits. Il examine si les conclusions découlent de ce qui les précède — raisonnement circulaire, faux dilemmes, sauts non justifiés, cadrage orienté. Un argument serré sur des prémisses fausses obtient un bon score ici ; c’est l’outil qui fonctionne, pas qui échoue.',
+    heroChips: ['Tout texte', 'Rien à installer', 'Sans compte'],
 
     getHeading: 'Ce que vous obtenez',
     getItems: [

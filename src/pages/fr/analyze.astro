@@ -11,7 +11,10 @@ const description =
   "Collez un texte et obtenez une analyse structurée de ses failles logiques, un score de raisonnement et ses points forts.";
 ---
 
-<Layout title={title} description={description} lang="fr" path="/analyze/">
+{/* noindex: sub-project 2c, Task 3 made /fr/ the analyzer and this page a
+    forced 301 to it (netlify.toml) — kept thin per
+    test/configFailLoud.test.js, which hard-codes this file. */}
+<Layout title={title} description={description} lang="fr" path="/analyze/" noindex>
   <Analyzer
     lang="fr"
     proxyUrl={ELENCHUS_PROXY_URL}
