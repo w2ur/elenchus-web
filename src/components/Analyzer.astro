@@ -462,6 +462,15 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
     }
   }
 
+  // Tracks the single pending "Copied" -> label reset, so a second click
+  // inside the 1500ms window cannot capture the wrong original: the old code
+  // read exportCopyBtn.textContent at click time, and a double-click's
+  // second handler read back "Copied" itself (the first handler's write),
+  // leaving the button stuck on "Copied" forever once its own timer fired.
+  // Resetting to the known constant (T.exportCopy) rather than a captured
+  // "original" removes the possibility entirely.
+  let copyResetTimer = null;
+
   exportCopyBtn.addEventListener('click', async () => {
     if (!lastResult) return;
     const md = toMarkdown(lastResult, { lang: PAGE_LANG, date: new Date() });
@@ -470,23 +479,39 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
     } catch {
       copyViaHiddenTextarea(md);
     }
-    const original = exportCopyBtn.textContent;
+    clearTimeout(copyResetTimer);
     exportCopyBtn.textContent = T.exportCopied;
-    setTimeout(() => {
-      exportCopyBtn.textContent = original;
+    copyResetTimer = setTimeout(() => {
+      exportCopyBtn.textContent = T.exportCopy;
+      copyResetTimer = null;
     }, 1500);
   });
 
   exportDownloadBtn.addEventListener('click', () => {
     if (!lastResult) return;
-    const md = toMarkdown(lastResult, { lang: PAGE_LANG, date: new Date() });
+    // One Date shared by the document's own title line and the filename —
+    // two separate `new Date()` calls could straddle midnight and disagree
+    // with each other (both format via toISOString()'s UTC day, so a reader
+    // east of UTC could otherwise get a filename dated "yesterday" against a
+    // title dated "today", or vice versa).
+    const date = new Date();
+    const md = toMarkdown(lastResult, { lang: PAGE_LANG, date });
     const blob = new Blob([md], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
     const a = Object.assign(document.createElement('a'), {
-      href: URL.createObjectURL(blob),
-      download: exportFilename(new Date()),
+      href: url,
+      download: exportFilename(date),
     });
+    // Appended to the DOM before click(): a detached anchor's click() is the
+    // form Safari is known to drop a download from. Revoking the object URL
+    // is deferred past this task (setTimeout 0) rather than run synchronously
+    // right after click() — revoking before the browser has actually started
+    // reading the blob is the same class of "looks fine, drops on Safari"
+    // bug the detached-anchor fix addresses.
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(a.href);
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
   });
 
   exportPrintBtn.addEventListener('click', () => {
