@@ -49,16 +49,17 @@ export const strings = {
     freeTierNoticeLink: 'use your own API key in the Elenchus extension',
     freeTierNoticeEnd: '.',
 
-    // The canonical privacy policy, which this site links rather than
-    // restates. It is the page the Chrome Web Store points at and the one
-    // the extension's options page opens; a copy here would be a fourth
-    // document to keep in agreement, and the one nobody would remember to
-    // update. It is also where this site's use of Cloudflare Turnstile is
-    // disclosed — the extension does not use it, so the two surfaces are
-    // described separately there.
-    // Guarded by check-privacy-sync.sh in the elenchus repo.
+    // The canonical privacy policy: ONE document for the whole Untilt house —
+    // Doxa, this site and the extension — served at untilt.app/privacy and
+    // written from untilt's client/src/data/privacy.json. It used to be a pair
+    // of Astro pages in william-revah-paris; those are now 301s. This site's
+    // use of Cloudflare Turnstile is disclosed there, in the section about
+    // this surface, separately from the extension, which does not use it.
+    // The slashed form is the one that serves 200; the unslashed form 301s.
+    // Guarded by check-privacy-sync.sh in the elenchus repo, which asserts
+    // this value, the extension's and PRIVACY.md's are the same string.
     privacyLabel: 'Privacy',
-    privacyUrl: 'https://william.revah.paris/en/elenchus/privacy/',
+    privacyUrl: 'https://untilt.app/privacy/',
 
     // The footer's link to this page's twin in the other language, written
     // in the language it leads TO — the only form a reader who cannot read
@@ -187,9 +188,9 @@ export const strings = {
     freeTierNoticeEnd: '.',
 
     // Voir le commentaire du bloc `en` : la politique est liée, jamais
-    // recopiée ici.
+    // recopiée ici. La version française vit sous /fr/.
     privacyLabel: 'Confidentialité',
-    privacyUrl: 'https://william.revah.paris/elenchus/confidentialite/',
+    privacyUrl: 'https://untilt.app/fr/privacy/',
 
     // Voir le commentaire du bloc `en`.
     otherLangLabel: 'English',
