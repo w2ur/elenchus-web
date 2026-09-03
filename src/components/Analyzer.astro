@@ -19,12 +19,14 @@ interface Props {
   turnstileSiteKey: string;
   /**
    * False on the front page (sub-project 2c, Task 3): ToolHero already
-   * renders the page's one <h1> (the "*hold up?*" title) and its lede
-   * already carries this component's own T.heading/T.subtitle in longer
-   * form, so rendering both would put two <h1>s on one page and repeat the
-   * same claim twice back to back. /analyze and /fr/analyze still compose
-   * Analyzer with no ToolHero above it, so they keep the default (true) and
-   * still have exactly one heading of their own.
+   * renders the page's one <h1> (the "*hold up?*" title), and its lede
+   * carries the load-bearing "does not fact-check" disclaimer instead — not
+   * a longer-form restatement of this component's own T.heading/T.subtitle.
+   * Rendering both anyway would still put two <h1>s on one page and, right
+   * below the hero's own claim, repeat "Elenchus" / "Paste text, get a
+   * reasoning analysis back." for no reason. /analyze and /fr/analyze still
+   * compose Analyzer with no ToolHero above it, so they keep the default
+   * (true) and still have exactly one heading of their own.
    */
   showHeading?: boolean;
 }

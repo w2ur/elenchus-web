@@ -313,7 +313,17 @@ textarea#text-input:focus {
   color: var(--severity-significant);
 }
 
+/* min-height reserves the widget's box before the Turnstile script (loaded
+   async/defer — see the <script> tag in Analyzer.astro) has rendered
+   anything into it. Without it, the iframe mounting in place pushes the
+   whole Landing block down after first paint — measured CLS 0.143 on `/`
+   against Lighthouse's `--preset=desktop`, and a `--only-categories=
+   performance,…` perf score of 94/95/94 across three runs, failing the
+   plan's own >=95 gate (see CLAUDE.md's Lighthouse note). 65px is
+   Turnstile's own default "normal"-size widget height (this component sets
+   no `data-size`, so that's what renders). */
 #turnstile-container {
+  min-height: 65px;
   margin-bottom: 16px;
 }
 
@@ -719,6 +729,16 @@ main a {
    house-bloom wait animation Analyzer.astro's loading state draws — same
    five contour paths, but stroke fixed to white and no dasharray/animation,
    because a resting hero has nothing to signal progress on. */
+/* [ADAPTED] `margin: 0 -1rem` only cancels `main`'s own 16px padding, and
+   `main` itself is `max-width: 720px` — so this band is 720px wide at
+   desktop, not full-bleed to the viewport, even though the suite's tool-
+   chrome contract (docs/house-contract.md §2 in the untilt repo) calls for
+   "a full-width band". This mirrors untilt's own ToolHero.tsx (`-mx-4 px-4`)
+   exactly, so it reads as a deliberate carry-over of that component's
+   layout rather than an oversight introduced here — noted rather than
+   changed, since a real viewport-width bleed (100vw tricks) trades this
+   known state for a horizontal-scrollbar risk that has not been measured
+   on this page. */
 .tool-hero {
   position: relative;
   overflow: hidden;
@@ -732,6 +752,21 @@ main a {
   max-width: 48rem;
   margin: 0 auto;
   position: relative;
+}
+
+/* Font/case/tracking match the shared house eyebrow definition (Instrument
+   Sans, 11px, 600, letter-spacing .05em, uppercase — untilt's
+   `@utility eyebrow` in client/src/index.css). This repo's house.css omits
+   the chapeau furniture that utility lives in (see that file's header), so
+   the properties are restated here directly rather than left to default to
+   body copy — measured on the built page before this fix: "DM Sans", 16px,
+   no text-transform. Only the tint (--hero-muted) is shared with .lede. */
+.tool-hero .eyebrow {
+  font-family: 'Instrument Sans', system-ui, -apple-system, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .tool-hero .eyebrow,
@@ -797,7 +832,10 @@ main a {
    hero band is the same story from a different cause — its dark fill and
    white-on-band text would burn ink for a decorative watermark and reduce
    the actual title to low-contrast paper: neutralised to plain text on
-   white instead. */
+   white instead. #landing-content (the ways/get/limits/privacy sections
+   below the analyzer, moved there by Task 3) and #new-analysis-btn are
+   spent the same way the form is — without them, printing a RESULT still
+   carried the whole landing page and a button that starts over, below it. */
 @media print {
   .house,
   .tool-nav-bar,
@@ -805,8 +843,20 @@ main a {
   #analyze-form,
   .export-row,
   footer,
-  #free-tier-notice {
+  #free-tier-notice,
+  #landing-content,
+  #new-analysis-btn {
     display: none;
+  }
+
+  /* The print light-palette override lives in house.css, not here: --bg/
+     --text/--muted/--line/--bg-card are SHELL tokens, and re-declaring a
+     shell token in this file is exactly what the "no shell token re-declared
+     in global.css" guard below (and in test/houseShell.test.js) exists to
+     catch — it would win on source order and diverge silently from the
+     value house.css itself declares. */
+  body {
+    background: #fff;
   }
 
   .tool-hero {
@@ -826,9 +876,23 @@ main a {
   /* Printed ink, not screen colour: a badge or severity tag whose only
      signal is a light background fill (the score-badge scheme, the
      flaw-severity border/colour pairs) can wash out or waste toner on
-     paper, so print pins both to plain black-on-white. */
+     paper, so print pins both to plain black-on-white.
+
+     Regression: `.score-badge, .flaw-severity` alone is specificity (0,1,0)
+     — lower than `.score-badge.weak` / `.flaw-severity.minor|.significant|
+     .critical` at (0,2,0) — so the modifier classes' own color/background
+     kept winning and a WEAK badge printed white text on a background the
+     browser drops by default (invisible ink on paper). Repeating the
+     modifier classes here matches that specificity, and this block is
+     later in the file, so it wins the tie. */
   .score-badge,
-  .flaw-severity {
+  .score-badge.strong,
+  .score-badge.moderate,
+  .score-badge.weak,
+  .flaw-severity,
+  .flaw-severity.minor,
+  .flaw-severity.significant,
+  .flaw-severity.critical {
     color: #000;
     background: none;
     border: 1px solid #000;

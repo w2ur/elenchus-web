@@ -214,11 +214,42 @@ contrast defect this repo has ever had actually lived — so a run made in
 inherited dark mode scores 100 without ever rendering the failing colours.
 Pass `--chrome-flags="--blink-settings=preferredColorScheme=1"` (1 = light,
 0 = dark) and confirm it took by decoding the report's `final-screenshot`:
-its top-left pixel must be the light `--bg`, not `#0F1117`. A run of
-`--only-categories=performance,accessibility,best-practices,seo
---preset=desktop` against `astro preview` scores 100/100/100/100 on `/` and
-`/fr/` in light mode, with axe-core reporting zero violations in both
-schemes.
+its top-left pixel must be the light `--bg`, not `#0F1117`.
+
+**Also pin `PUBLIC_TURNSTILE_SITE_KEY` to one of Cloudflare's published test
+keys for a local Lighthouse run, not `.env.example`'s `replace-me`.** The
+placeholder isn't a valid key shape, so the widget throws
+`TurnstileError 400020` into the console on every load — a real error, but
+one about the placeholder, not the page — which costs best-practices a
+point (`errors-in-console`) and would silently mis-measure any future
+Turnstile-adjacent regression as a Lighthouse false negative on this one
+audit. `1x00000000000000000000AA` (Cloudflare's documented
+always-passes-visible test key) renders and solves like production without
+touching a real siteverify call. `.env` is gitignored, so this is a
+local-only substitution, never committed.
+
+A run of `--only-categories=performance,accessibility,best-practices,seo
+--preset=desktop` against `astro preview` scores, in light mode with a
+working Turnstile key: `/fr/` **100/100/100/100** (CLS ~0.006); `/`
+**95/100/100/100** across three consecutive runs (CLS ~0.139) — since
+sub-project 2c put the analyzer directly on `/`, that page now carries more
+font-dependent content above the fold (the hero band, the notice, the form)
+than `/analyze` or `/fr/` ever did, and the self-hosted fonts' `swap`
+display was reflowing that stack on load. `#turnstile-container` reserves
+its own box (`min-height: 65px`, Turnstile's own default "normal" size) so
+the widget mounting doesn't add to that; `'DM Sans'`/`'Instrument Sans'`
+moved from `font-display: swap` to `font-display: optional` in
+`house.css` so neither can swap into a rendered layout after the fact
+(`'Instrument Serif'` keeps `swap`, since it already carries a
+metric-matched `size-adjust`/`ascent-override` fallback face for exactly
+this — see that `@font-face` block's own comment). A metric-matched
+fallback was tried for the two sans faces too, sized against Arial with
+fontTools — it made both perf and CLS measurably *worse* (92/100, CLS
+0.179) rather than better, so it was reverted rather than shipped on the
+strength of the calculation alone; `font-display: optional` is the change
+that was actually verified to move the score, not the one that looked
+more principled on paper. axe-core reports zero violations on `/` and
+`/fr/` in both colour schemes.
 
 **Two copy files, two jobs.** `src/lib/strings.js` is the analyzer UI's
 strings — labels, failure states, and the severity/score tables a

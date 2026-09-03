@@ -29,6 +29,12 @@
  *      overrides the system media query in both directions — see the divider
  *      comment at their site for the specificity argument.
  *
+ *   4. A PRINT LIGHT-PALETTE OVERRIDE, marked [ELENCHUS ADDITION] at its
+ *      site rather than [ADAPTED] — untilt has no print/export feature to
+ *      adapt FROM. Lives here rather than in global.css because it
+ *      restates shell tokens (--bg/--text/etc.), which only this file may
+ *      legitimately declare.
+ *
  * The `.house` lockup rules below are NOT from upstream house.css — they
  * originated here and were copied FROM here into the extension. That is why
  * they carry no [ADAPTED] marker: this file is their source.
@@ -49,21 +55,36 @@
    gate of >=95. These are the same two families and the same weights
    (Instrument Sans 500/600/700, DM Sans 400/500/700 + 400 italic) fetched
    from fonts.googleapis.com's own woff2 latin-subset files, saved once
-   into public/fonts/ and served same-origin with font-display: swap.
-   Instrument Sans and DM Sans are themselves variable fonts, so each of the
-   three @font-face rules below declares a weight *range* rather than one
-   rule per discrete weight — Chrome resolves the requested numeric
-   font-weight against the file's own wght axis, exactly as it would have
-   from the Google-hosted stylesheet, which split the same file across
-   several weight-labelled rules. Verified with fontTools: DM Sans carries
-   an fvar wght axis (100–1000) and Instrument Sans one of 400–700; the DM
-   Sans italic is a static 400 instance, which is why it alone declares a
-   single weight. */
+   into public/fonts/ and served same-origin. Instrument Sans and DM Sans
+   are themselves variable fonts, so each of the three @font-face rules
+   below declares a weight *range* rather than one rule per discrete
+   weight — Chrome resolves the requested numeric font-weight against the
+   file's own wght axis, exactly as it would have from the Google-hosted
+   stylesheet, which split the same file across several weight-labelled
+   rules. Verified with fontTools: DM Sans carries an fvar wght axis
+   (100–1000) and Instrument Sans one of 400–700; the DM Sans italic is a
+   static 400 instance, which is why it alone declares a single weight.
+
+   font-display: optional, not swap (sub-project 2c): once the front page
+   composed ToolHero + the notice + the form directly on `/` (more
+   font-dependent height above the fold than `/analyze` ever carried),
+   these three faces swapping in after first paint reflowed that whole
+   stack — measured via Lighthouse's `layout-shift-elements` audit naming
+   `form#analyze-form` as the shifted node with all three files (plus
+   Instrument Serif below) as "Web font loaded" causes, CLS ~0.14,
+   desktop performance 94/95/94 across three runs against the >=95 gate.
+   `optional` makes the browser commit to the fallback or the real face
+   BEFORE first paint and never swap after — the spec-guaranteed fix,
+   verified by re-running Lighthouse rather than assumed: perf 95/95/95
+   after. A metric-matched fallback face (this file's own pattern, see
+   Instrument Serif Fallback below) was tried first and made both perf and
+   CLS *worse* when measured (92/100, CLS 0.179), so it was not kept — see
+   CLAUDE.md's Lighthouse note for the numbers and why. */
 @font-face {
   font-family: 'DM Sans';
   font-style: normal;
   font-weight: 400 700;
-  font-display: swap;
+  font-display: optional;
   src: url('/fonts/dm-sans-latin.woff2') format('woff2');
 }
 
@@ -71,7 +92,7 @@
   font-family: 'DM Sans';
   font-style: italic;
   font-weight: 400;
-  font-display: swap;
+  font-display: optional;
   src: url('/fonts/dm-sans-italic-latin.woff2') format('woff2');
 }
 
@@ -79,7 +100,7 @@
   font-family: 'Instrument Sans';
   font-style: normal;
   font-weight: 500 700;
-  font-display: swap;
+  font-display: optional;
   src: url('/fonts/instrument-sans-latin.woff2') format('woff2');
 }
 
@@ -148,6 +169,30 @@
    decides. Values are copies of the two blocks above — keep them equal. */
 :root.dark { color-scheme: dark; --bg: #0F1117; --bg-card: #1A1D25; --text: #ECEEF2; --muted: #94A3B8; --line: #2F333D; }
 :root.light { color-scheme: light; --bg: #F8F9FB; --bg-card: #FFFFFF; --text: #1A1D23; --muted: #5C6370; --line: #D2D7DF; }
+
+/* [ELENCHUS ADDITION] Printing must not inherit the viewer's dark-mode choice:
+   `:root.dark` survives onto a printed page regardless of what the browser's
+   own print dialog thinks prefers-color-scheme is (measured: body/hero text
+   both resolved to the dark #ECEEF2 --text value against an unprinted dark
+   --bg, ~1.1:1 — global.css's own @media print block neutralises the hero
+   band to `var(--text)`, which is exactly the token this pins). Same
+   specificity as the two explicit-choice rules above (0,2,0) and later in
+   the file, so it wins that tie without needing !important. Lives HERE, not
+   in global.css: --bg/--text/--muted/--line/--bg-card are shell tokens, and
+   a shell token re-declared in global.css is what the "no shell token
+   re-declared" guard below (and in test/houseShell.test.js) exists to catch. */
+@media print {
+  :root,
+  :root.dark,
+  :root.light {
+    color-scheme: light;
+    --bg: #F8F9FB;
+    --bg-card: #FFFFFF;
+    --text: #1A1D23;
+    --muted: #5C6370;
+    --line: #D2D7DF;
+  }
+}
 
 /* --- The house lockup -----------------------------------------------------
    The only thing on the page that says which house it belongs to. The

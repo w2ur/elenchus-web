@@ -37,39 +37,46 @@ const ways = C.ways.map((way) => ({
 const HOUSE_URL = 'https://untilt.app/';
 ---
 
-<h2>{C.waysHeading}</h2>
-<ul class="ways">
-  {
-    ways.map((way) => (
-      <li class="way">
-        <h3>{way.name}</h3>
-        <p>{way.body}</p>
-        {way.external ? (
-          <a class="way-cta" href={way.href} target="_blank" rel="noopener noreferrer">
-            {way.cta}
-          </a>
-        ) : (
-          <a class="way-cta" href={way.href}>
-            {way.cta}
-          </a>
-        )}
-      </li>
-    ))
-  }
-</ul>
+{/* One wrapper so the print sheet (global.css, @media print) can hide this
+    whole section in one rule. Without it, printing a RESULT carried the
+    entire landing page below the analysis — ways/get/limits/privacy, three
+    CTAs included — because ul/h2/p are all visible-by-default in print;
+    only the header/nav/form/Turnstile/footer had ever been targeted. */}
+<div id="landing-content">
+  <h2>{C.waysHeading}</h2>
+  <ul class="ways">
+    {
+      ways.map((way) => (
+        <li class="way">
+          <h3>{way.name}</h3>
+          <p>{way.body}</p>
+          {way.external ? (
+            <a class="way-cta" href={way.href} target="_blank" rel="noopener noreferrer">
+              {way.cta}
+            </a>
+          ) : (
+            <a class="way-cta" href={way.href}>
+              {way.cta}
+            </a>
+          )}
+        </li>
+      ))
+    }
+  </ul>
 
-<h2>{C.getHeading}</h2>
-<ul>
-  {C.getItems.map((item) => <li>{item}</li>)}
-</ul>
+  <h2>{C.getHeading}</h2>
+  <ul>
+    {C.getItems.map((item) => <li>{item}</li>)}
+  </ul>
 
-<h2>{C.limitsHeading}</h2>
-<p>{C.limitsText}</p>
+  <h2>{C.limitsHeading}</h2>
+  <p>{C.limitsText}</p>
 
-<p class="notice">
-  {C.privacyText}<a href={T.privacyUrl}>{C.privacyLink}</a>{C.privacyEnd}
-</p>
+  <p class="notice">
+    {C.privacyText}<a href={T.privacyUrl}>{C.privacyLink}</a>{C.privacyEnd}
+  </p>
 
-<p>
-  {C.houseText}<a href={HOUSE_URL}>{C.houseLink}</a>{C.houseEnd}
-</p>
+  <p>
+    {C.houseText}<a href={HOUSE_URL}>{C.houseLink}</a>{C.houseEnd}
+  </p>
+</div>

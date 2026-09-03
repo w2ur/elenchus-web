@@ -696,4 +696,112 @@ describe('the front page is the analyzer', () => {
     // passing showHeading={false}, which would leave them with none.
     for (const src of [analyze, frAnalyze]) expect(src).not.toMatch(/showHeading/);
   });
+
+  it('the fact-check claim is ACTUALLY RENDERED as the hero lede (not just the word "lede" somewhere in a comment)', () => {
+    const hero = readFileSync(join(__dirname, '../src/components/ToolHero.astro'), 'utf-8');
+    expect(hero).toMatch(/<p class="lede">\{lede\}<\/p>/);
+  });
+
+  it('the analyze pages omit `path` entirely rather than a wrong one', () => {
+    const analyze = readFileSync(join(__dirname, '../src/pages/analyze.astro'), 'utf-8');
+    const frAnalyze = readFileSync(join(__dirname, '../src/pages/fr/analyze.astro'), 'utf-8');
+    // noindex + force-redirected: this page must not emit a self-canonical
+    // or a hreflang set for a URL nothing should index or link to.
+    // Layout.astro skips the whole block when `path` is omitted.
+    for (const src of [analyze, frAnalyze]) expect(src).not.toMatch(/path=/);
+  });
+
+  it('both trailing-slash forms of /analyze redirect, not just the bare path', () => {
+    expect(netlifyToml).toMatch(
+      /from = "\/analyze\/"\s*\n\s*to = "\/"\s*\n\s*status = 301\s*\n\s*force = true/,
+    );
+    expect(netlifyToml).toMatch(
+      /from = "\/fr\/analyze\/"\s*\n\s*to = "\/fr\/"\s*\n\s*status = 301\s*\n\s*force = true/,
+    );
+  });
+});
+
+// Regression: composing ToolHero + the notice + the form directly on `/`
+// (sub-project 2c) put more font-dependent height above the fold than
+// `/analyze` ever carried, and these self-hosted faces swapping in after
+// first paint reflowed that whole stack — Lighthouse measured CLS ~0.14 and
+// desktop performance 94/95/94 across three runs, against the plan's own
+// >=95 gate. See CLAUDE.md's Lighthouse note and house.css's @font-face
+// comment for the numbers and the (rejected) metric-matched-fallback
+// alternative.
+describe('the front page does not reflow its own form when fonts finish loading', () => {
+  it('DM Sans and Instrument Sans are font-display: optional, so neither can swap in after first paint', () => {
+    // Every @font-face block for these two families (DM Sans has one for
+    // normal, one for italic) — indexOf-then-slice on the first occurrence
+    // alone would leave the italic rule uncovered.
+    for (const family of ["'DM Sans'", "'Instrument Sans'"]) {
+      const blocks = [...houseCss.matchAll(new RegExp(`font-family: ${family};[\\s\\S]*?\\}`, 'g'))];
+      expect(blocks.length).toBeGreaterThan(0);
+      for (const [face] of blocks) expect(face).toMatch(/font-display:\s*optional/);
+    }
+  });
+
+  it("Instrument Serif keeps font-display: swap — it already carries a metric-matched fallback face", () => {
+    const block = houseCss.slice(houseCss.indexOf("font-family: 'Instrument Serif';"));
+    const face = block.slice(0, block.indexOf('}'));
+    expect(face).toMatch(/font-display:\s*swap/);
+    expect(houseCss).toMatch(/font-family:\s*'Instrument Serif Fallback'/);
+  });
+
+  it('the Turnstile widget reserves its own box so mounting cannot push the Landing block down', () => {
+    const block = css.slice(css.indexOf('#turnstile-container {'));
+    const rule = block.slice(0, block.indexOf('}'));
+    expect(rule).toMatch(/min-height:\s*65px/);
+  });
+});
+
+// Task 2/3 follow-up: the print sheet was written before Task 3 moved the
+// landing content below the analyzer and before a printed RESULT existed to
+// look at, so neither had ever been checked against it.
+describe('print: a printed RESULT carries the analysis, not the whole site', () => {
+  const print = css.slice(css.indexOf('@media print'));
+
+  it('hides the landing sections and the "analyze again" button, not just the chrome/form', () => {
+    for (const sel of ['#landing-content', '#new-analysis-btn']) {
+      expect(print).toMatch(new RegExp(`${sel.replace(/[.#]/g, '\\$&')}[^}]*display:\\s*none`));
+    }
+  });
+
+  it('pins a light palette for print regardless of the viewer\'s dark-mode choice', () => {
+    // Regression: :root.dark survives onto the printed page (the browser's
+    // print dialog does not re-decide prefers-color-scheme against the
+    // page's own explicit-choice class), so without this a dark-mode
+    // reader printed ~#ECEEF2 text on an unprinted dark background — ~1.1:1.
+    // Lives in house.css, not global.css's print block: --text/--bg/etc. are
+    // shell tokens, and only house.css may declare them (see the "no shell
+    // token re-declared in global.css" guard elsewhere in this file).
+    const housePrint = houseCss.slice(houseCss.indexOf('@media print'));
+    expect(housePrint).toMatch(/:root[^{]*:root\.dark[^{]*:root\.light[^{]*\{[^}]*--text:\s*#1A1D23/);
+  });
+
+  it('the score-badge/flaw-severity print ink rule outranks the modifier classes it must override', () => {
+    // Regression: `.score-badge, .flaw-severity { color:#000 }` alone is
+    // specificity (0,1,0), lower than `.score-badge.weak`'s (0,2,0) — so the
+    // modifier's own white-on-red kept winning and a WEAK badge printed
+    // invisible white-on-(dropped)red. The fix repeats the modifier classes
+    // in the print selector list itself, matching their specificity — so
+    // this checks that the exact modifier class string is part of that
+    // selector list (the text before the rule's opening `{`), not just
+    // present somewhere in the print block.
+    const inkRule = print.slice(print.indexOf('.score-badge'));
+    const selectorList = inkRule.slice(0, inkRule.indexOf('{'));
+    for (const sel of ['.score-badge.weak', '.flaw-severity.critical']) {
+      expect(selectorList).toContain(sel);
+    }
+  });
+});
+
+describe('the ToolHero eyebrow follows the house contract (§2: Instrument Sans, uppercase, --hero-muted)', () => {
+  it('carries the shared eyebrow type treatment, not the page body font', () => {
+    const block = css.slice(css.indexOf('.tool-hero .eyebrow {'));
+    const rule = block.slice(0, block.indexOf('}'));
+    expect(rule).toMatch(/font-family:\s*'Instrument Sans'/);
+    expect(rule).toMatch(/text-transform:\s*uppercase/);
+    expect(rule).toMatch(/letter-spacing:\s*0\.05em/);
+  });
 });
