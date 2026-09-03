@@ -137,6 +137,12 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
     <ul id="strengths-list"></ul>
   </div>
 
+  <div class="export-row" role="group" aria-label={T.exportLabel}>
+    <button type="button" id="export-copy" class="btn-secondary">{T.exportCopy}</button>
+    <button type="button" id="export-download" class="btn-secondary">{T.exportDownload}</button>
+    <button type="button" id="export-print" class="btn-secondary">{T.exportPrint}</button>
+  </div>
+
   <button id="new-analysis-btn" class="btn-secondary" type="button">{T.newAnalysisBtn}</button>
 </div>
 
@@ -185,6 +191,7 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
   import { callProxy } from '../lib/proxyClient.js';
   import { renderAnalysis } from '../lib/render.js';
   import { strings as STRINGS } from '../lib/strings.js';
+  import { toMarkdown, exportFilename } from '../lib/exportMarkdown.js';
 
   const config = document.getElementById('analyzer-config').dataset;
   const PAGE_LANG = config.lang;
@@ -209,6 +216,14 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
   const truncationWarning = document.getElementById('truncation-warning');
   const retryBtn = document.getElementById('retry-btn');
   const newAnalysisBtn = document.getElementById('new-analysis-btn');
+  const exportCopyBtn = document.getElementById('export-copy');
+  const exportDownloadBtn = document.getElementById('export-download');
+  const exportPrintBtn = document.getElementById('export-print');
+
+  // Set the moment a result renders (see renderAnalysis() call below), so
+  // the export row always exports the analysis currently on screen — never
+  // a stale one left over from a previous submit.
+  let lastResult = null;
 
   const resultElements = {
     summaryEl: document.getElementById('result-summary'),
@@ -394,6 +409,7 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
         return;
       }
       truncationWarning.hidden = !wasTruncated;
+      lastResult = outcome.data;
       renderAnalysis(outcome.data, resultElements, T);
       showState('result');
     } finally {
@@ -403,4 +419,61 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
 
   retryBtn.addEventListener('click', () => showState('form'));
   newAnalysisBtn.addEventListener('click', () => showState('form'));
+
+  /**
+   * Selects `text` inside a throwaway, invisible textarea and calls
+   * document.execCommand('copy') on it — the pre-Clipboard-API fallback,
+   * used only when navigator.clipboard.writeText() itself rejects (insecure
+   * context, permission denied, or the API missing entirely). The element
+   * is removed again immediately after, so nothing is left in the DOM for
+   * the analysis result to keep track of.
+   * @param {string} text
+   */
+  function copyViaHiddenTextarea(text) {
+    const fallback = document.createElement('textarea');
+    fallback.value = text;
+    fallback.setAttribute('readonly', '');
+    fallback.style.position = 'fixed';
+    fallback.style.top = '-1000px';
+    fallback.style.left = '-1000px';
+    document.body.appendChild(fallback);
+    fallback.select();
+    fallback.setSelectionRange(0, text.length);
+    try {
+      document.execCommand('copy');
+    } finally {
+      document.body.removeChild(fallback);
+    }
+  }
+
+  exportCopyBtn.addEventListener('click', async () => {
+    if (!lastResult) return;
+    const md = toMarkdown(lastResult, { lang: PAGE_LANG, date: new Date() });
+    try {
+      await navigator.clipboard.writeText(md);
+    } catch {
+      copyViaHiddenTextarea(md);
+    }
+    const original = exportCopyBtn.textContent;
+    exportCopyBtn.textContent = T.exportCopied;
+    setTimeout(() => {
+      exportCopyBtn.textContent = original;
+    }, 1500);
+  });
+
+  exportDownloadBtn.addEventListener('click', () => {
+    if (!lastResult) return;
+    const md = toMarkdown(lastResult, { lang: PAGE_LANG, date: new Date() });
+    const blob = new Blob([md], { type: 'text/markdown' });
+    const a = Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(blob),
+      download: exportFilename(new Date()),
+    });
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  exportPrintBtn.addEventListener('click', () => {
+    window.print();
+  });
 </script>

@@ -704,3 +704,43 @@ main a {
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+.export-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+/* A reader who prints (or "Save as PDF"s) a result wants the analysis, not
+   the site around it: the house header/nav, the Turnstile widget and the
+   paste form are all either meaningless on paper or already spent. The
+   .tool-hero neutralise rule is Task 3's — that component doesn't exist on
+   this branch yet — so it is intentionally absent here and added there. */
+@media print {
+  .house,
+  .tool-nav-bar,
+  #turnstile-container,
+  #analyze-form,
+  .export-row,
+  footer,
+  #free-tier-notice {
+    display: none;
+  }
+
+  .flaw-card {
+    break-inside: avoid;
+    border: 1px solid #999;
+  }
+
+  /* Printed ink, not screen colour: a badge or severity tag whose only
+     signal is a light background fill (the score-badge scheme, the
+     flaw-severity border/colour pairs) can wash out or waste toner on
+     paper, so print pins both to plain black-on-white. */
+  .score-badge,
+  .flaw-severity {
+    color: #000;
+    background: none;
+    border: 1px solid #000;
+  }
+}

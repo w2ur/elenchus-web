@@ -588,3 +588,22 @@ describe('regression: the favicon is the house contour, not the Astro logo', () 
     expect(layout).toMatch(/rel="icon" type="image\/png" sizes="32x32" href="\/favicon\.ico"/);
   });
 });
+
+// Task 2 of sub-project 2c: copy/download/print an analysis as Markdown.
+// The .tool-hero neutralise rule is Task 3's (that component doesn't exist
+// yet) — this describe block deliberately does not assert it; Task 3 adds
+// both the rule and the assertion.
+describe('export row and print', () => {
+  it('renders three export controls inside the result state', () => {
+    const rs = analyzer.slice(analyzer.indexOf('id="result-state"'));
+    for (const id of ['export-copy', 'export-download', 'export-print']) expect(rs).toContain(`id="${id}"`);
+    expect(analyzer).toMatch(/import \{ toMarkdown, exportFilename \} from '\.\.\/lib\/exportMarkdown\.js'/);
+  });
+  it('downloads through a Blob and a constant filename', () => {
+    expect(analyzer).toMatch(/new Blob\(\[/); expect(analyzer).toMatch(/exportFilename\(/); expect(analyzer).not.toMatch(/download=\{?`?\$\{result/);
+  });
+  it('print hides chrome, Turnstile and the paste box', () => {
+    const print = css.slice(css.indexOf('@media print'));
+    for (const sel of ['.house', '.tool-nav-bar', '#turnstile-container', '#analyze-form', '.export-row']) expect(print).toMatch(new RegExp(`${sel.replace(/[.#]/g, '\\$&')}[^}]*display:\\s*none`));
+  });
+});
