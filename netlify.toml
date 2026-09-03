@@ -25,3 +25,19 @@
   to = "/fr/"
   status = 301
   force = true
+
+# Trailing-slash twins of the two rules above. The page this replaced was
+# canonical at "/analyze/" (with the slash), and Netlify's trailing-slash
+# handling for `from` has not been measured on this branch — belt and
+# braces rather than trusting it silently falls through to the rules above.
+[[redirects]]
+  from = "/analyze/"
+  to = "/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/fr/analyze/"
+  to = "/fr/"
+  status = 301
+  force = true

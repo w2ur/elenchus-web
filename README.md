@@ -116,11 +116,12 @@ Advisory drift-check: exits 1 if the severity/score labels in
     npm run build
 
 Builds to `./dist/`. Must produce zero warnings — see `CLAUDE.md`. Frontmatter
-in `src/pages/analyze.astro` and `src/pages/fr/analyze.astro` imports
-`src/lib/config.js`, so a missing `PUBLIC_ELENCHUS_WEB_KEY` /
-`PUBLIC_TURNSTILE_SITE_KEY` fails this command, not just a visitor's browser.
-Those two imports are the whole mechanism, and removing them fails nothing —
-`test/configFailLoud.test.js` is what keeps them there.
+in `src/pages/index.astro`, `src/pages/fr/index.astro`, `src/pages/analyze.astro`
+and `src/pages/fr/analyze.astro` imports `src/lib/config.js`, so a missing
+`PUBLIC_ELENCHUS_WEB_KEY` / `PUBLIC_TURNSTILE_SITE_KEY` fails this command,
+not just a visitor's browser. Those four imports are the whole mechanism, and
+removing them fails nothing — `test/configFailLoud.test.js` is what keeps
+them there.
 
 ## Deployment
 

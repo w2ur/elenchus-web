@@ -2,24 +2,26 @@
 // nothing else can catch.
 //
 // src/lib/config.js throws at MODULE SCOPE when a required PUBLIC_ env var
-// is missing. That fails the *build* only because src/pages/analyze.astro
-// and src/pages/fr/analyze.astro import it in FRONTMATTER, which runs in
-// Node during `astro build` (output: 'static'). The client script receives
-// config through data-* attributes instead, so nothing else imports
-// config.js at all — the two frontmatter imports are the entire mechanism.
+// is missing. That fails the *build* only because four pages import it in
+// FRONTMATTER, which runs in Node during `astro build` (output: 'static'):
+// src/pages/index.astro and src/pages/fr/index.astro (the front page, since
+// sub-project 2c) plus src/pages/analyze.astro and src/pages/fr/analyze.astro
+// (kept as thin redirect targets). The client script receives config through
+// data-* attributes instead, so nothing else imports config.js at all — these
+// four frontmatter imports are the entire mechanism.
 //
-// A final review removed both imports with the env unset and got build
-// exit 0. So a future refactor that "tidies away" an import that looks
-// unused would ship a site broken for every visitor, with a green deploy
-// and no test failing. There is no type-checker here to notice, and
-// `npm run build` cannot notice by construction: with the imports gone
-// there is nothing left to fail.
+// A final review removed the two /analyze imports (before the front page
+// carried its own) with the env unset and got build exit 0. So a future
+// refactor that "tidies away" an import that looks unused would ship a site
+// broken for every visitor, with a green deploy and no test failing. There is
+// no type-checker here to notice, and `npm run build` cannot notice by
+// construction: with the imports gone there is nothing left to fail.
 //
 // Two halves, both pinned below, because either one alone is a false sense
 // of safety:
-//   1. Both pages import config.js, and do it from frontmatter — an import
-//      moved into a client <script> compiles fine and only throws in a
-//      visitor's browser, which is exactly the failure the frontmatter
+//   1. All four pages import config.js, and do it from frontmatter — an
+//      import moved into a client <script> compiles fine and only throws in
+//      a visitor's browser, which is exactly the failure the frontmatter
 //      import exists to prevent.
 //   2. Importing config.js with a required var unset actually throws, and
 //      the message names the variable. A refactor that made the read lazy
@@ -39,6 +41,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 const PAGES = [
+  { file: 'src/pages/index.astro', specifier: '../lib/config.js' },
+  { file: 'src/pages/fr/index.astro', specifier: '../../lib/config.js' },
   { file: 'src/pages/analyze.astro', specifier: '../lib/config.js' },
   { file: 'src/pages/fr/analyze.astro', specifier: '../../lib/config.js' },
 ];

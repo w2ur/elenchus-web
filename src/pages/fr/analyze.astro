@@ -13,8 +13,11 @@ const description =
 
 {/* noindex: sub-project 2c, Task 3 made /fr/ the analyzer and this page a
     forced 301 to it (netlify.toml) — kept thin per
-    test/configFailLoud.test.js, which hard-codes this file. */}
-<Layout title={title} description={description} lang="fr" path="/analyze/" noindex>
+    test/configFailLoud.test.js, which hard-codes this file.
+    `path` omitted — see src/pages/analyze.astro's comment for why passing
+    "/analyze/" here was wrong (a self-canonical plus hreflang for a
+    noindex'd, force-redirected page). */}
+<Layout title={title} description={description} lang="fr" noindex>
   <Analyzer
     lang="fr"
     proxyUrl={ELENCHUS_PROXY_URL}

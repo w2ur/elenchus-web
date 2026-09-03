@@ -426,18 +426,23 @@ path.
 
 ### Failure-state copy
 
-**The build-time fail-loud gate is two frontmatter imports and nothing
+**The build-time fail-loud gate is four frontmatter imports and nothing
 else.** `src/lib/config.js` throws at module scope for a missing `PUBLIC_`
-var, and that fails `astro build` only because `src/pages/analyze.astro`
-and `src/pages/fr/analyze.astro` import it in **frontmatter** (which runs
-in Node at build time). The client gets config through `data-*` attributes,
-so nothing else imports the module — remove both imports and the build
-goes green with the env completely unset, shipping a site broken for every
-visitor (measured: exit 0, zero errors). `npm run build` cannot catch that
-by construction, and there is no type-checker here. `test/configFailLoud.test.js`
-is the pin: it asserts both imports are real `import` statements **inside
-the frontmatter fence** (not in a client script, not in a comment), and
-that importing `config.js` with a var unset actually throws and names it.
+var, and that fails `astro build` only because `src/pages/index.astro`,
+`src/pages/fr/index.astro`, `src/pages/analyze.astro` and
+`src/pages/fr/analyze.astro` import it in **frontmatter** (which runs in
+Node at build time) — the front page carries the analyzer directly since
+sub-project 2c, and the two `/analyze` pages stayed as thin redirect
+targets rather than dropping the gate. The client gets config through
+`data-*` attributes, so nothing else imports the module — remove all four
+imports and the build goes green with the env completely unset, shipping a
+site broken for every visitor (measured on the two `/analyze` imports
+alone, before the front page carried its own: exit 0, zero errors).
+`npm run build` cannot catch that by construction, and there is no
+type-checker here. `test/configFailLoud.test.js` is the pin: it asserts
+all four imports are real `import` statements **inside the frontmatter
+fence** (not in a client script, not in a comment), and that importing
+`config.js` with a var unset actually throws and names it.
 
 A dry per-IP bucket is the **normal** state of this service on a good day
 (150 requests/day service-wide, 2 per IP) — this is a first-impression

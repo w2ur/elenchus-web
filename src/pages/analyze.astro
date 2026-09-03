@@ -17,8 +17,14 @@ const description =
 
 {/* noindex: sub-project 2c, Task 3 made / the analyzer and this page a
     forced 301 to it (netlify.toml) — kept thin per
-    test/configFailLoud.test.js, which hard-codes this file. */}
-<Layout title={title} description={description} lang="en" path="/analyze/" noindex>
+    test/configFailLoud.test.js, which hard-codes this file.
+    `path` is deliberately OMITTED, not set to "/analyze/": Layout.astro
+    skips the whole canonical/hreflang block when `path` is absent, and this
+    page has no business emitting either — it is noindex and 301s away
+    before a crawler could ever act on them. Passing "/analyze/" anyway
+    (measured on this branch before this fix) emitted a self-canonical plus
+    a full hreflang set for a page nothing should index or link to. */}
+<Layout title={title} description={description} lang="en" noindex>
   <Analyzer
     lang="en"
     proxyUrl={ELENCHUS_PROXY_URL}
