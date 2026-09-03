@@ -47,8 +47,16 @@ export const landingCopy = {
       {
         name: 'Paste it',
         body: 'Any text, any browser, any device. Nothing to install.',
-        cta: 'Open the analyzer',
-        href: '/analyze/',
+        // Sub-project 2c, Task 3 folded /analyze into this page: the paste
+        // box this card advertises is already ABOVE it, in Analyzer.astro
+        // (id="text-input", shared by / and /fr/ — see that file's
+        // markup). An href of '/analyze/' would 301 straight back here,
+        // sending a visitor away from the very box and back to the top of
+        // the page they're already on (fix round 1, Task 3 finding). An
+        // in-page anchor instead — no per-language prefix needed, since
+        // the id is identical on both pages.
+        cta: 'Jump to the paste box',
+        href: '#text-input',
       },
       {
         name: 'One click while reading',
@@ -106,8 +114,10 @@ export const landingCopy = {
       {
         name: 'Collez le texte',
         body: 'N’importe quel texte, navigateur ou appareil. Rien à installer.',
-        cta: 'Ouvrir l’analyseur',
-        href: '/fr/analyze/',
+        // Voir le commentaire du bloc `en` : même correction, même ancre —
+        // l’identifiant "text-input" est partagé par / et /fr/.
+        cta: 'Aller à la zone de texte',
+        href: '#text-input',
       },
       {
         name: 'En un clic pendant la lecture',
