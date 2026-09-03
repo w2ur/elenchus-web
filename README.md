@@ -84,10 +84,13 @@ asserting model output never reaches the DOM as live markup),
 `src/lib/errorState.js` (which honest failure state an outcome selects, how
 it renders, and whether Retry is offered — see `CLAUDE.md`, "Failure-state
 copy"), `src/lib/proxyClient.js` (the Worker call — in particular that an
-unparseable or wrong-shaped 2xx body is a failure, never a result) and
+unparseable or wrong-shaped 2xx body is a failure, never a result),
 `test/configFailLoud.test.js` (the build-time env gate, which nothing else
-can catch). There is no UI/e2e test runner — the analyzer flow itself is
-exercised manually and by `npm run build`.
+can catch), and `test/exportMarkdown.test.js` (`src/lib/exportMarkdown.js`,
+the Markdown export of a result — property-tested with `fast-check` that
+every quote line stays blockquoted and every model string survives verbatim
+modulo the line-start escape). There is no UI/e2e test runner — the analyzer
+flow itself is exercised manually and by `npm run build`.
 
     npm run check:labels-sync
 

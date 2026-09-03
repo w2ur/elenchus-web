@@ -105,6 +105,13 @@ export const strings = {
     scores: { strong: 'strong', moderate: 'moderate', weak: 'weak', unknown: 'unknown' },
     severities: { minor: 'minor', significant: 'significant', critical: 'critical' },
 
+    // The export controls above a result (src/lib/exportMarkdown.js).
+    exportLabel: 'Export',
+    exportCopy: 'Copy as Markdown',
+    exportCopied: 'Copied',
+    exportDownload: 'Download .md',
+    exportPrint: 'Print / PDF',
+
     // Two different Turnstile situations, and they must not share copy.
     //
     // `errTurnstileUnsolved` is the one where the widget IS on the page and
@@ -218,6 +225,13 @@ export const strings = {
 
     scores: { strong: 'solide', moderate: 'modéré', weak: 'faible', unknown: 'inconnu' },
     severities: { minor: 'mineure', significant: 'significative', critical: 'critique' },
+
+    // Voir le commentaire du bloc `en`.
+    exportLabel: 'Exporter',
+    exportCopy: 'Copier en Markdown',
+    exportCopied: 'Copié',
+    exportDownload: 'Télécharger le .md',
+    exportPrint: 'Imprimer / PDF',
 
     // See the EN block for why these are two states and not one.
     errTurnstileUnsolved: 'Merci de compléter la vérification avant de lancer l’analyse.',
