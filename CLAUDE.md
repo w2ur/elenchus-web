@@ -85,10 +85,31 @@ header before touching it: it names the two things that deliberately differ
 `:root.light`/`:root.dark` classes set by the theme toggle for an explicit
 choice — a third mechanism, distinct from untilt's `.dark`-only class; the
 chapeau furniture is omitted) and records why there is no `sync-house.sh`.
+One block breaks that "adapted, not verbatim" rule on purpose: the
+`/* @geometry */` `:root` rule, declared after the lockup rules, holds the
+shell-geometry tokens (see the block itself in `house.css` for the current
+set — not restated here, because a token added or removed there would make
+a hand-typed list here go stale silently) copied byte-identical from
+untilt's `house.css`, because the numbers are the whole point and a
+transform here would be the drift the rest of the file exists to avoid
+(contract §8). `test/houseShell.test.js` derives each token's name from the
+block itself and asserts it is actually referenced somewhere, rather than
+hand-typing that list either. Sub-project A also split the header rule
+just above it into two: `.house-bar` is the full-width sticky strip that paints the surface
+and draws the hairline, and `.house` is now its inner row — a `--col`-wide
+flex line holding the lockup — so the wordmark lines up with the page
+content instead of the viewport edge. `HouseHeader.astro` nests them
+`<header class="house-bar"><div class="house">…`.
 `src/styles/global.css` imports it and holds only what is Elenchus's own —
 the teal accent and the severity/score scale. A shell token re-declared in
 `global.css` would win on source order and diverge silently, so
 `test/houseShell.test.js` fails if one appears there.
+`astro.config.mjs` pins `vite.build.cssTarget` to Tailwind v4's browser floor
+(Safari 16.4 / Chrome 111 / Firefox 128) — the same target untilt sets, for
+the same reason (an old target makes Lightning CSS fold a modern color
+function into an opaque pre-target fallback), even though nothing here
+triggers it yet, since `--tint`'s `color-mix()` wraps a `var()` Lightning CSS
+can't fold regardless of target.
 
 **The wait is the contour bloom, not a spinner.** `#loading-state` in
 `Analyzer.astro` carries five `.house-bloom-ring` paths, byte-identical to
@@ -123,7 +144,8 @@ hub assigns Elenchus the teal accent `#1E7A76` (`src/styles/global.css`),
 not `untilt.app`'s blue-grey. Stay in that teal family; never default to
 purple/violet/indigo (portfolio-wide rule).
 
-The header (`.house`, rendered by `src/components/HouseHeader.astro`, not
+The header (`.house-bar > .house` — the full-width sticky bar wrapping the
+`--col` inner row, rendered by `src/components/HouseHeader.astro`, not
 `Layout.astro` — the layout only mounts it) follows the suite's tool-chrome
 contract (`docs/house-contract.md` in the untilt repo, §1): lockup · nav ·
 theme · language, in that fixed order, with the language toggle living in
@@ -187,7 +209,12 @@ but now carry a `noindex` meta and a forced Netlify 301 to the front page
 `src/components/BookmarkletInstall.astro`, and its built `javascript:` URL
 now targets the front page, not `/analyze`. `src/lib/clamp.js`,
 `src/lib/render.js`, `src/lib/strings.js` and `src/lib/emTitle.js` (the hero
-title's one-emphasised-word marker) hold the testable logic.
+title's one-emphasised-word marker) hold the testable logic. **A hero band
+goes in `Layout.astro`'s `<slot name="band" />`** (`<ToolHero slot="band">`),
+which renders between the header bar and `<main>` so the band bleeds to the
+viewport edge and carries the `--col` column inside itself — rendered in
+`<main>` instead it is boxed at the column's width with the page's own top
+padding above it, the drift sub-project A removed.
 
 **The front page says "it does not fact-check" before it says anything
 about how to use the tool.** Every reasoning tool gets mistaken for a

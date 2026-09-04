@@ -37,7 +37,7 @@ const bookmarkletHref = await buildBookmarklet(analyzeUrl);
 <h1>{C.heading}</h1>
 <p class="subtitle">{C.intro}</p>
 
-<h2>{C.installHeading}</h2>
+<h2 class="eyebrow">{C.installHeading}</h2>
 <p>{C.installStep}</p>
 
 <p class="bookmarklet-drop">
@@ -54,24 +54,24 @@ const bookmarkletHref = await buildBookmarklet(analyzeUrl);
 </p>
 <p class="notice">{C.installHint}</p>
 
-<h2>{C.useHeading}</h2>
+<h2 class="eyebrow">{C.useHeading}</h2>
 <ol>
   {C.useSteps.map((step) => <li>{step}</li>)}
 </ol>
 
-<h2>{C.limitsHeading}</h2>
+<h2 class="eyebrow">{C.limitsHeading}</h2>
 <p>{C.limitsIntro}</p>
 <ul>
   {C.limits.map((limit) => <li>{limit}</li>)}
 </ul>
 <p>{C.limitsGood}</p>
 
-<h2>{C.fallbackHeading}</h2>
+<h2 class="eyebrow">{C.fallbackHeading}</h2>
 <p>
   {C.fallbackText}<a href={analyzePath}>{C.fallbackLink}</a>{C.fallbackEnd}
 </p>
 
-<h2>{C.privacyHeading}</h2>
+<h2 class="eyebrow">{C.privacyHeading}</h2>
 <p class="notice">
   {C.privacyText}<a href={T.privacyUrl}>{C.privacyLink}</a>{C.privacyEnd}
 </p>

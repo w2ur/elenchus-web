@@ -70,12 +70,22 @@
   box-sizing: border-box;
 }
 
-html,
-body {
+/* Regression: `html, body { height: 100% }` made the body box exactly one
+   viewport tall whatever the page's length, and .house-bar is `position:
+   sticky` — which is constrained by its containing block, so the bar stopped
+   sticking the moment the page scrolled past the first screen (measured at
+   1280x700: top -358px at scrollY 1000). Only BODY moves to min-height: html
+   keeps a definite height, because with min-height on both, body's percentage
+   resolves against an auto-height parent, collapses to its content and
+   un-pins the footer on a short page (measured: footer bottom at 1259px in a
+   1600px viewport). Same one-viewport body is what used to shrink the hero
+   band away, which is why .tool-hero no longer needs `flex-shrink: 0`. */
+html {
   height: 100%;
 }
 
 body {
+  min-height: 100%;
   font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
   line-height: 1.5;
   color: var(--text);
@@ -92,40 +102,93 @@ h1, h2, h3 {
 main {
   flex: 1;
   width: 100%;
-  max-width: 720px;
+  max-width: var(--col);
   margin: 0 auto;
   /* Bottom padding clears the fixed .tool-nav-bar below 768px (see the
      header nav section below) so the last line of content is never hidden
      behind it; the 768px+ media query there restores the plain 32px. */
-  padding: 32px 16px calc(4rem + env(safe-area-inset-bottom));
+  padding: 2rem 1rem calc(4rem + env(safe-area-inset-bottom));
 }
 
+/* A page whose hero band is in Layout's band slot (the two index pages) gets
+   its top spacing from the band's own margin-bottom. Without this, the two
+   stack and open a 4rem trench between the band and the first line under it.
+   A band-less page (/bookmarklet/, 404) keeps the 2rem above. The band is
+   main's immediate previous sibling in that slot, so adjacency says it
+   without depending on :has(). */
+.tool-hero + main {
+  padding-top: 0;
+}
+
+/* Chrome carries no underline — nav pills, controls, cards and the footer row
+   all read as controls without one, and underlining every anchor was one of
+   the measured differences from Doxa. Prose is the opposite case: colour alone
+   is not a cue there, so the rule below restores it inside running text. */
 a {
   color: var(--link);
+  text-decoration: none;
 }
 
-a:hover {
+/* The three exclusions are on the rule that DECIDES the underline, not resets
+   after it: `a:hover` (0,1,1) outranks `.way-card { color: var(--text) }`
+   (0,1,0), so a hovered way card underlined its title, body and CTA at once
+   and repainted the title, the language pill picked up the same underline
+   over its own `.lang-toggle:hover`, and the bookmarklet CTA — `<a
+   class="btn-primary bookmarklet-link">` in BookmarkletInstall.astro — had
+   its text repainted to --accent-hover with no color of its own set on
+   `.btn-primary:hover`, landing on the same value as the fill underneath it
+   (1:1) and underlined besides. A reset pair would have to stay ahead of
+   every hover declaration added later; an exclusion cannot be outrun. All
+   three controls paint their own hover below (.btn-primary's is the fill
+   swap a few rules down — no color change, .on-accent still applies).
+
+   `:where()` is load-bearing, not decoration: a bare `:not(.card):not(
+   .lang-toggle):not(.btn-primary)` scores (0,4,1) and outranks `.tool-nav a`
+   (0,1,1) and `.tool-nav a:hover` (0,2,1), which put the underline straight
+   back on every nav pill — measured in the browser after the first attempt.
+   :where() contributes nothing, so this rule keeps the plain `a:hover`
+   (0,1,1) it replaces and only stops matching the three controls. */
+a:where(:not(.card):not(.lang-toggle):not(.btn-primary)):hover {
   color: var(--accent-hover);
-}
-
-footer {
-  margin-top: 24px;
-  padding: 16px;
-  border-top: 1px solid var(--line);
-  text-align: center;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-footer a {
-  color: inherit;
   text-decoration: underline;
 }
 
+/* `:not(.card)` because a way card is an <a> inside an <li>: the whole tile is
+   the target, and an underlined title inside a bordered box reads as two
+   affordances rather than one. */
+main p a,
+main li a:not(.card),
+.notice a {
+  text-decoration: underline;
+}
+
+/* The bottom margin clears the fixed .tool-nav-bar below 768px. main's own
+   bottom padding cannot do it: the footer is main's SIBLING, below it — so
+   the last lines of the footer sat under the bar (measured at 390: 64px of
+   it hidden). Doxa's footer carries the same clearance (Layout.tsx). */
+footer {
+  margin-top: 24px;
+  margin-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+  padding: 16px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.footer-links {
+  margin-bottom: 0.25rem;
+}
+
+.footer-credit {
+  font-size: 13px;
+}
+
 /* --- Header nav (Task 4: the contract header + mobile bottom bar) --------
-   `.house` (the lockup + nav + controls row) is per-tool layout on top of
-   house.css's shared `.house` rule — its gap only, so the tool nav and the
-   controls have room to sit beside the lockup.
+   The header row itself carries NO per-tool layout any more. It used to add
+   a 1rem gap on top of house.css's shared rule; sub-project A deleted that,
+   because a per-consumer number sitting on a shell rule is the shape the
+   whole drift took — the shell's own 0.5rem is the gap in both tools now.
 
    ToolNav.astro's <nav> carries BOTH `.tool-nav` and `.tool-nav-bar` at
    once (see that file's comment for why): the two blocks below are two CSS
@@ -134,10 +197,6 @@ footer a {
    Order here is load-bearing: for a property declared in both blocks, the
    LATER declaration wins on an element carrying both classes, in BOTH the
    unqualified rules below and inside the @media block further down. */
-.house {
-  gap: 1rem;
-}
-
 .tool-nav {
   /* Below 768px this loses to .tool-nav-bar's `display: flex` (declared
      after it), which is what makes the bar visible on mobile at all. */
@@ -146,12 +205,18 @@ footer a {
   gap: 0.25rem;
 }
 
+/* The shell control treatment: --radius-control, --text-ui, --muted at rest.
+   The 999px capsule and the 14.4px label were this site's own invention and
+   are what made the same nav read as a different product from Doxa's. */
 .tool-nav a {
-  padding: 0.35rem 0.7rem;
-  border-radius: 999px;
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--radius-control);
   color: var(--muted);
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: var(--text-ui);
+  /* The geometry tokens are silent on weight, so Doxa's pill decides it —
+     `font-medium` there, 500 here. */
+  font-weight: 500;
   white-space: nowrap;
   /* Column so the icon (Item 9) sits above the label on the mobile bar; at
      >=768px the icon is hidden below, leaving a single centred text child —
@@ -162,14 +227,18 @@ footer a {
   gap: 0.2rem;
 }
 
+/* Selected and hovered paint the SAME surface, --tint — the one neutral
+   grey both tools now use. The 12% accent tint this replaced was per-tool by
+   construction: teal here, blue-grey upstream, for the identical state. */
 .tool-nav a[aria-current='page'] {
   color: var(--link);
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  background: var(--tint);
 }
 
 .tool-nav a:hover,
 .tool-nav a:focus-visible {
-  color: var(--text);
+  color: var(--link);
+  background: var(--tint);
 }
 
 .tool-nav-bar {
@@ -177,8 +246,10 @@ footer a {
   left: 0;
   right: 0;
   bottom: 0;
+  height: 4rem;
   display: flex;
   justify-content: space-around;
+  align-items: center;
   border-top: 1px solid var(--line);
   background: var(--bg);
   /* Regression: `padding-bottom: env(safe-area-inset-bottom, 12px)` REPLACED
@@ -190,6 +261,14 @@ footer a {
   padding: 0.5rem;
   padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
   z-index: 40;
+}
+
+/* The tab-bar label floor: 10px, a literal at this one site (contract §2b —
+   a token for a single site is a constant). Declared AFTER `.tool-nav a` so
+   it wins on the shared element below 768px, and reset back to --text-ui
+   inside the desktop block, where the same element becomes the pill row. */
+.tool-nav-bar a {
+  font-size: 10px;
 }
 
 .house-controls {
@@ -212,14 +291,22 @@ footer a {
     position: static;
     border-top: none;
     /* The shared-element price (Item 7): .tool-nav-bar's mobile treatment
-       (padding, background, the space-around justification, and its
-       stacking z-index) leaks onto this element too, since one <nav>
-       carries both classes at once. Reset all four explicitly rather than
-       relying on values .tool-nav never declared in the first place. */
+       (padding, background, the space-around justification, its stacking
+       z-index and its 4rem bar height) leaks onto this element too, since
+       one <nav> carries both classes at once. Reset each explicitly rather
+       than relying on values .tool-nav never declared in the first place. */
     padding: 0;
     background: transparent;
     justify-content: flex-start;
     z-index: auto;
+    height: auto;
+  }
+
+  /* Same price on the anchors: the 10px tab-bar label is declared on
+     `.tool-nav-bar a`, which matches at every width. The desktop pill takes
+     the shell's control size back. */
+  .tool-nav a {
+    font-size: var(--text-ui);
   }
 
   /* Item 9: the mobile bar's icons (see ToolNav.astro) have no place in the
@@ -232,13 +319,26 @@ footer a {
   main {
     padding-bottom: 32px;
   }
+
+  /* The bar is gone at this width, so both clearances go with it. */
+  footer {
+    margin-bottom: 0;
+  }
 }
 
 /* --- Analyzer (C3) --- */
 
+/* The page H1 — the band-less pages (/bookmarklet/, /analyze/). The display
+   serif at the contract's "page H1" size; the hero band's own h1 is a step
+   larger and is set by .tool-hero h1 further down. 22px sans was the side
+   panel's heading size, which is where global.css was copied from. */
 h1 {
-  font-size: 22px;
-  margin-bottom: 6px;
+  font-family: var(--face-display);
+  font-weight: 400;
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
 }
 
 .subtitle {
@@ -252,6 +352,21 @@ h2 {
   margin-bottom: 10px;
 }
 
+/* THE eyebrow — one rule, contract §2b. It was two here: this treatment and a
+   second copy scoped to the hero band. Section headings are <h2> semantically
+   and eyebrows visually, which is why the class sits on the heading rather
+   than replacing it. The band's own copy is now only its tint (--hero-muted,
+   further down): everything about the type is shared. */
+.eyebrow {
+  font-family: 'Instrument Sans', system-ui, -apple-system, sans-serif;
+  font-size: var(--text-eyebrow);
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 /* Quieter than .warning-notice below: this is a standing condition of the
    free tier, not something that went wrong, so it must not read as an
    error — mirrors .privacy-notice in sidepanel.css. */
@@ -259,21 +374,23 @@ h2 {
   margin-bottom: 20px;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  font-size: 12px;
+  border-radius: var(--radius-control);
+  font-size: 13px;
   line-height: 1.45;
   color: var(--muted);
 }
 
+/* The link inside a notice stays in the surrounding muted ink — the box is
+   already quiet, and a --link-coloured line inside it reads as a call to
+   action this notice is not. The underline comes from the prose rule above. */
 .notice a {
   color: inherit;
-  text-decoration: underline;
 }
 
 .warning-notice {
   background: color-mix(in srgb, var(--severity-minor) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--severity-minor) 30%, transparent);
-  border-radius: 6px;
+  border-radius: var(--radius-control);
   padding: 10px 12px;
   font-size: 12px;
   color: var(--severity-minor);
@@ -287,7 +404,7 @@ textarea#text-input {
   resize: vertical;
   padding: 12px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-card);
   background: var(--bg-card);
   color: var(--text);
   font: inherit;
@@ -327,25 +444,65 @@ textarea#text-input:focus {
   margin-bottom: 16px;
 }
 
+/* Regression: .chrome-btn dropped its own border and --bg-card fill (spec §5,
+   "borderless, card-less"), and with nothing cancelling the UA button defaults
+   the theme toggle came straight back as a boxed square — measured on the
+   built page at `2px outset rgb(0, 0, 0)` on `rgb(239, 239, 239)`. The reset
+   belongs here rather than back on .chrome-btn, whose own guard forbids a
+   `border:` declaration; every button that wants a fill sets one below. */
 button {
   font: inherit;
   cursor: pointer;
+  border: 0;
+  background: none;
+  color: inherit;
 }
 
-/* Minimal styling for now — a 44px tap target and the house surface/border,
-   nothing else. Task 4 gives this its hover/focus treatment when it moves
-   into HouseHeader.astro alongside the language switch; ThemeToggle.astro is
-   its first user. */
+/* Borderless, card-less, --control-h square: the shell control, not a card.
+   The 44px bordered box came from the extension's side panel and set the
+   whole bar's height. 32px clears WCAG 2.5.8 on its own (the AA floor is
+   24px; 44px is AAA), so no ::after hit area is needed to make up the
+   difference — and adding one would put an invisible box back over the
+   layout the boxes were removed from. */
 .chrome-btn {
-  min-width: 44px;
-  min-height: 44px;
-  border: 1px solid var(--line);
-  border-radius: 0.5rem;
-  background: var(--bg-card);
-  color: var(--text);
+  width: var(--control-h);
+  height: var(--control-h);
+  border-radius: var(--radius-control);
+  color: var(--muted);
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+.chrome-btn:hover,
+.chrome-btn:focus-visible {
+  color: var(--text);
+  background: var(--tint);
+}
+
+/* The language toggle: a compact pill, not a second icon square, because it
+   carries a two-letter word as well as a glyph. --link on --tint, hover to
+   --tint-strong — the same two surfaces every other control here paints,
+   with a hairline so it reads as a control rather than as running text. */
+.lang-toggle {
+  height: var(--control-h);
+  padding: 0 0.625rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--tint);
+  color: var(--link);
+  font-size: var(--text-ui);
+  font-weight: 500;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.lang-toggle:hover,
+.lang-toggle:focus-visible {
+  background: var(--tint-strong);
+  color: var(--link-hover);
 }
 
 /* Regression: `hidden` on an <svg> is inert in Chromium (not an HTMLElement
@@ -369,8 +526,8 @@ button {
   background: var(--accent);
   color: var(--on-accent);
   border: none;
-  border-radius: 8px;
-  padding: 10px 20px;
+  border-radius: var(--radius-card);
+  padding: 0.875rem 1.5rem;
   font-size: 14px;
   font-weight: 600;
 }
@@ -379,28 +536,64 @@ button {
   background: var(--accent-hover);
 }
 
+/* Dimmed, not repainted. The grey fill this replaced changed the button's
+   colour as well as its state, so a disabled CTA read as a different control
+   rather than as the same one, unavailable. */
 .btn-primary:disabled {
-  background: var(--line);
-  color: var(--muted);
+  opacity: 0.5;
   cursor: not-allowed;
+}
+
+@media (max-width: 767px) {
+  /* Full width on a phone: the analyse button is the page's one action and a
+     thumb should not have to find it. */
+  .btn-primary {
+    width: 100%;
+  }
 }
 
 /* Text color uses --link, not --accent: --accent has never cleared AA in
    light mode as text (4.86:1 on the page, 3.73:1 on its own /20 tint), on a
-   button sitting directly on --bg. Border stays --accent (a non-text
-   UI-component outline; 3:1 is the relevant floor there, already cleared). */
+   button sitting directly on --bg. The --accent outline is gone with it — the
+   tint IS the affordance now, the same two surfaces the nav pill and the
+   language toggle paint, so the export row reads as a row of quiet controls
+   rather than three competing outlined CTAs beside the primary one. */
 .btn-secondary {
-  background: transparent;
+  background: var(--tint);
   color: var(--link);
-  border: 1px solid var(--accent);
-  border-radius: 8px;
-  padding: 9px 18px;
-  font-size: 14px;
+  border: none;
+  border-radius: var(--radius-control);
+  min-height: var(--control-h);
+  padding: 0.5rem 0.875rem;
+  font-size: var(--text-ui);
   font-weight: 600;
 }
 
 .btn-secondary:hover {
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  background: var(--tint-strong);
+  color: var(--link-hover);
+}
+
+/* One card: --bg-card on a hairline, the card radius, the card padding. The
+   two selectors beside it are the blocks src/lib/render.js writes for itself
+   — it sets `flaw-card` and builds the strengths <li>s in JS, and it is not
+   part of this change — so they join the rule here rather than gain a class.
+   :hover is on `a.card` alone: the two below are not links, and neither is
+   the summary block Analyzer.astro wraps in a plain `.card` <div> — an
+   unscoped `.card:hover` lit its border and shadow under the pointer as if
+   it were a target. */
+.card,
+.flaw-card,
+#strengths-list li {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: var(--space-card);
+}
+
+a.card:hover {
+  border-color: var(--muted);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 /* Loading — names the method, never progress. No percentage, no step count,
@@ -455,7 +648,7 @@ button {
   color: var(--text);
   background: color-mix(in srgb, var(--accent) 8%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
-  border-radius: 6px;
+  border-radius: var(--radius-control);
   padding: 10px 12px;
 }
 
@@ -465,9 +658,15 @@ button {
   padding-top: 8px;
 }
 
+/* The 20px that used to sit under .score-badge lives on the card now: inside
+   a padded box the badge's own margin only opened dead space below it. */
+#result-summary-card {
+  margin-bottom: 20px;
+}
+
 #result-summary {
   font-size: 14px;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
 /* Regression: .strong/.moderate/.weak each carried a bare `color: #fff`,
@@ -487,12 +686,11 @@ button {
 .score-badge {
   display: inline-block;
   padding: 4px 12px;
-  border-radius: 20px;
+  border-radius: var(--radius-control);
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-bottom: 20px;
   color: #0F1117;
 }
 
@@ -538,10 +736,6 @@ button {
 }
 
 .flaw-card {
-  background: var(--bg-card);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 14px;
   margin-bottom: 10px;
 }
 
@@ -557,7 +751,7 @@ button {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-control);
   display: inline-block;
   margin-bottom: 8px;
 }
@@ -596,13 +790,13 @@ button {
 
 #strengths-list {
   list-style: none;
+  /* `main ul`'s 20px left indent is for prose lists. These items are cards
+     now, and an indented card sits 20px right of every other block on the
+     results screen. */
+  margin: 0;
 }
 
 #strengths-list li {
-  background: var(--bg-card);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 8px 12px;
   margin-bottom: 6px;
   font-size: 13px;
 }
@@ -674,7 +868,10 @@ main a {
 
 /* The three ways in. A list, not a row of cards: on a phone they stack
    either way, and a list keeps them announced as "3 items" by a screen
-   reader — which is the page's actual claim. */
+   reader — which is the page's actual claim. Each <li> now wraps ONE
+   <a class="card">, so the whole tile is the target; the link's accessible
+   name is title + body + CTA, which is short enough to be read as one label
+   on three cards this size. */
 .ways {
   list-style: none;
   margin: 0 0 24px;
@@ -685,28 +882,62 @@ main a {
 
 .way {
   margin: 0;
-  padding: 14px 16px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--bg-card);
 }
 
-.way h3 {
-  font-size: 14px;
+.way-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  height: 100%;
+  /* The card is not a link-coloured block: the title is body ink, and --link
+     is spent on the one line that is the call to action. */
+  color: var(--text);
+}
+
+/* The 48px icon tile: the control radius on the same neutral tint every other
+   selected/hover surface here paints, glyph in --link. The tokens are silent
+   on the tile, so Doxa's shape decides its size — `w-12 h-12` at every icon
+   tile there. */
+.way-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--radius-control);
+  background: var(--tint);
+  color: var(--link);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.way-title {
+  font-family: 'Instrument Sans', system-ui, -apple-system, sans-serif;
+  font-size: 1.125rem;
   font-weight: 600;
-  margin: 0 0 6px;
+  letter-spacing: -0.01em;
 }
 
-.way p {
-  margin: 0 0 10px;
-  font-size: 13px;
+.way-body {
+  font-size: var(--text-ui);
   color: var(--muted);
 }
 
+/* `margin-top: auto` pins the CTA to the bottom of the tallest card in the
+   row, so the three chevrons line up when the bodies are different lengths. */
 .way-cta {
-  font-size: 13px;
+  margin-top: auto;
+  padding-top: 0.25rem;
+  font-size: var(--text-ui);
   font-weight: 600;
   color: var(--link);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.way-card:hover .way-cta {
+  color: var(--link-hover);
 }
 
 @media (min-width: 720px) {
@@ -729,46 +960,46 @@ main a {
    house-bloom wait animation Analyzer.astro's loading state draws — same
    five contour paths, but stroke fixed to white and no dasharray/animation,
    because a resting hero has nothing to signal progress on. */
-/* [ADAPTED] `margin: 0 -1rem` only cancels `main`'s own 16px padding, and
-   `main` itself is `max-width: 720px` — so this band is 720px wide at
-   desktop, not full-bleed to the viewport, even though the suite's tool-
-   chrome contract (docs/house-contract.md §2 in the untilt repo) calls for
-   "a full-width band". This mirrors untilt's own ToolHero.tsx (`-mx-4 px-4`)
-   exactly, so it reads as a deliberate carry-over of that component's
-   layout rather than an oversight introduced here — noted rather than
-   changed, since a real viewport-width bleed (100vw tricks) trades this
-   known state for a horizontal-scrollbar risk that has not been measured
-   on this page. */
+/* The band is a SIBLING of <main> now (Layout.astro's `slot="band"`), not a
+   child of it, so it bleeds to the viewport edge the way the tool-chrome
+   contract (docs/house-contract.md §2 in the untilt repo) asks — the old
+   `margin: 0 -1rem` only cancelled main's own gutter and left the band as
+   wide as the column. The column moved inside instead: .tool-hero-inner is
+   --col, so the hero's text still lines up with the page's, and it carries
+   the vertical padding because the outer element is now edge-to-edge.
+
+   This used to need `flex-shrink: 0`: as a direct flex item of the column on
+   body, its own `overflow: hidden` cancels the automatic minimum size a flex
+   item takes from its content, so against a body that was exactly one
+   viewport tall it shrank to zero and clipped the whole band away. body takes
+   min-height now (see the rule at the top of this file), so there is no
+   overflow to shrink out of and the workaround is gone — measured on the
+   built page: 353px tall with neither the old height rule nor the
+   flex-shrink, 0px with the old height rule and no flex-shrink. */
 .tool-hero {
   position: relative;
   overflow: hidden;
   background: var(--band);
   color: var(--hero-fg);
-  margin: 0 -1rem;
-  padding: 2.5rem 1rem 3rem;
+  margin-bottom: 2rem;
 }
 
 .tool-hero-inner {
-  max-width: 48rem;
+  max-width: var(--col);
   margin: 0 auto;
+  padding: 2.5rem 1rem;
   position: relative;
 }
 
-/* Font/case/tracking match the shared house eyebrow definition (Instrument
-   Sans, 11px, 600, letter-spacing .05em, uppercase — untilt's
-   `@utility eyebrow` in client/src/index.css). This repo's house.css omits
-   the chapeau furniture that utility lives in (see that file's header), so
-   the properties are restated here directly rather than left to default to
-   body copy — measured on the built page before this fix: "DM Sans", 16px,
-   no text-transform. Only the tint (--hero-muted) is shared with .lede. */
-.tool-hero .eyebrow {
-  font-family: 'Instrument Sans', system-ui, -apple-system, sans-serif;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+@media (min-width: 768px) {
+  .tool-hero-inner {
+    padding: 3.5rem 1rem;
+  }
 }
 
+/* The type treatment is the shared `.eyebrow` rule near the top of this file
+   — this is only the tint, which is the one part of it that is about riding
+   on a dark fill. */
 .tool-hero .eyebrow,
 .tool-hero .lede {
   color: var(--hero-muted);
@@ -780,7 +1011,9 @@ main a {
   font-size: clamp(2.5rem, 7vw, 4.5rem);
   line-height: 0.95;
   letter-spacing: -0.02em;
-  margin: 0.25rem 0 1rem;
+  /* The tokens are silent on the eyebrow-to-title gap, so Doxa's hero decides
+     it: its <h1> takes `mt-3`. */
+  margin: 0.75rem 0 1rem;
 }
 
 .tool-hero .lede {
@@ -837,6 +1070,10 @@ main a {
    spent the same way the form is — without them, printing a RESULT still
    carried the whole landing page and a button that starts over, below it. */
 @media print {
+  /* .house-bar as well as .house: the bar is the element that carries the
+     background and the hairline now, so hiding only the row inside it would
+     print an empty ruled strip at the top of every page. */
+  .house-bar,
   .house,
   .tool-nav-bar,
   #turnstile-container,

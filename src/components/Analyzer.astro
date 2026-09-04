@@ -142,16 +142,23 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
 <div id="result-state" aria-live="polite" aria-atomic="false" hidden>
   <p id="truncation-warning" class="warning-notice" hidden>{T.truncationWarning}</p>
 
-  <h2>{T.summaryHeading}</h2>
-  <p id="result-summary"></p>
-  <span id="result-score" class="score-badge"></span>
+  <h2 class="eyebrow">{T.summaryHeading}</h2>
+  {/* The summary is a card like the flaws below it — and, like them, not a
+      link: global.css scopes the card's hover to `a.card`, so this block
+      never lights up under a pointer that cannot click it. The wrapper is
+      here and not in src/lib/render.js, which only writes the two children's
+      text and the badge's class and is untouched by this change. */}
+  <div class="card" id="result-summary-card">
+    <p id="result-summary"></p>
+    <span id="result-score" class="score-badge"></span>
+  </div>
 
-  <h2>{T.flawsHeading} <span id="flaws-count" class="count-badge"></span></h2>
+  <h2 class="eyebrow">{T.flawsHeading} <span id="flaws-count" class="count-badge"></span></h2>
   <p id="no-flaws" hidden>{T.noFlaws}</p>
   <div id="flaws-list"></div>
 
   <div id="strengths-section" hidden>
-    <h2>{T.strengthsHeading}</h2>
+    <h2 class="eyebrow">{T.strengthsHeading}</h2>
     <ul id="strengths-list"></ul>
   </div>
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync, statSync } from 'fs';
+import { readFileSync, statSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { strings } from '../src/lib/strings.js';
@@ -22,6 +22,8 @@ const bookmarkletInstall = readFileSync(
   join(__dirname, '../src/components/BookmarkletInstall.astro'),
   'utf-8',
 );
+const landing = readFileSync(join(__dirname, '../src/components/Landing.astro'), 'utf-8');
+const toolNav = readFileSync(join(__dirname, '../src/components/ToolNav.astro'), 'utf-8');
 const netlifyToml = readFileSync(join(__dirname, '../netlify.toml'), 'utf-8');
 
 // Negative guards below must read the RULES, not the prose. house.css's header
@@ -70,9 +72,14 @@ const dark = houseCss.slice(houseCss.indexOf('@media (prefers'), houseCss.indexO
 // and would have silently swallowed every rule after it, including
 // :root.light itself, into "the dark block".
 const explicitDark = houseCss.slice(houseCss.indexOf(':root.dark {'), houseCss.indexOf(':root.light {'));
-// Mirror of explicitDark, bounded at the next real rule ('.house {') so it
-// does not run to EOF either.
-const explicitLight = houseCss.slice(houseCss.indexOf(':root.light {'), houseCss.indexOf('.house {'));
+// Mirror of explicitDark, bounded at the next real rule. That rule is
+// '.house-bar {', not '.house {' — Sub-project A split the header rule in
+// two and .house-bar now sits between :root.light and .house — so the bound
+// is here, tightened to match, rather than at '.house {' where it would
+// swallow .house-bar's whole body into "the light block" too. (.house-bar is
+// asserted to declare no custom property below, precisely so nothing here
+// depends on that swallow being harmless.)
+const explicitLight = houseCss.slice(houseCss.indexOf(':root.light {'), houseCss.indexOf('.house-bar {'));
 const toolLight = css.slice(css.indexOf(':root {'), css.indexOf('@media'));
 const toolDark = css.slice(css.indexOf('@media'));
 
@@ -235,8 +242,15 @@ describe('the contract header', () => {
     // would silently collapse to a plain 0.5rem on a notched phone.
     expect(layout).toMatch(/<meta name="viewport" content="[^"]*viewport-fit=cover[^"]*"/);
   });
+  // Item 6 originally asked only that hover recolour the text (to --text).
+  // Sub-project A moves the whole nav onto the shell control treatment, where
+  // hover paints the SURFACE as well — that is the drift the spec measured
+  // between the two tools ("hover recolours text only" here against Doxa's
+  // "hover paints the same tint"). The intent Item 6 pinned is unchanged: a
+  // hovered item must still read clearly, now at --link on --tint.
   it('a hovered or focused nav item still reads clearly (Item 6)', () => {
-    expect(css).toMatch(/\.tool-nav a:hover,\s*\n?\s*\.tool-nav a:focus-visible\s*\{[^}]*color:\s*var\(--text\)/s);
+    expect(css).toMatch(/\.tool-nav a:hover,\s*\n?\s*\.tool-nav a:focus-visible\s*\{[^}]*color:\s*var\(--link\)/s);
+    expect(css).toMatch(/\.tool-nav a:hover,\s*\n?\s*\.tool-nav a:focus-visible\s*\{[^}]*background:\s*var\(--tint\)/s);
   });
   it('the desktop pill nav resets the bar-only treatment it shares the element with (Item 7)', () => {
     const desktopBlock = css.slice(css.indexOf('@media (min-width: 768px)'));
@@ -796,12 +810,544 @@ describe('print: a printed RESULT carries the analysis, not the whole site', () 
   });
 });
 
-describe('the ToolHero eyebrow follows the house contract (§2: Instrument Sans, uppercase, --hero-muted)', () => {
-  it('carries the shared eyebrow type treatment, not the page body font', () => {
-    const block = css.slice(css.indexOf('.tool-hero .eyebrow {'));
-    const rule = block.slice(0, block.indexOf('}'));
+// Sub-project A (spec §6): ONE eyebrow, not two. The hero's own copy of the
+// type treatment folded into the shared `.eyebrow` rule; what stays scoped to
+// the band is the tint (--hero-muted), which is the only part of it that is
+// about riding on a dark fill.
+describe('the eyebrow follows the house contract (§2: Instrument Sans, uppercase)', () => {
+  it('is declared once, and reads its size from the geometry token', () => {
+    expect(css.match(/\.eyebrow\s*\{/g) ?? []).toHaveLength(1);
+    const rule = ruleBody(css, '.eyebrow {');
     expect(rule).toMatch(/font-family:\s*'Instrument Sans'/);
+    expect(rule).toMatch(/font-size:\s*var\(--text-eyebrow\)/);
     expect(rule).toMatch(/text-transform:\s*uppercase/);
     expect(rule).toMatch(/letter-spacing:\s*0\.05em/);
+    expect(rule).toMatch(/color:\s*var\(--muted\)/);
   });
+
+  it('the hero keeps only the tint, not a second type treatment', () => {
+    expect(css).not.toMatch(/\.tool-hero \.eyebrow\s*\{/);
+    expect(css).toMatch(/\.tool-hero \.eyebrow,\s*\.tool-hero \.lede\s*\{[^}]*var\(--hero-muted\)/s);
+  });
+
+  it('every section heading carries it — Landing, the install page and the results', () => {
+    for (const [name, src] of [
+      ['Landing.astro', landing],
+      ['BookmarkletInstall.astro', bookmarkletInstall],
+      ['Analyzer.astro', analyzer],
+    ]) {
+      const h2s = src.match(/<h2[^>]*>/g) ?? [];
+      expect(h2s.length, name).toBeGreaterThan(0);
+      for (const h of h2s) expect(h, `${name}: ${h}`).toMatch(/class="eyebrow"/);
+    }
+  });
+});
+
+// Sub-project A (spec §3/§4): the shell geometry tokens, and the two rules
+// the header bar is now made of. The declarations below are hand-copied
+// literals — the same "each copy pins itself" arrangement HOUSE_LIGHT and
+// HOUSE_DARK use at the top of this file. There is no cross-repo read and no
+// CI in this repo, so a check that read untilt's own house.css would only
+// ever skip here, and skipping is what a drift guard must never do. How many
+// there are is not typed here or in CLAUDE.md — see 'every geometry-block
+// custom property is referenced' below, which derives the names from the
+// block itself rather than counting them by hand.
+//
+// The block sits AFTER the lockup rules on purpose: both surface slices at
+// the top cut before it (`light` ends at the dark media query, `explicitLight`
+// at the inner-row rule), so the derived set-equality guard further up still
+// compares exactly the sets it compared before this block existed. The two
+// assertions below that name `light` and `explicitLight` are what prove that
+// rather than assume it.
+const GEOMETRY = {
+  '--col': '48rem',
+  '--bar-pad': '0.75rem 1rem',
+  '--control-h': '2rem',
+  '--radius-card': '0.75rem',
+  '--radius-control': '0.5rem',
+  '--text-ui': '0.875rem',
+  '--text-eyebrow': '0.6875rem',
+  '--space-card': '1.25rem',
+  '--tint': 'color-mix(in srgb, var(--text) 6%, transparent)',
+  '--tint-strong': 'color-mix(in srgb, var(--text) 12%, transparent)',
+};
+
+describe('the shell geometry', () => {
+  // Bounded at the rule's own closing brace, so "the value is in the
+  // @geometry block" cannot be satisfied by the same string appearing
+  // anywhere else in the file.
+  const afterMarker = houseCss.slice(houseCss.indexOf('/* @geometry */'));
+  const geometry = afterMarker.slice(0, afterMarker.indexOf('}'));
+
+  it('declares the block exactly once, found by its marker', () => {
+    expect(houseCss.match(/\/\* @geometry \*\//g) ?? []).toHaveLength(1);
+  });
+
+  for (const [k, v] of Object.entries(GEOMETRY)) {
+    it(`${k} is ${v}`, () => {
+      expect(geometry).toContain(`${k}: ${v};`);
+    });
+  }
+
+  it('sits outside the two surface slices, so the set-equality guard is untouched', () => {
+    expect(light).not.toMatch(/--col:/);
+    expect(explicitLight).not.toMatch(/--col:/);
+  });
+
+  // The GEOMETRY pin above hand-types names AND values on purpose (the
+  // comment at the top of this describe block explains why: a check that
+  // read the values back off the block itself would be vacuous). This test
+  // is the different thing CLAUDE.md's "never hand-type a count or
+  // inventory" rule actually asks for here: which tokens EXIST is derived by
+  // parsing the @geometry block's own declarations, not retyped as a name
+  // list, so adding or removing a token needs no matching edit here — only
+  // that every token the block declares is consumed somewhere.
+  it('every geometry-block custom property is referenced at least once', () => {
+    const names = [...geometry.matchAll(/(--[a-z-]+):/g)].map((m) => m[1]);
+    expect(names.length).toBeGreaterThan(0);
+    const consumers = css + houseCss;
+    for (const name of names) {
+      expect(consumers, `${name} is declared but never consumed via var(${name})`).toMatch(
+        new RegExp(`var\\(${name}\\)`),
+      );
+    }
+  });
+
+  it('the bar is the full-width shell rule, sticky over the page', () => {
+    const bar = ruleBody(houseCss, '.house-bar {');
+    expect(bar).toMatch(/position:\s*sticky/);
+    expect(bar).toMatch(/background:\s*var\(--bg\)/);
+    expect(bar).toMatch(/border-bottom:\s*1px solid var\(--line\)/);
+  });
+
+  // The module-scope explicitLight slice above stops right before this rule
+  // rather than swallowing it, so this is now the thing that has to hold for
+  // that boundary to be correct rather than merely convenient: if .house-bar
+  // ever gained a custom property, it would be declared inside :root.light's
+  // scope visually but outside the slice that checks :root.light's token
+  // set, and would go completely unchecked. Named and isolated (ruleBody, not
+  // the multi-hundred-line houseCss) so a failure here reads as "a custom
+  // property landed on .house-bar", not as an unrelated :root.light mismatch.
+  it('.house-bar declares no custom property of its own', () => {
+    const bar = ruleBody(houseCss, '.house-bar {');
+    expect(bar).not.toMatch(/--[\w-]+\s*:/);
+  });
+
+  it('the lockup row is a --col column and no longer draws the bar itself', () => {
+    const row = ruleBody(houseCss, '.house {');
+    expect(row).toMatch(/max-width:\s*var\(--col\)/);
+    expect(row).toMatch(/padding:\s*var\(--bar-pad\)/);
+    // The border moved up to .house-bar; left here it would draw a second
+    // hairline across the middle of the bar, at the column's width.
+    expect(row).not.toMatch(/border-bottom:/);
+  });
+
+  it('the header markup is the bar wrapping the row', () => {
+    expect(houseHeader).toMatch(/<header class="house-bar">/);
+    expect(houseHeader).toMatch(/<div class="house">/);
+    expect(houseHeader.indexOf('class="house-bar"')).toBeLessThan(houseHeader.indexOf('class="house"'));
+  });
+
+  it('the print sheet hides the bar, not only the row inside it', () => {
+    const print = css.slice(css.indexOf('@media print'));
+    const selectorList = print.slice(0, print.indexOf('{', print.indexOf('.house')));
+    expect(selectorList).toContain('.house-bar');
+  });
+
+  it('the chrome button is borderless and card-less, with no phantom hit area', () => {
+    const btn = ruleBody(css, '.chrome-btn {');
+    expect(btn).not.toMatch(/border:/);
+    expect(btn).not.toMatch(/background:\s*var\(--bg-card\)/);
+    expect(btn).toMatch(/height:\s*var\(--control-h\)/);
+    expect(btn).toMatch(/border-radius:\s*var\(--radius-control\)/);
+    // 32px already clears WCAG 2.5.8 (24px, AA); the 44px ::after pad was
+    // the only reason these were boxes.
+    expect(css).not.toMatch(/\.chrome-btn::after/);
+  });
+
+  it('the nav pill is the shell control, tinted from --text rather than from the accent', () => {
+    const item = ruleBody(css, '.tool-nav a {');
+    expect(item).toMatch(/border-radius:\s*var\(--radius-control\)/);
+    expect(item).toMatch(/font-size:\s*var\(--text-ui\)/);
+    // The tokens are silent on weight, so Doxa's pill decides it: font-medium.
+    expect(item).toMatch(/font-weight:\s*500/);
+    expect(item).not.toMatch(/border-radius:\s*999px/);
+    expect(ruleBody(css, ".tool-nav a[aria-current='page'] {")).toMatch(/background:\s*var\(--tint\)/);
+    // The 12% teal surface is the drift this replaces: one neutral tint in
+    // both tools, not one tinted by each tool's own accent.
+    const nav = css.slice(css.indexOf('.tool-nav {'), css.indexOf('.house-controls {'));
+    expect(nav).not.toMatch(/color-mix\([^)]*--accent/);
+  });
+
+  it('the mobile bar keeps the 10px label floor at a 4rem height', () => {
+    expect(ruleBody(css, '.tool-nav-bar {')).toMatch(/height:\s*4rem/);
+    expect(ruleBody(css, '.tool-nav-bar a {')).toMatch(/font-size:\s*10px/);
+  });
+
+  it('the language toggle is a pill showing the destination code, drawn in the inline-SVG convention', () => {
+    expect(houseHeader).toMatch(/class="lang-toggle"/);
+    expect(houseHeader).toMatch(/otherCode/);
+    // Same convention as ThemeToggle.astro and ToolNav.astro: 24-unit
+    // viewBox, currentColor stroke, decorative.
+    const glyph = houseHeader.match(/<svg [^>]*>/)?.[0] ?? '';
+    expect(glyph).toMatch(/viewBox="0 0 24 24"/);
+    expect(glyph).toMatch(/stroke="currentColor"/);
+    expect(glyph).toMatch(/aria-hidden="true"/);
+    // The full word stays in the footer; the header shows the code.
+    expect(houseHeader).not.toMatch(/\{otherLabel\}/);
+  });
+});
+
+// The tints are translucent, so what a hovered control actually paints is a
+// composite — and the worst case flips by scheme (light is worst over --bg,
+// dark over --bg-card). Percentages are parsed out of house.css rather than
+// retyped, so lowering or raising --tint-strong moves these numbers instead
+// of leaving them describing a value the file no longer has.
+describe('--link stays legible on the tint a hovered control paints', () => {
+  const pct = (name) => {
+    const m = houseCss.match(new RegExp(`${name}:\\s*color-mix\\(in srgb, var\\(--text\\) (\\d+)%`));
+    if (!m) throw new Error(`no color-mix percentage for ${name}`);
+    return Number(m[1]) / 100;
+  };
+  const over = (fg, bg, a) => '#' + [1,3,5].map((i) => Math.round(a*parseInt(fg.slice(i,i+2),16) + (1-a)*parseInt(bg.slice(i,i+2),16)).toString(16).padStart(2,'0')).join('');
+  // Deferred to test-run time, not computed while the suite is being
+  // collected: a missing block must fail these nine tests by name, not crash
+  // the whole file before a single one of them is registered.
+  const lightTint = (bg) => over(HOUSE_LIGHT['--text'], bg, pct('--tint-strong'));
+  const darkTint = (bg) => over(HOUSE_DARK['--text'], bg, pct('--tint-strong'));
+  const ROWS = [
+    ['--link light over the page', () => TOOL['--link'][0], () => lightTint(HOUSE_LIGHT['--bg'])],
+    ['--link light over a card', () => TOOL['--link'][0], () => lightTint(HOUSE_LIGHT['--bg-card'])],
+    ['--link-hover light over the page', () => TOOL['--link-hover'][0], () => lightTint(HOUSE_LIGHT['--bg'])],
+    ['--link-hover light over a card', () => TOOL['--link-hover'][0], () => lightTint(HOUSE_LIGHT['--bg-card'])],
+    ['--link dark over the page', () => TOOL['--link'][1], () => darkTint(HOUSE_DARK['--bg'])],
+    ['--link dark over a card', () => TOOL['--link'][1], () => darkTint(HOUSE_DARK['--bg-card'])],
+    ['--link-hover dark over the page', () => TOOL['--link-hover'][1], () => darkTint(HOUSE_DARK['--bg'])],
+    ['--link-hover dark over a card', () => TOOL['--link-hover'][1], () => darkTint(HOUSE_DARK['--bg-card'])],
+  ];
+  for (const [name, fg, bg] of ROWS) it(name, () => expect(ratio(fg(), bg())).toBeGreaterThanOrEqual(4.5));
+
+  it('the must-fail twin: --accent as text on the same tint does not clear it', () => {
+    // Which is why the nav pill, the lockup tool name and .btn-secondary all
+    // take --link and not --accent.
+    expect(ratio(TOOL['--accent'][0], lightTint(HOUSE_LIGHT['--bg']))).toBeLessThan(4.5);
+  });
+});
+
+// Sub-project A (spec §5 hero, §6 page components). The band is no longer a
+// boxed element inside <main>: it is a sibling of it, full-bleed, with its own
+// --col column inside — which is what makes it flush under the header bar the
+// way Doxa's is.
+describe('the hero band is a full-bleed sibling of main', () => {
+  it('Layout renders a band slot between the header and main', () => {
+    const i = (s) => layout.indexOf(s);
+    expect(i('<slot name="band" />')).toBeGreaterThan(i('<HouseHeader '));
+    expect(i('<slot name="band" />')).toBeLessThan(i('<main>'));
+  });
+
+  it('both index pages put the hero in that slot, not in the page body', () => {
+    for (const src of [indexPage, frIndexPage]) {
+      expect(src).toMatch(/<ToolHero\s+slot="band"/);
+    }
+  });
+
+  it('the outer element bleeds — the -1rem gutter cancel is gone', () => {
+    const hero = ruleBody(css, '.tool-hero {');
+    expect(hero).not.toMatch(/margin:\s*0 -1rem/);
+    expect(hero).toMatch(/margin-bottom:\s*2rem/);
+    expect(hero).toMatch(/background:\s*var\(--band\)/);
+  });
+
+  // Regression, measured in the browser at 1280x700: with `html, body {
+  // height: 100% }` the body box was exactly one viewport tall, and a sticky
+  // element is constrained by its containing block — so .house-bar stopped
+  // sticking the moment the page scrolled past the first screen (top: -358px
+  // at scrollY 1000). The same one-viewport body is what made the band shrink
+  // to 0 and need `flex-shrink: 0`: measured with the old rule and the
+  // workaround removed, the hero is 0px tall; with the rule below and the
+  // workaround removed it is its full 353px, so the workaround is gone too.
+  // html keeps a definite height on purpose — with min-height on both, body's
+  // percentage resolves against an auto-height parent and collapses to its
+  // content, un-pinning the footer on a short page (measured: footer bottom
+  // 1259px in a 1600px viewport).
+  it('body is at least a viewport tall, never exactly one, so the bar keeps sticking', () => {
+    expect(ruleBody(css, '\nhtml {')).toMatch(/height:\s*100%/);
+    const b = ruleBody(css, '\nbody {');
+    expect(b).toMatch(/min-height:\s*100%/);
+    expect(b).not.toMatch(/(?<!-)height:\s*100%/);
+  });
+
+  it('the inner content is the --col column, padded 2.5rem and 3.5rem on desktop', () => {
+    const inner = ruleBody(css, '.tool-hero-inner {');
+    expect(inner).toMatch(/max-width:\s*var\(--col\)/);
+    expect(inner).toMatch(/margin:\s*0 auto/);
+    expect(inner).toMatch(/padding:\s*2\.5rem 1rem/);
+    const wide = css.slice(css.indexOf('.tool-hero {'));
+    expect(wide).toMatch(
+      /@media \(min-width: 768px\)\s*\{[^}]*\.tool-hero-inner\s*\{[^}]*padding:\s*3\.5rem 1rem/s,
+    );
+  });
+
+  // The tokens are silent on the eyebrow-to-title gap, so Doxa's hero decides
+  // it: its <h1> takes `mt-3`, three times the 0.25rem this had.
+  it('the title sits 0.75rem under the eyebrow, as Doxa does', () => {
+    expect(ruleBody(css, '.tool-hero h1 {')).toMatch(/margin:\s*0\.75rem 0 1rem/);
+  });
+
+  it('main is the same column, and yields its top padding to a band when there is one', () => {
+    const m = ruleBody(css, '\nmain {');
+    expect(m).toMatch(/max-width:\s*var\(--col\)/);
+    expect(m).toMatch(/padding:\s*2rem 1rem/);
+    // A band-less page (/bookmarklet/, 404) keeps the 2rem; the front page's
+    // band supplies its own bottom margin instead, so main must not add a
+    // second gap under it. The band is main's immediate previous sibling, so
+    // the adjacency selector says it with no :has() dependency.
+    expect(css).toMatch(/\.tool-hero \+ main\s*\{[^}]*padding-top:\s*0/s);
+    expect(css).not.toMatch(/body:has\(/);
+  });
+
+  // Measured at 390x844, scrolled to the bottom: 64px of the footer sat under
+  // the fixed .tool-nav-bar. main's own bottom padding cannot help — the
+  // footer is main's SIBLING, below it — so the clearance is the footer's,
+  // the way Doxa gives it to its own footer (Layout.tsx's `mb-[calc(4rem+…)]
+  // md:mb-0`).
+  it('the footer clears the fixed mobile bar, and gives the clearance back at 768px', () => {
+    const barH = ruleBody(css, '.tool-nav-bar {').match(/height:\s*([\d.]+rem)/)[1];
+    expect(ruleBody(css, '\nfooter {')).toContain(
+      `margin-bottom: calc(${barH} + env(safe-area-inset-bottom, 0px))`,
+    );
+    const i = css.indexOf('@media (min-width: 768px)');
+    const wide = css.slice(i, css.indexOf('@media', i + 10));
+    expect(wide).toMatch(/footer\s*\{[^}]*margin-bottom:\s*0/);
+  });
+});
+
+describe('page components take the house geometry (spec §6)', () => {
+  it('links are chrome by default and prose restores the underline', () => {
+    expect(css).toMatch(/\na\s*\{[^}]*text-decoration:\s*none/s);
+    const prose = ruleBody(css, 'main p a,');
+    expect(prose).toMatch(/text-decoration:\s*underline/);
+    expect(css).toMatch(/main p a,\s*\n\s*main li a:not\(\.card\),\s*\n\s*\.notice a\s*\{/);
+  });
+
+  // Measured in the browser: a bare `a:hover` (0,1,1) matched both the way
+  // card and the language pill, so hovering a card underlined title, body and
+  // CTA at once and repainted the title over `.way-card { color: var(--text) }`
+  // (0,1,0), and hovering the pill underlined it. The exclusion is written on
+  // the rule that decides the underline rather than as two later resets: a
+  // reset pair has to stay ahead of every future hover declaration, while the
+  // exclusion cannot be outrun by one. The exclusion sits inside :where() so
+  // the rule keeps the (0,1,1) of the `a:hover` it replaces: bare :not()s
+  // score (0,3,1), which outranks `.tool-nav a` and put the underline back on
+  // every nav pill — measured in the browser on the first attempt.
+  // The selector string itself is asserted literally (not via a regex spanning
+  // its nested parens — `[^)]*` cannot cross the `)` inside `:not(.card)`),
+  // then its body is read with ruleBody like every other rule in this file.
+  const PROSE_HOVER_SELECTOR = 'a:where(:not(.card):not(.lang-toggle):not(.btn-primary)):hover';
+
+  it('the prose hover does not reach a card or the language pill', () => {
+    expect(css).toContain(PROSE_HOVER_SELECTOR);
+    expect(ruleBody(css, PROSE_HOVER_SELECTOR)).toMatch(/text-decoration:\s*underline/);
+    expect(css).not.toMatch(/\na:hover\s*\{/);
+    expect(css).not.toMatch(/\na:not\(/);
+  });
+
+  // Regression: the bookmarklet CTA is `<a class="btn-primary bookmarklet-link">`
+  // (BookmarkletInstall.astro) — an anchor, so it was still caught by the
+  // prose-hover rule above before .btn-primary joined the exclusion list.
+  // .btn-primary:hover repaints the fill to --accent-hover but sets no
+  // `color`, so the prose rule's `color: var(--accent-hover)` painted the
+  // text the same colour as the fill underneath it (1:1) and underlined it —
+  // measured in the browser, not just read off the cascade.
+  it('the prose hover does not reach the primary button', () => {
+    expect(PROSE_HOVER_SELECTOR).toContain(':not(.btn-primary)');
+    expect(ruleBody(css, PROSE_HOVER_SELECTOR)).toMatch(/text-decoration:\s*underline/);
+  });
+
+  it('one card rule, and the two blocks render.js writes for itself share it', () => {
+    const card = ruleBody(css, '.card,');
+    expect(card).toMatch(/background:\s*var\(--bg-card\)/);
+    expect(card).toMatch(/border:\s*1px solid var\(--line\)/);
+    expect(card).toMatch(/border-radius:\s*var\(--radius-card\)/);
+    expect(card).toMatch(/padding:\s*var\(--space-card\)/);
+    // render.js is untouched by this change — it writes `flaw-card` and the
+    // strengths <li>s itself — so those two join the selector list instead of
+    // gaining a class.
+    const selectors = css.slice(css.indexOf('.card,'), css.indexOf('{', css.indexOf('.card,')));
+    expect(selectors).toContain('.flaw-card');
+    expect(selectors).toContain('#strengths-list li');
+    // Scoped to the anchor: the summary block is a `.card` <div> nobody can
+    // click, and an unscoped .card:hover lit its border and shadow under the
+    // pointer as if it were a target.
+    expect(ruleBody(css, 'a.card:hover {')).toMatch(/box-shadow:\s*0 1px 3px rgba\(0, 0, 0, 0\.04\)/);
+    expect(css).not.toMatch(/\n\.card:hover\s*\{/);
+  });
+
+  it('the ways are a list of card links with an icon tile', () => {
+    expect(landing).toMatch(/<ul class="ways">/);
+    expect(landing).toMatch(/<li class="way">/);
+    expect(landing).toMatch(/<a\s+class="card way-card"/);
+    const tile = ruleBody(css, '.way-icon {');
+    expect(tile).toMatch(/border-radius:\s*var\(--radius-control\)/);
+    expect(tile).toMatch(/background:\s*var\(--tint\)/);
+    // 3rem, not 2.5rem: the geometry tokens are silent on the tile, so the
+    // contract's card tile is 3rem; Doxa's other tiles are per-context.
+    expect(tile).toMatch(/width:\s*3rem/);
+    expect(tile).toMatch(/height:\s*3rem/);
+  });
+
+  it("the way icons are ToolNav's own paths, repeated inline rather than factored out", () => {
+    // The Item 9 guard above counts three <svg in ToolNav.astro's SOURCE, so
+    // the icons cannot move into a shared component. They are repeated here
+    // instead — and pinned equal, so the copy cannot drift.
+    const dOf = (src) => [...src.matchAll(/\sd="([^"]+)"/g)].map((m) => m[1]);
+    const start = landing.indexOf('class="way-icon"');
+    expect(start).toBeGreaterThan(0);
+    const tile = landing.slice(start, landing.indexOf('</span>', start));
+    expect(dOf(toolNav)).toHaveLength(3);
+    expect(dOf(tile)).toEqual(dOf(toolNav));
+  });
+
+  it('the summary block is a card too, and the badges keep their colours', () => {
+    expect(analyzer).toMatch(/<div class="card" id="result-summary-card">/);
+    // Colours are pinned by the score-badge/flaw-severity describes above and
+    // are untouched here: only the radius moves onto the token.
+    expect(ruleBody(css, '.score-badge {')).toMatch(/border-radius:\s*var\(--radius-control\)/);
+    expect(ruleBody(css, '.flaw-severity {')).toMatch(/border-radius:\s*var\(--radius-control\)/);
+  });
+
+  it('the notice is a quiet lined box on the control radius', () => {
+    const notice = ruleBody(css, '.notice {');
+    expect(notice).toMatch(/border-radius:\s*var\(--radius-control\)/);
+    expect(notice).toMatch(/border:\s*1px solid var\(--line\)/);
+    expect(notice).toMatch(/color:\s*var\(--muted\)/);
+    expect(notice).toMatch(/font-size:\s*13px/);
+  });
+
+  it('the primary button dims when disabled instead of turning grey', () => {
+    const btn = ruleBody(css, '.btn-primary {');
+    expect(btn).toMatch(/border-radius:\s*var\(--radius-card\)/);
+    expect(btn).toMatch(/padding:\s*0\.875rem 1\.5rem/);
+    const off = ruleBody(css, '.btn-primary:disabled {');
+    expect(off).toMatch(/opacity:\s*0?\.5/);
+    expect(off).not.toMatch(/background:/);
+    expect(css).toMatch(/@media \(max-width: 767px\)\s*\{[^}]*\.btn-primary\s*\{[^}]*width:\s*100%/s);
+  });
+
+  // Regression, measured in the browser rather than read off the source: with
+  // .chrome-btn's own `border`/`background: var(--bg-card)` removed (spec §5),
+  // nothing was left to cancel the UA button defaults, so the theme toggle
+  // rendered `2px outset rgb(0,0,0)` on `rgb(239,239,239)` — the boxed square
+  // the whole change exists to remove, restored by the browser. The reset
+  // belongs on `button`, not back on .chrome-btn, whose own guard above
+  // forbids a `border:` declaration there.
+  it('the button element reset cancels the UA border and fill', () => {
+    const b = ruleBody(css, '\nbutton {');
+    expect(b).toMatch(/border:\s*0/);
+    expect(b).toMatch(/background:\s*none/);
+  });
+
+  it('the secondary button is the tinted control, not an outlined one', () => {
+    const btn = ruleBody(css, '.btn-secondary {');
+    expect(btn).toMatch(/background:\s*var\(--tint\)/);
+    expect(btn).toMatch(/color:\s*var\(--link\)/);
+    expect(btn).toMatch(/border-radius:\s*var\(--radius-control\)/);
+    expect(btn).toMatch(/min-height:\s*var\(--control-h\)/);
+    expect(ruleBody(css, '.btn-secondary:hover {')).toMatch(/background:\s*var\(--tint-strong\)/);
+  });
+
+  it("a band-less page's H1 is the display serif, not a 22px sans line", () => {
+    // /bookmarklet/ and /analyze/ carry no hero, so their <h1> takes the type
+    // scale's "page H1" role rather than the band's oversized one
+    // (.tool-hero h1 overrides this further down the file).
+    const h1 = ruleBody(css, '\nh1 {');
+    expect(h1).toMatch(/font-family:\s*var\(--face-display\)/);
+    expect(h1).toMatch(/font-size:\s*clamp\(2rem, 5vw, 3rem\)/);
+  });
+
+  it('the textarea takes the card radius', () => {
+    expect(ruleBody(css, 'textarea#text-input {')).toMatch(/border-radius:\s*var\(--radius-card\)/);
+  });
+
+  it('the footer is two lines, policy first and the credit under it', () => {
+    const foot = layout.slice(layout.indexOf('<footer>'));
+    expect(foot.indexOf('footer-links')).toBeLessThan(foot.indexOf('footer-credit'));
+    // The privacy <a> moved verbatim: scripts/check-privacy-sync.sh in the
+    // elenchus repo greps strings.js, but this link is what it exists for.
+    expect(foot).toMatch(/<a href=\{t\.privacyUrl\}>\{t\.privacyLabel\}<\/a>/);
+    expect(foot.indexOf('t.privacyUrl')).toBeLessThan(foot.indexOf('Made with care by'));
+    expect(ruleBody(css, '.footer-credit {')).toMatch(/font-size:\s*13px/);
+  });
+});
+
+describe('the pinned Vite CSS target (astro.config.mjs) leaves no opaque fallback in the built CSS', () => {
+  // astro.config.mjs pins build.cssTarget to Tailwind v4's browser floor
+  // (Safari 16.4 / Chrome 111 / Firefox 128) rather than trusting Vite's own
+  // undocumented default. This repo carries no oklab/relative-color syntax
+  // today, so Lightning CSS has nothing to fold: `--tint`'s definition
+  // (`color-mix(in srgb, var(--text) 6%, transparent)`, house.css) mixes a
+  // var(), not a constant, and lightningcss's transform() leaves such a
+  // declaration untouched under any target — verified directly against the
+  // library and by building under a deliberately ancient target first. The
+  // config claim is pinned below the same way untilt's tokens.test.ts pins
+  // vite.config.ts's cssTarget; the rest of this block reads `dist/`, not
+  // `src/`, so it needs a build to have run — it skips loudly (not silently
+  // green) when dist is missing rather than pass on nothing checked.
+  const astroConfig = readFileSync(join(__dirname, '../astro.config.mjs'), 'utf-8');
+
+  it("states Tailwind v4's own browser floor as the build's CSS target", () => {
+    const target = astroConfig.match(/cssTarget:\s*\[([^\]]*)\]/)?.[1] ?? '';
+    for (const browser of ['chrome111', 'safari16.4', 'firefox128']) expect(target).toContain(browser);
+  });
+
+  const distDir = join(__dirname, '../dist');
+  const distExists = statSync(distDir, { throwIfNoEntry: false })?.isDirectory() ?? false;
+  const astroDir = join(distDir, '_astro');
+  // A build that crashed mid-way (or was interrupted) can leave dist/ present
+  // with no dist/_astro inside it — readdirSync on a missing directory throws
+  // at describe-time collection, which takes every assertion in this file
+  // down with it, not just this block's. Guarded the same way as dist/ itself.
+  const astroExists = distExists && (statSync(astroDir, { throwIfNoEntry: false })?.isDirectory() ?? false);
+  const OPAQUE_FALLBACK = /--tint:var\(--text\)/;
+
+  if (!astroExists) {
+    // A skipped test with no message is silent in vitest's default reporter
+    // (measured: a describe-time console.warn never reached the output
+    // either — vitest drops console calls made outside a running test body).
+    // So this stays a real, running `it` whose own name carries the reason
+    // and whose body throws with the same reason, landing as a named FAIL —
+    // not a silently-green skip and not a suite failure anyone hits by
+    // running `npm test` after a build (only when dist/_astro is stale/absent
+    // or the build produced dist/ without ever reaching dist/_astro).
+    it('SKIPPED — run `npm run build` first: dist/_astro not found, the opaque-fallback check has nothing to read', () => {
+      throw new Error('dist/_astro not found — this check verified nothing; run `npm run build` first.');
+    });
+  } else {
+    const cssFiles = readdirSync(astroDir).filter((f) => f.endsWith('.css'));
+    it('at least one built CSS file exists to check', () => {
+      expect(cssFiles.length).toBeGreaterThan(0);
+    });
+    it('no built CSS file carries the opaque --tint:var(--text) fallback', () => {
+      for (const file of cssFiles) {
+        const built = readFileSync(join(astroDir, file), 'utf-8');
+        expect(built).not.toMatch(OPAQUE_FALLBACK);
+      }
+    });
+    // A stale dist/ (built before the last source edit) passes every check
+    // above on the OLD bundle, silently — the failure this guards against is
+    // a green suite that verified yesterday's CSS. house.css and global.css
+    // are the only sources this describe block draws conclusions about.
+    it('the built CSS is newer than src/styles/house.css and src/styles/global.css — not a stale bundle', () => {
+      const newestSource = Math.max(
+        statSync(join(__dirname, '../src/styles/house.css')).mtimeMs,
+        statSync(join(__dirname, '../src/styles/global.css')).mtimeMs,
+      );
+      const staleFiles = cssFiles.filter((f) => statSync(join(astroDir, f)).mtimeMs < newestSource);
+      if (staleFiles.length > 0) {
+        throw new Error(
+          `dist/_astro CSS is older than src/styles/{house,global}.css — stale build (${staleFiles.join(', ')}). Run \`npm run build\` again.`,
+        );
+      }
+    });
+  }
 });
