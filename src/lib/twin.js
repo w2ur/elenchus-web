@@ -22,13 +22,19 @@ import { strings } from './strings.js';
 const SITE = 'https://elenchus.untilt.app';
 
 /**
+ * Two renderings of the destination language out of one derivation: the
+ * header's compact pill shows `otherCode` ('FR' on an English page), the
+ * footer keeps `otherLabel` (the full word). Both name the DESTINATION, so
+ * the control offers an action rather than stating the language you are
+ * already reading.
+ *
  * @param {string} lang - 'en' or 'fr'.
  * @param {string} [path] - the page's English path, e.g. '/', '/bookmarklet/'.
- * @returns {{ otherHref: string | null, otherLang: string | null, otherLabel: string | null }}
+ * @returns {{ otherHref: string | null, otherLang: string | null, otherLabel: string | null, otherCode: string | null }}
  */
 export function twinFor(lang, path) {
   if (!path) {
-    return { otherHref: null, otherLang: null, otherLabel: null };
+    return { otherHref: null, otherLang: null, otherLabel: null, otherCode: null };
   }
 
   const enHref = new URL(path, SITE).href;
@@ -37,6 +43,9 @@ export function twinFor(lang, path) {
   const otherLang = lang === 'fr' ? 'en' : 'fr';
   const otherHref = lang === 'fr' ? enHref : frHref;
   const otherLabel = (strings[lang] ?? strings.en).otherLangLabel;
+  // Derived from otherLang rather than kept in a second table — a hand-kept
+  // map is exactly how the visible label and the hreflang come to disagree.
+  const otherCode = otherLang.toUpperCase();
 
-  return { otherHref, otherLang, otherLabel };
+  return { otherHref, otherLang, otherLabel, otherCode };
 }

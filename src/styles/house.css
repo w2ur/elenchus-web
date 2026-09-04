@@ -35,9 +35,13 @@
  *      restates shell tokens (--bg/--text/etc.), which only this file may
  *      legitimately declare.
  *
- * The `.house` lockup rules below are NOT from upstream house.css — they
- * originated here and were copied FROM here into the extension. That is why
- * they carry no [ADAPTED] marker: this file is their source.
+ * The lockup rules below (.house-mark / .house-sep / .house-tool) are NOT
+ * from upstream house.css — they originated here and were copied FROM here
+ * into the extension. That is why they carry no [ADAPTED] marker: this file
+ * is their source. The header bar and its inner row are the other way round:
+ * upstream declares both, and sub-project A brought them down here, along
+ * with the @geometry block — the one section of this file that is copied
+ * VERBATIM rather than adapted (contract §8).
  *
  * WHAT IS NOT HERE, ON PURPOSE: --accent and --link. The shared shell is
  * surfaces, text, borders and type, and nothing else. Both accents are PER
@@ -194,19 +198,38 @@
   }
 }
 
-/* --- The house lockup -----------------------------------------------------
+/* --- The header bar and the house lockup ----------------------------------
    The only thing on the page that says which house it belongs to. The
    wordmark links out to the chapeau; the tool name is not a link, because it
-   names the page you are already on. */
+   names the page you are already on.
+
+   Two rules, not one, since sub-project A: the bar is full width and draws
+   the hairline, its inner row is a --col column. That is what lines the
+   lockup up with the page content instead of with the viewport edge — the
+   full-bleed header was the single largest difference the spec measured
+   against untilt.app/check. HouseHeader.astro carries the pair as
+   header > div; global.css adds no geometry of its own on top of them.
+
+   The extension copy omits the bar and keeps its own padding on the row: a
+   360px panel has no column (contract §8). */
+
+.house-bar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
 
 .house {
+  max-width: var(--col);
+  margin: 0 auto;
+  padding: var(--bar-pad);
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--line);
   font-family: 'Instrument Sans', system-ui, sans-serif;
-  font-size: 1rem;
+  font-size: 1.125rem;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
@@ -231,6 +254,38 @@
      light mode (see global.css's --accent comment for the current numbers).
      Same split as .btn-secondary. */
   color: var(--link);
+}
+
+/* Shell geometry — identical in every web copy, no adaptation. This is the
+   one part of this file that is a VERBATIM copy of untilt's, not an adapted
+   one (contract §8): the numbers are the whole point, so a transform here
+   would be the drift it exists to remove. Declared in its own :root rule
+   AFTER the lockup rules, outside every scheme block and outside the slices
+   houseShell.test.js takes for the surface sets — `light` cuts at the dark
+   media query and `explicitLight` at `.house-bar {`, so a second :root
+   placed here is invisible to both and the derived set-equality guard is
+   untouched. Found by the tests via the marker line below.
+
+   The two tints derive from --text, so they are scheme-aware by construction
+   rather than by a second hand-written value: one neutral grey replaces both
+   the 12% teal this site painted behind a selected nav item and the
+   blue-tinged surfaces Doxa used, so the two tools select and hover alike.
+   Composited over --bg and --bg-card in both schemes, --tint-strong — the
+   darker of the two, and the surface a hovered control actually paints —
+   leaves --link and --link-hover above 4.5:1; houseShell.test.js recomputes
+   that from these very percentages rather than trusting this sentence. */
+/* @geometry */
+:root {
+  --col: 48rem;                 /* content column (max-w-3xl) */
+  --bar-pad: 0.75rem 1rem;      /* header inner row (py-3 px-4) */
+  --control-h: 2rem;            /* theme button, language pill, nav pill, secondary button */
+  --radius-card: 0.75rem;       /* cards, textareas, primary CTA (rounded-xl) */
+  --radius-control: 0.5rem;     /* pills, toggles, notices, icon tiles, badges, single-line fields (rounded-lg) */
+  --text-ui: 0.875rem;          /* nav, controls, footer links (text-sm) */
+  --text-eyebrow: 0.6875rem;    /* eyebrows (11px, @utility eyebrow) */
+  --space-card: 1.25rem;        /* card padding (p-5) */
+  --tint: color-mix(in srgb, var(--text) 6%, transparent);         /* rest / selected surface */
+  --tint-strong: color-mix(in srgb, var(--text) 12%, transparent); /* hover on a control already on --tint */
 }
 
 /* --- Contour bloom: the shared waiting animation ---------------------------

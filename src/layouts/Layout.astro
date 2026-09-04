@@ -93,28 +93,43 @@ const t = strings[lang] ?? strings.en;
   </head>
   <body>
     <HouseHeader lang={lang} path={path} />
+    {/* The band slot sits BETWEEN the bar and the column, so a hero is flush
+        under the header hairline and bleeds to the viewport edge. Rendered
+        inside the column instead, it was boxed at the column's width with the
+        page's own top padding above it — the drift the spec measured against
+        Doxa. A page with no band (/bookmarklet/, 404) renders nothing here,
+        and the column keeps its own 2rem top padding (global.css). */}
+    <slot name="band" />
     <main>
       <slot />
     </main>
     <footer>
-      Made with care by <a href="https://william.revah.paris">William</a>
-      <span aria-hidden="true"> · </span>
-      <a href={t.privacyUrl}>{t.privacyLabel}</a>
-      {
-        /* The twin page in the other language, from the same derived pair as
-           the hreflang tags above — so the link a reader clicks and the link
-           a crawler reads can never point at different pages. `hreflang` and
-           `lang` are both set: without `lang`, a screen reader announces
-           "Français" in the surrounding page's voice. */
-        otherHref && (
-          <>
-            <span aria-hidden="true"> · </span>
-            <a href={otherHref} hreflang={otherLang} lang={otherLang}>
-              {otherLabel}
-            </a>
-          </>
-        )
-      }
+      <div class="footer-links">
+        <a href={t.privacyUrl}>{t.privacyLabel}</a>
+        {
+          /* The twin page in the other language, from the same derived pair as
+             the hreflang tags above — so the link a reader clicks and the link
+             a crawler reads can never point at different pages. `hreflang` and
+             `lang` are both set: without `lang`, a screen reader announces
+             "Français" in the surrounding page's voice. The header shows the
+             two-letter code; the footer keeps the full word. */
+          otherHref && (
+            <>
+              <span aria-hidden="true"> · </span>
+              <a href={otherHref} hreflang={otherLang} lang={otherLang}>
+                {otherLabel}
+              </a>
+            </>
+          )
+        }
+      </div>
+      {/* Divs, not <p>s: the prose underline rule in global.css keys on
+          `main p a` / `main li a`, and the footer is chrome — but a <p> here
+          would also make "Made with care by William" a paragraph of running
+          text, which it is not. */}
+      <div class="footer-credit">
+        Made with care by <a href="https://william.revah.paris">William</a>
+      </div>
     </footer>
   </body>
 </html>

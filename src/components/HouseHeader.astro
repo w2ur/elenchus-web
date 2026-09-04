@@ -21,25 +21,43 @@ interface Props {
 
 const { lang = 'en', path } = Astro.props;
 const t = strings[lang] ?? strings.en;
-const { otherHref, otherLang, otherLabel } = twinFor(lang, path);
+const { otherHref, otherLang, otherCode } = twinFor(lang, path);
 ---
 
-<header class="house">
-  {/* The only thing on the page that says which house it belongs to. The
-      wordmark links out to the chapeau; the tool name is not a link,
-      because it names the page you are already on. */}
-  <a class="house-mark" href={t.houseUrl}>{t.houseLabel}</a>
-  <span class="house-sep" aria-hidden="true">/</span>
-  <span class="house-tool">Elenchus</span>
-  <ToolNav lang={lang} path={path} />
-  <div class="house-controls">
-    <ThemeToggle lang={lang} />
-    {
-      otherHref && (
-        <a data-lang-toggle class="chrome-btn" href={otherHref} hreflang={otherLang} lang={otherLang}>
-          {otherLabel}
-        </a>
-      )
-    }
+{/* The bar is full width; the row inside it is a --col column, so the lockup
+    lines up with the page content rather than with the viewport edge. Both
+    rules belong to the shell (house.css) — see its header-bar comment. */}
+<header class="house-bar">
+  <div class="house">
+    {/* The only thing on the page that says which house it belongs to. The
+        wordmark links out to the chapeau; the tool name is not a link,
+        because it names the page you are already on. */}
+    <a class="house-mark" href={t.houseUrl}>{t.houseLabel}</a>
+    <span class="house-sep" aria-hidden="true">/</span>
+    <span class="house-tool">Elenchus</span>
+    <ToolNav lang={lang} path={path} />
+    <div class="house-controls">
+      <ThemeToggle lang={lang} />
+      {
+        /* The visible label is the DESTINATION code, not the current
+           language: a control reading "EN" on an English page states a fact
+           instead of offering an action, and both tools shipped that
+           reading. `lang`, `hreflang` and the label now name the same
+           destination. The full word stays on the footer's copy of this
+           link (Layout.astro), where there is room for it. The globe is
+           drawn to ThemeToggle.astro's inline-SVG convention (24x24
+           viewBox, currentColor stroke, round caps) and is decorative —
+           the code beside it already carries the meaning. */
+        otherHref && (
+          <a data-lang-toggle class="lang-toggle" href={otherHref} hreflang={otherLang} lang={otherLang}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18" />
+            </svg>
+            {otherCode}
+          </a>
+        )
+      }
+    </div>
   </div>
 </header>
