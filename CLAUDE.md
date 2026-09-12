@@ -77,7 +77,7 @@ header reach the Worker and come back as an opaque 403.
 
 ## Visual identity
 
-**Two stylesheets, and the split is the point.** `src/styles/house.css` is the
+Two stylesheets, and the split is the point. `src/styles/house.css` is the
 Untilt house shell — fonts, surfaces, the `.house` lockup and the contour
 bloom — an **adapted copy** of `untilt/client/src/styles/house.css`. Read its
 header before touching it: it names the two things that deliberately differ
@@ -94,9 +94,9 @@ untilt's `house.css`, because the numbers are the whole point and a
 transform here would be the drift the rest of the file exists to avoid
 (contract §8). `test/houseShell.test.js` derives each token's name from the
 block itself and asserts it is actually referenced somewhere, rather than
-hand-typing that list either. Sub-project A also split the header rule
-just above it into two: `.house-bar` is the full-width sticky strip that paints the surface
-and draws the hairline, and `.house` is now its inner row — a `--col`-wide
+hand-typing that list either. The header rule just above it is split in two:
+`.house-bar` is the full-width sticky strip that paints the surface
+and draws the hairline, and `.house` is its inner row — a `--col`-wide
 flex line holding the lockup — so the wordmark lines up with the page
 content instead of the viewport edge. `HouseHeader.astro` nests them
 `<header class="house-bar"><div class="house">…`.
@@ -111,7 +111,7 @@ function into an opaque pre-target fallback), even though nothing here
 triggers it yet, since `--tint`'s `color-mix()` wraps a `var()` Lightning CSS
 can't fold regardless of target.
 
-**The wait is the contour bloom, not a spinner.** `#loading-state` in
+The wait is the contour bloom, not a spinner. `#loading-state` in
 `Analyzer.astro` carries five `.house-bloom-ring` paths, byte-identical to
 untilt's `ContourBloom.tsx` and the extension's `sidepanel.html`. It loops and
 never fills — no percentage, no bar, no step count, because nothing about this
@@ -121,28 +121,24 @@ wait is measurable. Two things about it that look like oversights:
   700ms gate on the result path — the highest-stakes branch in this repo and
   the one with no automated coverage — to delay a result the visitor waited a
   minute for. The rules stay in the copy because divergence between the three
-  copies is the failure mode this arrangement guards against. Known suite-wide:
-  it is applied in **zero** of the four places the design spec calls for.
+  copies is the failure mode this arrangement guards against.
 - **`vector-effect: non-scaling-stroke` is load-bearing.** `stroke-width`
   otherwise resolves in viewBox user units and scales down with the SVG — a
   400-unit viewBox at 64px turned 1.5 into a 0.24px haze upstream. Removing it
   here reproduces that: 2012 painted pixels against the real 4818.
 
 The surface tokens carry both the **names and the values** of the Untilt
-house shell in `untilt/client/src/styles/house.css`. They used to carry only
-the values: `--muted` and `--line` were `--text-muted` and `--border` here
-until the v0.2 rename, which is what now lets the two files be read against
-each other by eye. `test/houseShell.test.js` pins them, so that
+house shell in `untilt/client/src/styles/house.css`, so the two files can be
+read against each other by eye. `test/houseShell.test.js` pins them, so that
 `elenchus.untilt.app` reads as one product with `untilt.app`; there is no
 cross-repo drift check, so a rename on either side is invisible to the other
 suite and each copy pins itself. The
 severity/score scale is copied verbatim from `~/Dev/elenchus/sidepanel/
 sidepanel.css` instead, and must not be folded into the house surface
 tokens — they are semantic status colours, not the house shell. The one
-deliberate difference from the house is the accent color — the portfolio
+deliberate difference from the house is the accent colour — the portfolio
 hub assigns Elenchus the teal accent `#1E7A76` (`src/styles/global.css`),
-not `untilt.app`'s blue-grey. Stay in that teal family; never default to
-purple/violet/indigo (portfolio-wide rule).
+not `untilt.app`'s blue-grey. Stay in that teal family.
 
 The header (`.house-bar > .house` — the full-width sticky bar wrapping the
 `--col` inner row, rendered by `src/components/HouseHeader.astro`, not
@@ -163,15 +159,13 @@ contract header" for the pin). Instrument Sans (headings, the header) and
 DM Sans (body) are self-hosted from `public/fonts/` rather than linked from
 fonts.googleapis.com — a render-blocking Google Fonts request measured
 Lighthouse performance at 94/100, against a >=95 gate; self-hosting with
-`font-display: swap` restored 100/100. The three `@font-face` rules moved
-into `src/styles/house.css` in v0.2, since untilt self-hosts the same files
+`font-display: swap` restored 100/100. The three `@font-face` rules live in
+`src/styles/house.css`, since untilt self-hosts the same files
 under the same names and they are part of the shared shell. **They are
 byte-identical across the two repos today** — verified by md5 against
 `untilt/client/public/fonts/` — but like the surface tokens above they are
 hand-copied with no cross-repo drift check, so a re-subset on either side is
-invisible to the other. untilt no longer loads these families from the Google
-Fonts CDN; that claim was true until its own v0.1 self-hosting task and is the
-kind of cross-repo statement that goes stale silently.
+invisible to the other.
 
 **Self-hosting also moved the caching onto us.** Astro fingerprints
 `_astro/*`, but `public/fonts/*.woff2` are copied through unhashed, so under
@@ -196,7 +190,7 @@ output, so the stored choice never flashes the wrong scheme (pinned by
 duplicate it elsewhere.
 
 The front page (`src/pages/index.astro` + `src/pages/fr/index.astro`) IS the
-analyzer, since sub-project 2c: `<ToolHero>` (band, title, the "does not
+analyzer: `<ToolHero>` (band, title, the "does not
 fact-check" lede, chips), then `<Analyzer>` (paste box, Turnstile widget,
 results panel, the enum clamp on model output), then `<Landing>` (the
 remaining ways-to-use-it / what-you-get / limits / privacy content).
@@ -214,7 +208,7 @@ goes in `Layout.astro`'s `<slot name="band" />`** (`<ToolHero slot="band">`),
 which renders between the header bar and `<main>` so the band bleeds to the
 viewport edge and carries the `--col` column inside itself — rendered in
 `<main>` instead it is boxed at the column's width with the page's own top
-padding above it, the drift sub-project A removed.
+padding above it.
 
 **The front page says "it does not fact-check" before it says anything
 about how to use the tool.** Every reasoning tool gets mistaken for a
@@ -227,58 +221,19 @@ are suppressed on the front page (`showHeading={false}`) precisely so this
 lede is the thing a visitor reads first, not a second heading repeating the
 same claim in shorter form right below it.
 
-Measured with Lighthouse against the local preview build: SEO,
-accessibility and best-practices all **100** on `/` and `/fr/`. The run was
-made to fail first — the same command scored 47 accessibility / 82 SEO on a
-deliberately broken control page (no `lang`, no meta description, an
-unlabelled link, an image with no alt, 1.1:1 text contrast) — so those
-hundreds are a measurement rather than a tool that always says yes.
+**Running Lighthouse here: load the `elenchus-web-lighthouse` skill** — it
+holds the scores, the CLS history and the experiments already tried. Two
+things that will silently mis-measure the page if skipped: pin the colour
+scheme with `--chrome-flags="--blink-settings=preferredColorScheme=1"`
+(headless Chrome otherwise inherits macOS's appearance, and light mode is
+where every contrast defect here has lived), and set
+`PUBLIC_TURNSTILE_SITE_KEY` to Cloudflare's `1x00000000000000000000AA` test
+key, never `.env.example`'s `replace-me`, which throws `TurnstileError
+400020` and costs a best-practices point. `'DM Sans'`/`'Instrument Sans'` use
+`font-display: optional`, not `swap` — a metric-matched fallback was measured
+worse and must not be re-proposed on the strength of the calculation alone.
 
-**Pin the colour scheme, or the accessibility score is about a page you did
-not test.** Headless Chrome inherits macOS's appearance, and dark mode here
-is 2–4 points clear of AA everywhere while light mode is where every
-contrast defect this repo has ever had actually lived — so a run made in
-inherited dark mode scores 100 without ever rendering the failing colours.
-Pass `--chrome-flags="--blink-settings=preferredColorScheme=1"` (1 = light,
-0 = dark) and confirm it took by decoding the report's `final-screenshot`:
-its top-left pixel must be the light `--bg`, not `#0F1117`.
-
-**Also pin `PUBLIC_TURNSTILE_SITE_KEY` to one of Cloudflare's published test
-keys for a local Lighthouse run, not `.env.example`'s `replace-me`.** The
-placeholder isn't a valid key shape, so the widget throws
-`TurnstileError 400020` into the console on every load — a real error, but
-one about the placeholder, not the page — which costs best-practices a
-point (`errors-in-console`) and would silently mis-measure any future
-Turnstile-adjacent regression as a Lighthouse false negative on this one
-audit. `1x00000000000000000000AA` (Cloudflare's documented
-always-passes-visible test key) renders and solves like production without
-touching a real siteverify call. `.env` is gitignored, so this is a
-local-only substitution, never committed.
-
-A run of `--only-categories=performance,accessibility,best-practices,seo
---preset=desktop` against `astro preview` scores, in light mode with a
-working Turnstile key: `/fr/` **100/100/100/100** (CLS ~0.006); `/`
-**95/100/100/100** across three consecutive runs (CLS ~0.139) — since
-sub-project 2c put the analyzer directly on `/`, that page now carries more
-font-dependent content above the fold (the hero band, the notice, the form)
-than `/analyze` or `/fr/` ever did, and the self-hosted fonts' `swap`
-display was reflowing that stack on load. `#turnstile-container` reserves
-its own box (`min-height: 65px`, Turnstile's own default "normal" size) so
-the widget mounting doesn't add to that; `'DM Sans'`/`'Instrument Sans'`
-moved from `font-display: swap` to `font-display: optional` in
-`house.css` so neither can swap into a rendered layout after the fact
-(`'Instrument Serif'` keeps `swap`, since it already carries a
-metric-matched `size-adjust`/`ascent-override` fallback face for exactly
-this — see that `@font-face` block's own comment). A metric-matched
-fallback was tried for the two sans faces too, sized against Arial with
-fontTools — it made both perf and CLS measurably *worse* (92/100, CLS
-0.179) rather than better, so it was reverted rather than shipped on the
-strength of the calculation alone; `font-display: optional` is the change
-that was actually verified to move the score, not the one that looked
-more principled on paper. axe-core reports zero violations on `/` and
-`/fr/` in both colour schemes.
-
-**Two copy files, two jobs.** `src/lib/strings.js` is the analyzer UI's
+Two copy files, two jobs. `src/lib/strings.js` is the analyzer UI's
 strings — labels, failure states, and the severity/score tables a
 drift-check compares against the extension. `src/lib/pageCopy.js` is prose
 for content pages, both languages side by side so a paragraph cannot be
@@ -324,10 +279,9 @@ per-browser fact and not a guarantee — Firefox carried a long-standing bug
 where CSP did break bookmarklets, and Safari is unverified here. Claim on
 the install page only what has been measured.
 
-**Transport: `window.open` + `postMessage` primary, URL fragment fallback**
-(plan task M3, decided from the COOP measurement in M1 — no
-`Cross-Origin-Opener-Policy` on any news or opinion site sampled, nor on this
-site). postMessage keeps the reader's text out of the address bar, history
+**Transport: `window.open` + `postMessage` primary, URL fragment fallback** —
+no `Cross-Origin-Opener-Policy` was found on any news or opinion site
+sampled, nor on this site. postMessage keeps the reader's text out of the address bar, history
 and any link they might share, and has no length ceiling. The fragment is
 what survives a severed opener (COOP) or a popup blocker; it is capped at
 `MAX_TEXT_LENGTH` and **flags its own truncation in the URL**, because on
@@ -350,7 +304,7 @@ choose to put an article into a link.
 
 `src/lib/limits.js` holds `MAX_TEXT_LENGTH`/`MIN_TEXT_LENGTH` — the mirror of
 the Worker's own two constants — because the paste box, the bookmarklet and
-the fragment now all enforce the same cap. Three copies of `15000` would be
+the fragment now all enforce the same cap. Three hand-copied caps would be
 three chances to drift.
 
 **Both transports are verified in a real browser, because vitest cannot reach
@@ -373,13 +327,13 @@ the build must run from the project root, which `npm run build` and Netlify
 both do; there is an `existsSync` check that says so if it ever does not.
 
 `buildBookmarklet()` **fails the build** if the encoded URL passes
-`MAX_BOOKMARKLET_LENGTH` (8000 chars; it is ~2.7 KB today). That budget is
+`MAX_BOOKMARKLET_LENGTH` (`src/lib/buildBookmarklet.js` owns the number, and
+the error prints both it and the actual length). That budget is
 deliberately far below any browser's real bookmark limit — raise it only
 against a measurement, never to make a bigger bookmarklet fit. It is also why
 Readability.js is not inlined: 43 KB encoded, in a disputed band for Firefox.
-That size argument is now the *whole* case — the other half of it used to be
-"and CSP blocks the bookmarklet on those sites anyway", which M2 measured
-false.
+That size argument is the whole case: CSP does not block the bookmarklet on
+those sites, as measured above.
 
 ## Development
 
@@ -391,11 +345,11 @@ false.
 
     npm test
 
-Vitest + jsdom, `test/*.test.js`, covering `src/lib/clamp.js`,
-`src/lib/render.js`, `src/lib/errorState.js`, `src/lib/proxyClient.js`,
-`src/lib/extract.js`, `src/lib/handoff.js` and `src/lib/buildBookmarklet.js`
-(that last one carries `// @vitest-environment node` at the top of its test
-file — esbuild's own entry point does not run under jsdom).
+Vitest + jsdom, `test/*.test.js` — `ls test/` is the inventory; most files
+pin one `src/lib/` module, the rest (`configFailLoud`, `houseShell`,
+`analyzerLiveRegions`) pin structure. `test/buildBookmarklet.test.js` carries
+`// @vitest-environment node` at the top: esbuild's own entry point does not
+run under jsdom.
 
 `test/extract.test.js` runs against real DOM trees built in jsdom, never
 against stubbed queries: the extraction heuristic **is** its interaction
@@ -428,65 +382,46 @@ There is no test runner for the Astro pages themselves, so anything in
 that side of the line.
 
 **`src/lib/proxyClient.js`: an unparseable or wrong-shaped 2xx is a
-failure, never a result.** This is the highest-stakes branch in the repo.
-It once did `let data = {}` before `await response.json()` and swallowed
-the parse error, so `{}` reached the success path (`response.ok` passed,
-`typeof {} === 'object'` passed) and the page rendered an empty summary, an
-"unknown" badge and the `#no-flaws` block — green text reading "No
-reasoning flaws detected." A Cloudflare interstitial or any CDN error page
-therefore made a reasoning-analysis tool **assert the opposite of the
-truth**, confidently. Two guards stand there now, but only one is
-load-bearing: the shape check (`looksLikeAnalysis`, checking `summary` a
-string and `flaws` an array — `{}`, `null` and `[]` all pass a bare
-`typeof === 'object'`) is what actually carries the guarantee. The parse
-branch on a 2xx is defense in depth, not a second independent guard —
-measured by deleting it (keeping `let data;` and an empty catch): 101/101
-tests still pass, because a caught parse leaves `data === undefined`, which
-`looksLikeAnalysis` rejects just the same. Removing `looksLikeAnalysis`
-alone, by contrast, reds 3 tests. It stays in the code anyway — it costs
-nothing and a future contributor should not have to prove the shape check
-is sufficient before trusting it. A parse failure on a **non**-2xx keeps
-selecting from the status instead, so a 503 interstitial still reads as
-`network` rather than the vaguer "unexpected response" — that half of the
-branch is not redundant, since `looksLikeAnalysis` never runs on that
-path.
+failure, never a result.** This is the highest-stakes branch in the repo — a
+Cloudflare interstitial or any CDN error page reaching the success path makes
+a reasoning-analysis tool **assert the opposite of the truth**, confidently.
+`looksLikeAnalysis` (summary a string, flaws an array — `{}`, `null` and `[]`
+all pass a bare `typeof === 'object'`) is the load-bearing guard; the parse
+branch on a 2xx is defence in depth, not a second independent one. A parse
+failure on a **non**-2xx keeps selecting from the status, so a 503
+interstitial still reads as `network`. The incident behind the rule and the
+measurement of which guard actually carries it are in the
+`elenchus-web-proxy-client` skill — load it before simplifying either guard.
 
 ### Failure-state copy
 
-**The build-time fail-loud gate is four frontmatter imports and nothing
-else.** `src/lib/config.js` throws at module scope for a missing `PUBLIC_`
-var, and that fails `astro build` only because `src/pages/index.astro`,
-`src/pages/fr/index.astro`, `src/pages/analyze.astro` and
-`src/pages/fr/analyze.astro` import it in **frontmatter** (which runs in
-Node at build time) — the front page carries the analyzer directly since
-sub-project 2c, and the two `/analyze` pages stayed as thin redirect
-targets rather than dropping the gate. The client gets config through
-`data-*` attributes, so nothing else imports the module — remove all four
+**The build-time fail-loud gate is the frontmatter imports of
+`src/lib/config.js` and nothing else.** `config.js` throws at module scope
+for a missing `PUBLIC_` var, and that fails `astro build` only because the
+index and `/analyze` pages in both languages import it in **frontmatter**
+(which runs in Node at build time). The client gets config through
+`data-*` attributes, so nothing else imports the module — remove those
 imports and the build goes green with the env completely unset, shipping a
-site broken for every visitor (measured on the two `/analyze` imports
-alone, before the front page carried its own: exit 0, zero errors).
-`npm run build` cannot catch that by construction, and there is no
-type-checker here. `test/configFailLoud.test.js` is the pin: it asserts
-all four imports are real `import` statements **inside the frontmatter
-fence** (not in a client script, not in a comment), and that importing
-`config.js` with a var unset actually throws and names it.
+site broken for every visitor. `npm run build` cannot catch that by
+construction, and there is no type-checker here.
+`test/configFailLoud.test.js` is the pin: it asserts each import is a real
+`import` statement **inside the frontmatter fence** (not in a client
+script, not in a comment), and that importing `config.js` with a var unset
+actually throws and names it.
 
 A dry per-IP bucket is the **normal** state of this service on a good day
 (150 requests/day service-wide, 2 per IP) — this is a first-impression
 surface for most visitors, not a rare error path. `src/lib/errorState.js`
 selects and renders the failure states, enumerated once in
-`FAILURE_STATES` so tests iterate the enum rather than a hand-copied list.
-Six describe an elenchus-proxy Worker outcome: `ip` and
-`service` (from the 429 body's `reason` enum, clamped
-through `oneOf()`/`REASONS` with unknown values falling to `'service'` — the
-safe direction, since it never tells an individual visitor "you're out" when
-the whole service is), `network` (a fetch throw, or a 5xx the Worker itself
-couldn't resolve — same honest-retry copy either way, since neither can be
-distinguished from here), `forbidden` (403), `generic` (any other non-2xx
-status) and `invalid` (a 2xx response whose body isn't the expected shape;
-returned by `proxyClient.js` directly, never by `selectFailureState()`).
-The other two are raised before any request is made — see "The Turnstile
-challenge has two failure modes" below.
+`FAILURE_STATES` so tests iterate the enum rather than a hand-copied list —
+read it there. Only the non-obvious mappings need stating here: an unknown
+429 `reason` falls to `'service'`, the safe direction, since it never tells
+one visitor "you're out" when the whole service is; `network` covers both a
+fetch throw and a 5xx the Worker itself couldn't resolve, which cannot be
+told apart from here; `invalid` is returned by `proxyClient.js` directly,
+never by `selectFailureState()`; and two states are raised before any
+request is made — see "The Turnstile challenge has two failure modes"
+below.
 The `ip`/`service` copy in `src/lib/strings.js` states the real numbers (2
 here, 21 in the extension) and links to the Chrome Web Store listing
 (`https://chromewebstore.google.com/detail/elenchus/bodfmokjnmkkdobfcnfbplnbplgdbfgl`
@@ -506,7 +441,7 @@ English-only page for every French visitor who hits `forbidden` or
 for developers (`console.error('[elenchus] proxy error:', ...)`) and never
 passes it to `renderFailureState()`.
 
-**Presentation follows the copy's own claim.** `ip`/`service` are the
+Presentation follows the copy's own claim. `ip`/`service` are the
 ordinary shape of a good day, not an error, so they render with the
 `.is-dry-state` CSS class — the same quiet, informational treatment
 `.notice` already gives the standing free-tier disclosure, not the
@@ -548,37 +483,14 @@ the deliberately quiet visual treatment in the one channel that cannot see
 it. `aria-atomic="false"` on the result panel because an analysis can be
 long, and atomic would re-read the whole thing as one block.
 
-**Link/text contrast**: `--accent` moved to `#1E7A76` light / `#5FC2BC` dark
-(pushed a step darker/further from the retired `#4F8A8B` family so a fill
-carrying white clears 3:1 with margin), and every fill now pairs with a
-scheme-paired ink token, `--on-accent` — white in light, `#0F1117` in dark —
-instead of a bare `#fff`, because the dark accent goes pale enough that white
-on it is only 2.12:1 (`.btn-primary`'s old dark-mode override existed for
-exactly this and is gone now that `--on-accent` does it generically).
-`--accent` is legal as a **fill**: white on it measures 5.12:1 in light,
-`#0F1117` on it 8.92:1 in dark. As **text** it is not: 4.86:1 on the
-page and 3.73:1 on its own `/20` tint, both under the 4.5:1 AA floor — so
-text still takes `--link`, now `#176763` light / `#5FC2BC` dark, with
-`--link-hover` at `#0F5552` light / `#7FD0CB` dark. `--accent-hover` also
-moved to `#176763` light / `#7FD0CB` dark, doubling as `--band` (the
-ToolHero fill, scheme-**invariant** — always `#176763` — so the shell's
-`--hero-fg`/`--hero-muted` are legal on it in both schemes: 6.65:1 and
-5.08:1). All of it is pinned in `test/houseShell.test.js`, including the
-retired `#4F8A8B`/`#3D6D6E`/`#6FB3B4`/`#8EC4C5` family failing the same 4.5:1
-sum, so a regression can't silently reintroduce it. Also applied to
-`.btn-secondary`'s text (Retry/Analyze again), which sits transparent
-directly on `--bg` — its border stays `--accent` (non-text UI outline, 3:1
-floor, already cleared) — borders are not this rule's concern.
-
-`.house-tool` (the "Elenchus" half of the header wordmark) follows the same
-rule, and is the reason the rule needs restating: adopting the house `--bg`
-`#F8F9FB` moves every `--accent`-on-background pair down a notch. **Any new
-use of `--accent` as text is a bug** — it has never cleared AA in light mode
-on any background this site uses. Reach for `--link`. The general ink rule
-this section pins: **a fill takes `--on-accent`, never a bare white or a
-bare ink** — the fill's own scheme decides which one is legal, and only
-`--on-accent` tracks that automatically (status badges pair their own ink
-per scheme, pinned in `houseShell.test.js`).
+**A fill takes `--on-accent`, never a bare white or a bare ink** — the fill's
+own scheme decides which is legal, and only `--on-accent` tracks that
+automatically (status badges pair their own ink per scheme). **Any new use of
+`--accent` as text is a bug**: it has never cleared AA in light mode on any
+background this site uses — reach for `--link`. Borders are not this rule's
+concern (3:1 non-text floor, already cleared). Every value and every retired
+colour is pinned in `test/houseShell.test.js`; read the numbers there, and
+load the `elenchus-web-palette` skill before changing one.
 
 ### Label drift-check
 
@@ -591,18 +503,12 @@ compares only `severities`/`scores` in both languages — never
 `freeTierNoticeText`/`freeTierNoticeLink`/`freeTierNoticeEnd`, which
 deliberately diverge from the extension's wording (this site has no settings
 page for the extension's link to point at) and would red on every run if
-compared. **This check is advisory**: this repo has no CI yet, and per
-"Visibility" above, a private GitHub repo would make any gate here advisory
-regardless (branch protection 403s on private repos on this account — see
-the `ci-and-branch-protection` skill).
+compared. **This check is advisory** — this repo has no CI yet, and see
+"Visibility" above before adding a gate.
 
 ## Build
 
     npm run build
-
-Must produce **zero warnings** — no documented exceptions yet. If one becomes
-necessary, it goes here with its justification, same as every other repo in
-the portfolio.
 
 ## Deployment
 
@@ -610,10 +516,3 @@ Netlify builds and deploys automatically on push to `main`. Netlify project
 creation, environment variable configuration in the Netlify dashboard, DNS
 for `elenchus.untilt.app`, and the Turnstile widget setup are all the
 owner's job — not something this repo's tooling does for itself.
-
-## Secrets
-
-No real secret has ever been committed here. `.env.example` carries
-placeholders only, and per "the web key is friction, not an auth boundary"
-above, none of this repo's env vars are actually secret in the first place —
-they are all `PUBLIC_`-prefixed by design.
