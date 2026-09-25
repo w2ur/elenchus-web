@@ -27,3 +27,7 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# Playwright MCP scratch output (traces, console logs, page snapshots). Written
+# into the repo root by the MCP server, never by the build or the test suite.
+.playwright-mcp/
