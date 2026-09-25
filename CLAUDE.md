@@ -78,54 +78,19 @@ header reach the Worker and come back as an opaque 403.
 ## Visual identity
 
 Two stylesheets, and the split is the point. `src/styles/house.css` is the
-Untilt house shell — fonts, surfaces, the `.house` lockup and the contour
-bloom — an **adapted copy** of `untilt/client/src/styles/house.css`. Read its
-header before touching it: it names the two things that deliberately differ
-(dark mode here is `prefers-color-scheme` for the system default, plus
-`:root.light`/`:root.dark` classes set by the theme toggle for an explicit
-choice — a third mechanism, distinct from untilt's `.dark`-only class; the
-chapeau furniture is omitted) and records why there is no `sync-house.sh`.
-One block breaks that "adapted, not verbatim" rule on purpose: the
-`/* @geometry */` `:root` rule, declared after the lockup rules, holds the
-shell-geometry tokens (see the block itself in `house.css` for the current
-set — not restated here, because a token added or removed there would make
-a hand-typed list here go stale silently) copied byte-identical from
-untilt's `house.css`, because the numbers are the whole point and a
-transform here would be the drift the rest of the file exists to avoid
-(contract §8). `test/houseShell.test.js` derives each token's name from the
-block itself and asserts it is actually referenced somewhere, rather than
-hand-typing that list either. The header rule just above it is split in two:
-`.house-bar` is the full-width sticky strip that paints the surface
-and draws the hairline, and `.house` is its inner row — a `--col`-wide
-flex line holding the lockup — so the wordmark lines up with the page
-content instead of the viewport edge. `HouseHeader.astro` nests them
-`<header class="house-bar"><div class="house">…`.
-`src/styles/global.css` imports it and holds only what is Elenchus's own —
-the teal accent and the severity/score scale. A shell token re-declared in
-`global.css` would win on source order and diverge silently, so
-`test/houseShell.test.js` fails if one appears there.
-`astro.config.mjs` pins `vite.build.cssTarget` to Tailwind v4's browser floor
-(Safari 16.4 / Chrome 111 / Firefox 128) — the same target untilt sets, for
-the same reason (an old target makes Lightning CSS fold a modern color
-function into an opaque pre-target fallback), even though nothing here
-triggers it yet, since `--tint`'s `color-mix()` wraps a `var()` Lightning CSS
-can't fold regardless of target.
+Untilt house shell, an **adapted copy** of
+`untilt/client/src/styles/house.css` — read its header before touching it.
+Its `/* @geometry */` `:root` block is the one exception: copied
+byte-identical from untilt, never transformed. `src/styles/global.css` holds
+only what is Elenchus's own — the teal accent and the severity/score scale;
+a shell token re-declared there fails `test/houseShell.test.js`.
 
-The wait is the contour bloom, not a spinner. `#loading-state` in
-`Analyzer.astro` carries five `.house-bloom-ring` paths, byte-identical to
-untilt's `ContourBloom.tsx` and the extension's `sidepanel.html`. It loops and
-never fills — no percentage, no bar, no step count, because nothing about this
-wait is measurable. Two things about it that look like oversights:
-
-- **`.is-settled` is defined and never applied here.** Wiring it would put a
-  700ms gate on the result path — the highest-stakes branch in this repo and
-  the one with no automated coverage — to delay a result the visitor waited a
-  minute for. The rules stay in the copy because divergence between the three
-  copies is the failure mode this arrangement guards against.
-- **`vector-effect: non-scaling-stroke` is load-bearing.** `stroke-width`
-  otherwise resolves in viewBox user units and scales down with the SVG — a
-  400-unit viewBox at 64px turned 1.5 into a 0.24px haze upstream. Removing it
-  here reproduces that: 2012 painted pixels against the real 4818.
+**The house shell's measured details live in the `elenchus-web-palette`
+skill: load it before touching `house.css`'s contour bloom or `@font-face`
+rules, `public/_headers`, the header's tool-chrome contract, or
+`vite.build.cssTarget`.** Two of them look like oversights and are not:
+`.is-settled` is defined and deliberately never applied here, and
+`vector-effect: non-scaling-stroke` on the bloom rings is load-bearing.
 
 The surface tokens carry both the **names and the values** of the Untilt
 house shell in `untilt/client/src/styles/house.css`, so the two files can be
@@ -140,43 +105,11 @@ deliberate difference from the house is the accent colour — the portfolio
 hub assigns Elenchus the teal accent `#1E7A76` (`src/styles/global.css`),
 not `untilt.app`'s blue-grey. Stay in that teal family.
 
-The header (`.house-bar > .house` — the full-width sticky bar wrapping the
-`--col` inner row, rendered by `src/components/HouseHeader.astro`, not
-`Layout.astro` — the layout only mounts it) follows the suite's tool-chrome
-contract (`docs/house-contract.md` in the untilt repo, §1): lockup · nav ·
-theme · language, in that fixed order, with the language toggle living in
-the header itself rather than only in the footer. The wordmark links to
-`houseUrl` in `src/lib/strings.js` (`https://untilt.app/` for English,
-`https://untilt.app/fr/` for French — a real prerendered page on the
-chapeau, not a language guess); the other-language link (header and footer
-both) is derived by `src/lib/twin.js`'s `twinFor(lang, path)`, so the two
-can't disagree about where it points. `src/components/ToolNav.astro` is the
-three-item nav — Analyse, Bookmarklet, Extension — and doubles as the
-mobile bottom bar (§6): one `<nav>` carries both `.tool-nav` and
-`.tool-nav-bar`, and CSS alone decides which look applies at a given width
-(see that file's comment for why, and `test/houseShell.test.js`'s "the
-contract header" for the pin). Instrument Sans (headings, the header) and
-DM Sans (body) are self-hosted from `public/fonts/` rather than linked from
-fonts.googleapis.com — a render-blocking Google Fonts request measured
-Lighthouse performance at 94/100, against a >=95 gate; self-hosting with
-`font-display: swap` restored 100/100. The three `@font-face` rules live in
-`src/styles/house.css`, since untilt self-hosts the same files
-under the same names and they are part of the shared shell. **They are
-byte-identical across the two repos today** — verified by md5 against
-`untilt/client/public/fonts/` — but like the surface tokens above they are
-hand-copied with no cross-repo drift check, so a re-subset on either side is
-invisible to the other.
-
-**Self-hosting also moved the caching onto us.** Astro fingerprints
-`_astro/*`, but `public/fonts/*.woff2` are copied through unhashed, so under
-Netlify's default `cache-control: public,max-age=0,must-revalidate` all
-three files revalidated on every navigation — where fonts.gstatic.com had
-served them `immutable` for a year. `public/_headers` sets `/fonts/*` to
-`max-age=31536000, immutable`; because the filenames are not fingerprinted,
-**replacing a font means a new filename, not new bytes at the old one**.
-That header only exists at the Netlify edge — `astro preview` does not apply
-`_headers`, so verify it after a deploy with `curl -I
-https://elenchus.untilt.app/fonts/dm-sans-latin.woff2`, never locally.
+The header follows the suite's tool-chrome contract (lockup · nav · theme ·
+language, in that fixed order). The self-hosted fonts are hand-copied from
+untilt with no cross-repo drift check. **Replacing a font means a new
+filename, not new bytes at the old one**, and the `/fonts/*` cache header
+exists only at the Netlify edge — verify it after a deploy, never locally.
 
 Dark/light/system is a three-state toggle (`src/lib/theme.js`, mounted via
 `src/components/ThemeToggle.astro`): 'system' is the absence of a class on
@@ -409,27 +342,13 @@ construction, and there is no type-checker here.
 script, not in a comment), and that importing `config.js` with a var unset
 actually throws and names it.
 
-A dry per-IP bucket is the **normal** state of this service on a good day
-(150 requests/day service-wide, 2 per IP) — this is a first-impression
-surface for most visitors, not a rare error path. `src/lib/errorState.js`
-selects and renders the failure states, enumerated once in
-`FAILURE_STATES` so tests iterate the enum rather than a hand-copied list —
-read it there. Only the non-obvious mappings need stating here: an unknown
-429 `reason` falls to `'service'`, the safe direction, since it never tells
-one visitor "you're out" when the whole service is; `network` covers both a
-fetch throw and a 5xx the Worker itself couldn't resolve, which cannot be
-told apart from here; `invalid` is returned by `proxyClient.js` directly,
-never by `selectFailureState()`; and two states are raised before any
-request is made — see "The Turnstile challenge has two failure modes"
-below.
-The `ip`/`service` copy in `src/lib/strings.js` states the real numbers (2
-here, 21 in the extension) and links to the Chrome Web Store listing
-(`https://chromewebstore.google.com/detail/elenchus/bodfmokjnmkkdobfcnfbplnbplgdbfgl`
-— never `github.com/w2ur/elenchus`, which is private and 404s for visitors).
-No percentage, no step count, no claimed wait that cannot be measured; the
-"resets at 00:00 UTC" claim is stated because it is true — `currentDay()` in
-`elenchus-proxy/src/rate-limiter.js` is `new Date().toISOString().slice(0,
-10)`, which is UTC — not because it sounds reassuring.
+**A dry per-IP bucket is the normal state of this service, not a rare error
+path.** `src/lib/errorState.js` enumerates the failure states once in
+`FAILURE_STATES` — read them there. **Editing `errorState.js`, the
+failure-state copy in `strings.js`, or the three state panels in
+`Analyzer.astro`: load the `elenchus-web-proxy-client` skill** — it holds
+the non-obvious state mappings, the numbers the copy states, the dry-state
+presentation, the Turnstile split and the live-region choices.
 
 **`renderFailureState()` never renders the Worker's own `error` prose.**
 Every non-429 Worker error body is a fixed, always-present ENGLISH string
@@ -441,47 +360,11 @@ English-only page for every French visitor who hits `forbidden` or
 for developers (`console.error('[elenchus] proxy error:', ...)`) and never
 passes it to `renderFailureState()`.
 
-Presentation follows the copy's own claim. `ip`/`service` are the
-ordinary shape of a good day, not an error, so they render with the
-`.is-dry-state` CSS class — the same quiet, informational treatment
-`.notice` already gives the standing free-tier disclosure, not the
-alarm-red `.error-message` box — and the Retry button is hidden for both:
-retrying provably cannot succeed until the day rolls over (`ip`/`service`)
-or the visitor's own allowance frees up, neither of which this page
-controls. `network`/`generic`/`forbidden`/`invalid` keep the alarm
-treatment and Retry.
-
-**Presentation and Retry are two separate questions**, answered by
-`isDryState()` and `canRetry()` respectively. They used to be one function,
-and `turnstileBlocked` is what pulled them apart: a genuine problem that
-belongs in the alarm treatment, but one no retry can fix. Do not fold them
-back together.
-
-**The Turnstile challenge has two failure modes and they must not share
-copy.** If `challenges.cloudflare.com` is blocked (uBlock Origin, Firefox
-strict mode, a corporate proxy), no widget renders — so "please complete
-the verification challenge", plus a Retry button, names an action the
-visitor cannot take and a retry that cannot work. That was the one piece
-of copy here promising the unmeasurable, which is the rule the rest of the
-copy obeys. The two are told apart by Turnstile's own hidden
-`cf-turnstile-response` input, which exists only once the widget has
-rendered: **`null` → `turnstileBlocked`** (no challenge on the page; honest
-copy naming the blocker, a link to the extension, no Retry) and **`''` →
-`turnstileUnsolved`** (the widget is there and unsolved; the original copy,
-Retry offered). The claim that the extension needs no challenge is a fact,
-not reassurance — the Worker makes zero siteverify calls on the extension's
-path, an invariant pinned by a call counter in
-`elenchus-proxy/test/turnstile.test.js`.
-
-**The three state panels are live regions.** `#loading-state` and
-`#error-state` carry `role="status"`, `#result-state` carries
-`aria-live="polite" aria-atomic="false"`. Without them a screen-reader user
-gets silence on every outcome — including the dry-state message, which is
-the ordinary result here, not an edge case. Polite and not `role="alert"`
-on purpose: an assertive interruption for `ip`/`service` would contradict
-the deliberately quiet visual treatment in the one channel that cannot see
-it. `aria-atomic="false"` on the result panel because an analysis can be
-long, and atomic would re-read the whole thing as one block.
+Guards from that skill a session must see unprompted: `isDryState()` and
+`canRetry()` answer two separate questions — do not fold them back
+together; the two Turnstile failure modes (`turnstileBlocked`,
+`turnstileUnsolved`) must not share copy; the three state panels are polite
+live regions, never `role="alert"`.
 
 **A fill takes `--on-accent`, never a bare white or a bare ink** — the fill's
 own scheme decides which is legal, and only `--on-accent` tracks that
