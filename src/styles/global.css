@@ -388,6 +388,13 @@ h2 {
   font-size: 13px;
   line-height: 1.45;
   color: var(--muted);
+  /* The box spans the column like the textarea and the cards; only its text
+     is held to the prose measure. `main p`'s 60ch cap used to shrink the box
+     itself, leaving its right edge ~200px short of the textarea at 1440. The
+     right padding grows to whatever keeps the text at 60ch (in the notice's
+     own 13px `ch`), and never drops below the 12px the box always had. */
+  max-width: none;
+  padding-inline-end: max(12px, calc(100% - 60ch - 14px));
 }
 
 /* The link inside a notice stays in the surrounding muted ink — the box is

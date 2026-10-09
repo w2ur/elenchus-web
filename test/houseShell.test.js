@@ -1230,6 +1230,15 @@ describe('page components take the house geometry (spec §6)', () => {
     expect(notice).toMatch(/font-size:\s*13px/);
   });
 
+  // Regression: f9e42fc — `main p { max-width: 60ch }` also matched every
+  // `<p class="notice">`, so the bordered box stopped ~200px short of the
+  // textarea at 1440. The box spans the column; only its text is capped.
+  it('the notice box spans the column and caps only its text', () => {
+    const notice = ruleBody(css, '.notice {');
+    expect(notice).toMatch(/max-width:\s*none/);
+    expect(notice).toMatch(/padding-inline-end:\s*max\(12px,\s*calc\(100% - 60ch - 14px\)\)/);
+  });
+
   // Regression (design audit 2026-10-09): opacity 0.5 made the resting,
   // disabled CTA read as broken (1.2:1 on its label). It keeps its fill; the
   // reason is stated as text the button points at.
