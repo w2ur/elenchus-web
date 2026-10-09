@@ -57,3 +57,24 @@ export function syncIcons(btn, theme) {
     else icon.removeAttribute('data-on');
   }
 }
+
+// The Cloudflare Turnstile widget paints its own iframe, so the page's
+// scheme reaches it only through `data-theme`. 'auto' follows the SYSTEM
+// preference, which is wrong as soon as a visitor picks the opposite scheme
+// with the toggle: a light widget on a dark page, or the reverse. An explicit
+// class on <html> (see applyTheme) wins; no class means 'system', which is
+// exactly what Turnstile's own 'auto' does.
+//
+// Analyzer.astro carries an `is:inline` copy of this mapping that runs before
+// the widget first renders (an inline script cannot import a module — same
+// constraint as THEME_KEY above); test/theme.test.js pins the copy to this
+// function's three cases.
+/**
+ * @param {DOMTokenList} classList the <html> element's classList
+ * @returns {'light' | 'dark' | 'auto'}
+ */
+export function turnstileTheme(classList) {
+  if (classList.contains('dark')) return 'dark';
+  if (classList.contains('light')) return 'light';
+  return 'auto';
+}

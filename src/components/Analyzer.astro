@@ -88,13 +88,29 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
     <span id="length-warning" hidden></span>
   </div>
 
+  {/* data-language: without it the widget follows the BROWSER locale, so an
+      English page in a French browser carried a French challenge. The page
+      language is the one the visitor chose.
+      data-theme starts at "auto" (= the system scheme) and the inline script
+      right below corrects it to an explicit light/dark choice before the
+      widget first renders; the module script further down re-renders it when
+      the toggle changes the scheme afterwards. See turnstileTheme() in
+      src/lib/theme.js. */}
   <div
     id="turnstile-container"
     class="cf-turnstile"
     data-sitekey={turnstileSiteKey}
+    data-language={lang}
     data-theme="auto"
   >
   </div>
+  <script is:inline>
+    (function () {
+      var c = document.getElementById('turnstile-container');
+      var r = document.documentElement.classList;
+      c.dataset.theme = r.contains('dark') ? 'dark' : r.contains('light') ? 'light' : 'auto';
+    })();
+  </script>
 
   <button id="analyze-btn" class="btn-primary" type="submit" disabled>{T.analyzeBtn}</button>
 </form>
@@ -217,6 +233,7 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
   import { renderAnalysis } from '../lib/render.js';
   import { strings as STRINGS } from '../lib/strings.js';
   import { toMarkdown, exportFilename } from '../lib/exportMarkdown.js';
+  import { turnstileTheme } from '../lib/theme.js';
 
   const config = document.getElementById('analyzer-config').dataset;
   const PAGE_LANG = config.lang;
@@ -347,6 +364,32 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
     });
     window.opener.postMessage({ type: READY_TYPE, v: PROTOCOL_VERSION }, '*');
   }
+
+  // The theme toggle only flips a class on <html>; the Turnstile iframe
+  // cannot see it. Re-render the widget with the new theme when the explicit
+  // choice changes. Before api.js has loaded there is nothing to re-render:
+  // its implicit render reads the corrected data-theme itself. A challenge
+  // solved before the toggle is lost with the old widget, which is the price
+  // of a widget that matches the page.
+  const turnstileContainer = document.getElementById('turnstile-container');
+  new MutationObserver(() => {
+    const theme = turnstileTheme(document.documentElement.classList);
+    if (turnstileContainer.dataset.theme === theme) return;
+    turnstileContainer.dataset.theme = theme;
+    const ts = window.turnstile;
+    if (!ts?.remove || !ts?.render) return;
+    try {
+      ts.remove(turnstileContainer);
+      ts.render(turnstileContainer, {
+        sitekey: turnstileContainer.dataset.sitekey,
+        language: turnstileContainer.dataset.language,
+        theme,
+      });
+    } catch {
+      // Widget not rendered (script blocked): the submit handler already
+      // reports that as 'turnstileBlocked'.
+    }
+  }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
   function resetTurnstile() {
     try {

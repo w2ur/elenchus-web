@@ -122,6 +122,15 @@ output, so the stored choice never flashes the wrong scheme (pinned by
 `https://william.revah.paris` is in `src/layouts/Layout.astro`; do not
 duplicate it elsewhere.
 
+The Turnstile widget is a third-party iframe: the page reaches it only
+through `data-language` (the page language, never the browser locale) and
+`data-theme` (`turnstileTheme()` in `src/lib/theme.js`, so an explicit
+toggle choice wins over the system scheme; the widget re-renders on toggle).
+Its dark variant paints Cloudflare's own grey panel with a light hairline,
+the one surface on the dark page not drawn from the palette. That is
+accepted as third-party, not a defect to restyle: nothing outside the
+iframe can reach inside it.
+
 The front page (`src/pages/index.astro` + `src/pages/fr/index.astro`) IS the
 analyzer: `<ToolHero>` (band, title, the "does not
 fact-check" lede, chips), then `<Analyzer>` (paste box, Turnstile widget,
