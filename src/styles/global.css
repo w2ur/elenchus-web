@@ -833,9 +833,19 @@ main ul li {
   margin-bottom: 8px;
 }
 
+/* 68ch caps the measure inside the 48rem column: at 1440 the free-tier
+   notice ran ~113 characters a line and the limits paragraph ~92 (design
+   audit 2026-10-09). */
 main p {
   line-height: 1.55;
   margin-bottom: 16px;
+  max-width: 68ch;
+}
+
+/* The form's action and the next section touched: the Analyze button sat
+   ~8px above the first landing eyebrow. A section gap, not a paragraph gap. */
+#landing-content {
+  margin-top: 2.5rem;
 }
 
 main a {
