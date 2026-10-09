@@ -843,13 +843,14 @@ main ul li {
   margin-bottom: 8px;
 }
 
-/* 68ch caps the measure inside the 48rem column: at 1440 the free-tier
+/* 60ch caps the measure inside the 48rem column: at 1440 the free-tier
    notice ran ~113 characters a line and the limits paragraph ~92 (design
-   audit 2026-10-09). */
+   audit 2026-10-09). 68ch still measured ~86 rendered characters, because a
+   `ch` is the width of "0", wider than the average letter; 60ch lands under 80. */
 main p {
   line-height: 1.55;
   margin-bottom: 16px;
-  max-width: 68ch;
+  max-width: 60ch;
 }
 
 /* The form's action and the next section touched: the Analyze button sat
