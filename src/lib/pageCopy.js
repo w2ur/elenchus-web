@@ -44,22 +44,11 @@ export const landingCopy = {
       'The strengths — what the argument does well.',
     ],
 
-    waysHeading: 'Three ways to use it',
+    // Two cards, not three (design audit 2026-10-09): a "Paste it" card used
+    // to lead this list and pointed at the paste box directly above it — the
+    // one way in a visitor has already found by the time they read this.
+    waysHeading: 'Two more ways to use it',
     ways: [
-      {
-        name: 'Paste it',
-        body: 'Any text, any browser, any device. Nothing to install.',
-        // Sub-project 2c, Task 3 folded /analyze into this page: the paste
-        // box this card advertises is already ABOVE it, in Analyzer.astro
-        // (id="text-input", shared by / and /fr/ — see that file's
-        // markup). An href of '/analyze/' would 301 straight back here,
-        // sending a visitor away from the very box and back to the top of
-        // the page they're already on (fix round 1, Task 3 finding). An
-        // in-page anchor instead — no per-language prefix needed, since
-        // the id is identical on both pages.
-        cta: 'Jump to the paste box',
-        href: '#text-input',
-      },
       {
         name: 'One click while reading',
         body: 'A bookmark that sends the page you are on — or the passage you selected — straight to the analyzer.',
@@ -112,16 +101,8 @@ export const landingCopy = {
       'Les points forts — ce que l’argumentation réussit.',
     ],
 
-    waysHeading: 'Trois façons de l’utiliser',
+    waysHeading: 'Deux autres façons de l’utiliser',
     ways: [
-      {
-        name: 'Collez le texte',
-        body: 'N’importe quel texte, navigateur ou appareil. Rien à installer.',
-        // Voir le commentaire du bloc `en` : même correction, même ancre —
-        // l’identifiant "text-input" est partagé par / et /fr/.
-        cta: 'Aller à la zone de texte',
-        href: '#text-input',
-      },
       {
         name: 'En un clic pendant la lecture',
         body: 'Un favori qui envoie la page où vous êtes — ou le passage sélectionné — directement à l’analyseur.',

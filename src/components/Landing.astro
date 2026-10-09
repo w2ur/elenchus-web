@@ -8,7 +8,7 @@
 // analyzer itself, band first, and CLAUDE.md's rule that the fact-check
 // claim precede every call to action means it belongs there, above the
 // paste box, not further down a page it no longer opens. What is left here
-// is the rest of the landing content: the three ways to use the tool, what
+// is the rest of the landing content: the two other ways to use the tool, what
 // you get back, the free-tier limits and the privacy/house links.
 import { landingCopy } from '../lib/pageCopy.js';
 import { strings } from '../lib/strings.js';
@@ -54,27 +54,22 @@ const HOUSE_URL = 'https://untilt.app/';
             target={way.external ? '_blank' : undefined}
             rel={way.external ? 'noopener noreferrer' : undefined}
           >
-            {/* The three icons are ToolNav.astro's own, REPEATED here rather
+            {/* The two icons are ToolNav.astro's own, REPEATED here rather
                 than factored into a shared component: test/houseShell.test.js
                 counts three <svg in ToolNav.astro's SOURCE (Item 9), so
                 moving them out would break that guard. A second guard pins
                 every `d=` in this tile equal to ToolNav's, in order, so the
                 repetition cannot drift into two different drawings. The order
-                is landingCopy.ways' order — paste box, bookmarklet,
-                extension — which is the nav's order too. */}
+                is landingCopy.ways' order — bookmarklet, extension — which
+                is the nav's order too, minus its first item: the paste box
+                is above this list, so it has no card here. */}
             <span class="way-icon" aria-hidden="true">
               {i === 0 && (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="11" cy="11" r="7" />
-                  <path d="m20 20-4.3-4.3" />
-                </svg>
-              )}
-              {i === 1 && (
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M6 4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v16l-6-4-6 4Z" />
                 </svg>
               )}
-              {i === 2 && (
+              {i === 1 && (
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M4 9h2.5a1.5 1.5 0 0 0 0-3H4V4a1 1 0 0 1 1-1h4v2.5a1.5 1.5 0 0 0 3 0V3h4a1 1 0 0 1 1 1v4h-2.5a1.5 1.5 0 0 0 0 3H17v4a1 1 0 0 1-1 1h-4v-2.5a1.5 1.5 0 0 0-3 0V17H5a1 1 0 0 1-1-1v-4h2.5a1.5 1.5 0 0 0 0-3H4Z" />
                 </svg>
@@ -82,12 +77,8 @@ const HOUSE_URL = 'https://untilt.app/';
             </span>
             <span class="way-title">{way.name}</span>
             <span class="way-body">{way.body}</span>
-            <span class="way-cta">
-              {way.cta}
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="m9 18 6-6-6-6" />
-              </svg>
-            </span>
+            {/* No trailing chevron: the CTA text already says where it goes. */}
+            <span class="way-cta">{way.cta}</span>
           </a>
         </li>
       ))

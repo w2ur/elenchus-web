@@ -1209,7 +1209,9 @@ describe('page components take the house geometry (spec §6)', () => {
     expect(start).toBeGreaterThan(0);
     const tile = landing.slice(start, landing.indexOf('</span>', start));
     expect(dOf(toolNav)).toHaveLength(3);
-    expect(dOf(tile)).toEqual(dOf(toolNav));
+    // The nav's first icon is the paste box's, which has no card: the box is
+    // directly above this list (design audit 2026-10-09).
+    expect(dOf(tile)).toEqual(dOf(toolNav).slice(1));
   });
 
   it('the summary block is a card too, and the badges keep their colours', () => {

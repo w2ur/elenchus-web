@@ -888,12 +888,11 @@ main a {
 
 /* --- Landing (B3) --- */
 
-/* The three ways in. A list, not a row of cards: on a phone they stack
-   either way, and a list keeps them announced as "3 items" by a screen
-   reader — which is the page's actual claim. Each <li> now wraps ONE
-   <a class="card">, so the whole tile is the target; the link's accessible
-   name is title + body + CTA, which is short enough to be read as one label
-   on three cards this size. */
+/* The two other ways in. A list, not a row of cards: on a phone they stack
+   either way, and a list keeps them announced as "2 items" by a screen
+   reader. Each <li> wraps ONE <a class="card">, so the whole tile is the
+   target; the link's accessible name is title + body + CTA, which is short
+   enough to be read as one label on cards this size. */
 .ways {
   list-style: none;
   margin: 0 0 24px;
@@ -946,7 +945,7 @@ main a {
 }
 
 /* `margin-top: auto` pins the CTA to the bottom of the tallest card in the
-   row, so the three chevrons line up when the bodies are different lengths. */
+   row, so the CTAs line up when the bodies are different lengths. */
 .way-cta {
   margin-top: auto;
   padding-top: 0.25rem;
@@ -964,7 +963,7 @@ main a {
 
 @media (min-width: 720px) {
   .ways {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
