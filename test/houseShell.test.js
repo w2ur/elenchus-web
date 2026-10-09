@@ -1236,7 +1236,7 @@ describe('page components take the house geometry (spec §6)', () => {
   it('the notice box spans the column and caps only its text', () => {
     const notice = ruleBody(css, '.notice {');
     expect(notice).toMatch(/max-width:\s*none/);
-    expect(notice).toMatch(/padding-inline-end:\s*max\(12px,\s*calc\(100% - 60ch - 14px\)\)/);
+    expect(notice).toMatch(/padding-inline-end:\s*max\(12px,\s*calc\(100% - 54ch - 14px\)\)/);
   });
 
   // Regression: f9e42fc — the measure capped paragraphs only, so the install
