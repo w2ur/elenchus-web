@@ -389,14 +389,19 @@ h2 {
   line-height: 1.45;
   color: var(--muted);
   /* The box spans the column like the textarea and the cards; only its text
-     is held to the prose measure. `main p`'s 60ch cap used to shrink the box
-     itself, leaving its right edge ~200px short of the textarea at 1440. The
-     right padding grows to whatever keeps the text at 54ch, and never drops
-     below the 12px the box always had. 54ch, not the paragraphs' 60ch: at
-     60ch this 13px text still rendered ~86 characters a line; 54ch lands
-     under 80. */
+     is held to the prose measure. `main p`'s cap used to shrink the box
+     itself, leaving its right edge ~200px short of the textarea at 1440. */
   max-width: none;
-  padding-inline-end: max(12px, calc(100% - 54ch - 14px));
+}
+
+/* The notice's text sits in an inner block capped by max-width, not behind a
+   right padding computed to the same width: the padding version kept the
+   text box itself full-width, so anything measuring the element (the
+   design-detect line-length heuristic did, at ~113 characters) saw the box
+   width instead of the real measure. Every .notice wraps its text in one. */
+.notice-text {
+  display: block;
+  max-width: 54ch;
 }
 
 /* The link inside a notice stays in the surrounding muted ink — the box is

@@ -1232,11 +1232,24 @@ describe('page components take the house geometry (spec §6)', () => {
 
   // Regression: f9e42fc — `main p { max-width: 60ch }` also matched every
   // `<p class="notice">`, so the bordered box stopped ~200px short of the
-  // textarea at 1440. The box spans the column; only its text is capped.
+  // textarea at 1440. The box spans the column; only its text is capped, by
+  // an inner .notice-text block rather than a computed right padding, so the
+  // capped width is the element's own width and a line-length check sees it.
   it('the notice box spans the column and caps only its text', () => {
     const notice = ruleBody(css, '.notice {');
     expect(notice).toMatch(/max-width:\s*none/);
-    expect(notice).toMatch(/padding-inline-end:\s*max\(12px,\s*calc\(100% - 54ch - 14px\)\)/);
+    expect(notice).not.toMatch(/padding-inline-end/);
+    expect(ruleBody(css, '.notice-text {')).toMatch(/display:\s*block[^}]*max-width:\s*\d+ch/s);
+  });
+
+  // Every rendered .notice carries the inner block, or its text is uncapped.
+  it('every .notice in the markup wraps its text in .notice-text', () => {
+    for (const file of ['Landing.astro', 'BookmarkletInstall.astro', 'Analyzer.astro']) {
+      const src = readFileSync(join(__dirname, '../src/components', file), 'utf8');
+      const notices = src.match(/<p class="notice"[^>]*>\s*(<[a-z]+[^>]*>)?/g) ?? [];
+      expect(notices.length).toBeGreaterThan(0);
+      for (const n of notices) expect(n).toMatch(/<span class="notice-text">$/);
+    }
   });
 
   // Regression: f9e42fc — the measure capped paragraphs only, so the install

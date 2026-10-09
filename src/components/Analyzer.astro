@@ -62,10 +62,10 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
 }
 
 <p class="notice" id="free-tier-notice">
-  {T.freeTierNoticeText}<a
+  <span class="notice-text">{T.freeTierNoticeText}<a
     href={CHROME_WEB_STORE_URL}
     target="_blank"
-    rel="noopener noreferrer">{T.freeTierNoticeLink}</a>{T.freeTierNoticeEnd}
+    rel="noopener noreferrer">{T.freeTierNoticeLink}</a>{T.freeTierNoticeEnd}</span>
 </p>
 
 <!--
@@ -74,7 +74,7 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
   cannot see what was dropped, so the cut is stated at the moment it
   arrives rather than in the results panel afterwards.
 -->
-<p class="notice" id="handoff-notice" hidden></p>
+<p class="notice" id="handoff-notice" hidden><span class="notice-text"></span></p>
 
 <form id="analyze-form" novalidate>
   <label class="sr-only" for="text-input">{T.textareaLabel}</label>
@@ -251,6 +251,9 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
   const lengthWarning = document.getElementById('length-warning');
   const analyzeBtn = document.getElementById('analyze-btn');
   const handoffNotice = document.getElementById('handoff-notice');
+  // The text goes in the inner .notice-text, never on the <p> itself:
+  // setting the <p>'s textContent would delete the span that carries the measure.
+  const handoffNoticeText = handoffNotice.querySelector('.notice-text');
   const loadingState = document.getElementById('loading-state');
   const errorState = document.getElementById('error-state');
   const errorMessage = document.getElementById('error-message');
@@ -315,7 +318,7 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
     // The handoff notice describes the text that ARRIVED. Once the reader
     // edits the box, it is no longer a statement about what is in it.
     handoffNotice.hidden = true;
-    handoffNotice.textContent = '';
+    handoffNoticeText.textContent = '';
   });
   updateMeta();
 
@@ -336,7 +339,7 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
     textInput.value = truncated ? incoming.slice(0, MAX_LEN) : incoming;
     updateMeta();
     handoffNotice.hidden = !truncated;
-    handoffNotice.textContent = truncated ? T.handoffTruncated : '';
+    handoffNoticeText.textContent = truncated ? T.handoffTruncated : '';
     showState('form');
     textInput.focus();
   }
