@@ -398,10 +398,17 @@ h2 {
    right padding computed to the same width: the padding version kept the
    text box itself full-width, so anything measuring the element (the
    design-detect line-length heuristic did, at ~113 characters) saw the box
-   width instead of the real measure. Every .notice wraps its text in one. */
+   width instead of the real measure. Every .notice wraps its text in one.
+
+   46ch, below the paragraphs' 48ch, holds the longest notice line at 72
+   rendered characters under DM Sans and 65 under the fallback (Chrome, 1440,
+   EN+FR on / and /bookmarklet/, 2026-10-10). The old 54ch reached 88 under
+   DM Sans on /fr/bookmarklet/ and 77 under the fallback: it had been sized
+   in the fallback only, and DM Sans is font-display: optional, so every
+   warm load renders it. */
 .notice-text {
   display: block;
-  max-width: 54ch;
+  max-width: 46ch;
 }
 
 /* The link inside a notice stays in the surrounding muted ink — the box is
@@ -858,22 +865,29 @@ main ul li {
 }
 
 /* Prose list items follow the paragraph measure: uncapped, the install
-   page's steps and limits ran ~95-100 characters a line beside 60ch
+   page's steps and limits ran ~95-100 characters a line beside capped
    paragraphs. Only bare lists are prose; the chips, the ways cards and the
    result lists carry a class or an id and keep their own widths. */
 main ol:not([class], [id]) > li,
 main ul:not([class], [id]) > li {
-  max-width: 60ch;
+  max-width: 48ch;
 }
 
-/* 60ch caps the measure inside the 48rem column: at 1440 the free-tier
-   notice ran ~113 characters a line and the limits paragraph ~92 (design
-   audit 2026-10-09). 68ch still measured ~86 rendered characters, because a
-   `ch` is the width of "0", wider than the average letter; 60ch lands under 80. */
+/* 48ch caps the measure inside the 48rem column. A `ch` is the width of
+   "0", wider than the average letter, and by how much depends on the font:
+   about 0.684em in DM Sans against about 0.63em in the fallback, so the
+   same ch count renders MORE characters a line in DM Sans. Measured in
+   Chrome at 1440, EN+FR on /, /fr/, /bookmarklet/ and /fr/bookmarklet/
+   (2026-10-10), the longest paragraph or bare list-item line at 48ch is 75
+   rendered characters under DM Sans and 72 under the fallback. The previous
+   60ch, said to land "under 80", had been measured in the fallback only: it
+   reached 88 there and 91 (paragraphs) / 93 (list items) under DM Sans,
+   which font-display: optional renders on every warm load. Re-measure in
+   BOTH fonts before changing this. */
 main p {
   line-height: 1.55;
   margin-bottom: 16px;
-  max-width: 60ch;
+  max-width: 48ch;
 }
 
 /* The form's action and the next section touched: the Analyze button sat

@@ -1253,12 +1253,17 @@ describe('page components take the house geometry (spec §6)', () => {
   });
 
   // Regression: f9e42fc — the measure capped paragraphs only, so the install
-  // page's list items ran ~95-100 characters a line beside 60ch paragraphs.
+  // page's list items ran ~95-100 characters a line beside capped paragraphs.
+  // 48ch/46ch were measured in Chrome at 1440 in BOTH DM Sans and the
+  // fallback (2026-10-10): longest line 75/72 for prose, 72/65 for notices.
+  // The old 60ch/54ch were sized in the fallback only and reached 93/88
+  // under DM Sans, which font-display: optional renders on every warm load.
   it('prose list items share the paragraph measure; classed lists are exempt', () => {
     expect(css).toMatch(
-      /main ol:not\(\[class\], \[id\]\) > li,\s*\n\s*main ul:not\(\[class\], \[id\]\) > li\s*\{\s*max-width:\s*60ch;/,
+      /main ol:not\(\[class\], \[id\]\) > li,\s*\n\s*main ul:not\(\[class\], \[id\]\) > li\s*\{\s*max-width:\s*48ch;/,
     );
-    expect(ruleBody(css, 'main p {')).toMatch(/max-width:\s*60ch/);
+    expect(ruleBody(css, 'main p {')).toMatch(/max-width:\s*48ch/);
+    expect(ruleBody(css, '.notice-text {')).toMatch(/max-width:\s*46ch/);
   });
 
   // Regression (design audit 2026-10-09): opacity 0.5 made the resting,
