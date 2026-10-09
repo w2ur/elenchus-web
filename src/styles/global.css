@@ -850,6 +850,15 @@ main ul li {
   margin-bottom: 8px;
 }
 
+/* Prose list items follow the paragraph measure: uncapped, the install
+   page's steps and limits ran ~95-100 characters a line beside 60ch
+   paragraphs. Only bare lists are prose; the chips, the ways cards and the
+   result lists carry a class or an id and keep their own widths. */
+main ol:not([class], [id]) > li,
+main ul:not([class], [id]) > li {
+  max-width: 60ch;
+}
+
 /* 60ch caps the measure inside the 48rem column: at 1440 the free-tier
    notice ran ~113 characters a line and the limits paragraph ~92 (design
    audit 2026-10-09). 68ch still measured ~86 rendered characters, because a

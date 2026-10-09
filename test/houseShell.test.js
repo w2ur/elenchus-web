@@ -1239,6 +1239,15 @@ describe('page components take the house geometry (spec §6)', () => {
     expect(notice).toMatch(/padding-inline-end:\s*max\(12px,\s*calc\(100% - 60ch - 14px\)\)/);
   });
 
+  // Regression: f9e42fc — the measure capped paragraphs only, so the install
+  // page's list items ran ~95-100 characters a line beside 60ch paragraphs.
+  it('prose list items share the paragraph measure; classed lists are exempt', () => {
+    expect(css).toMatch(
+      /main ol:not\(\[class\], \[id\]\) > li,\s*\n\s*main ul:not\(\[class\], \[id\]\) > li\s*\{\s*max-width:\s*60ch;/,
+    );
+    expect(ruleBody(css, 'main p {')).toMatch(/max-width:\s*60ch/);
+  });
+
   // Regression (design audit 2026-10-09): opacity 0.5 made the resting,
   // disabled CTA read as broken (1.2:1 on its label). It keeps its fill; the
   // reason is stated as text the button points at.
