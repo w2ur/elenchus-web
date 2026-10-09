@@ -110,7 +110,7 @@ the header itself rather than only in the footer. The wordmark links to
 chapeau, not a language guess); the other-language link (header and footer
 both) is derived by `src/lib/twin.js`'s `twinFor(lang, path)`, so the two
 can't disagree about where it points. `src/components/ToolNav.astro` is the
-three-item nav — Analyse, Bookmarklet, Extension — and doubles as the
+three-item nav — Analyze, Bookmarklet, Extension — and doubles as the
 mobile bottom bar (§6): one `<nav>` carries both `.tool-nav` and
 `.tool-nav-bar`, and CSS alone decides which look applies at a given width
 (see that file's comment for why, and `test/houseShell.test.js`'s "the

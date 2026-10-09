@@ -68,7 +68,7 @@ export const landingCopy = {
       },
       {
         name: 'The Chrome extension',
-        body: 'Analyse in a side panel without leaving the page: 21 a day, or unlimited with your own API key.',
+        body: 'Analyze in a side panel without leaving the page: 21 a day, or unlimited with your own API key.',
         cta: 'View on the Chrome Web Store',
         href: null, // the Web Store URL, threaded in per language
       },

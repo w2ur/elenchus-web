@@ -50,7 +50,7 @@ export const strings = {
       'This page had more than 15,000 characters, so only the beginning was brought over. Edit the text below if the part you wanted to examine is missing.',
 
     freeTierNoticeText:
-      "Free tier: this text is sent to model providers that may log it and train on it. Avoid analysing confidential text, or ",
+      "Free tier: this text is sent to model providers that may log it and train on it. Avoid analyzing confidential text, or ",
     freeTierNoticeLink: 'use your own API key in the Elenchus extension',
     freeTierNoticeEnd: '.',
 
@@ -87,7 +87,9 @@ export const strings = {
     // is `/` since sub-project 2c, Task 3 made the front page the analyzer.
     navLabel: 'Elenchus',
     navAnalyseHref: '/',
-    navAnalyse: 'Analyse',
+    // US spelling, like every other English string here ("Analyze" button,
+    // "analyzing"): the nav said "Analyse" beside an "Analyze" button.
+    navAnalyse: 'Analyze',
     navBookmarklet: 'Bookmarklet',
     navExtension: 'Extension',
 
