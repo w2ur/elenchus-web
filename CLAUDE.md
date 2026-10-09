@@ -129,7 +129,13 @@ toggle choice wins over the system scheme; the widget re-renders on toggle).
 Its dark variant paints Cloudflare's own grey panel with a light hairline,
 the one surface on the dark page not drawn from the palette. That is
 accepted as third-party, not a defect to restyle: nothing outside the
-iframe can reach inside it.
+iframe can reach inside it. The same iframe logs `%c%d
+font-size:0;color:transparent NaN` at every console level (two of them as
+errors) on production: measured 2026-10-10, every entry sourced from
+`challenges.cloudflare.com/cdn-cgi/challenge-platform/…/turnstile/…`, the
+challenge's own console probing. Accepted noise, not this site's error. The
+`1x00000000000000000000AA` test key does not run that challenge, so a local
+capture's console stays empty.
 
 The front page (`src/pages/index.astro` + `src/pages/fr/index.astro`) IS the
 analyzer: `<ToolHero>` (band, title, the "does not
