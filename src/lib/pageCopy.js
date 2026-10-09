@@ -29,7 +29,9 @@ export const landingCopy = {
     // call to action means it belongs in the hero, above the paste box, not
     // in a heading further down a page that no longer opens with it.
     heroEyebrow: 'For arguments',
-    heroTitle: 'Does this argument *hold up?*',
+    // One italic word, as the house contract (§2) sets it: two read as a
+    // phrase in a switched face, not as the one word that carries the stress.
+    heroTitle: 'Does this argument *hold* up?',
     heroLede:
       'Elenchus does not check facts. It checks whether the conclusions follow from what came before — circular reasoning, false dilemmas, unsupported leaps, loaded framing. A tight argument on false premises scores well here; that is the tool working, not failing.',
     heroChips: ['Any text', 'Nothing to install', 'No account'],
@@ -96,7 +98,8 @@ export const landingCopy = {
     // Voir le commentaire du bloc `en` : ce contenu vit désormais dans le
     // bandeau ToolHero (heroTitle/heroLede), pas dans un titre plus bas.
     heroEyebrow: 'Pour les arguments',
-    heroTitle: 'Cet argument *tient-il debout ?*',
+    // Un seul mot en italique (contrat maison §2). Espace insécable avant « ? ».
+    heroTitle: 'Cet argument *tient-il* debout\u00a0?',
     heroLede:
       'Elenchus ne vérifie pas les faits. Il examine si les conclusions découlent de ce qui les précède — raisonnement circulaire, faux dilemmes, sauts non justifiés, cadrage orienté. Un argument serré sur des prémisses fausses obtient un bon score ici ; c’est l’outil qui fonctionne, pas qui échoue.',
     heroChips: ['Tout texte', 'Rien à installer', 'Sans compte'],

@@ -1036,6 +1036,8 @@ main a {
   /* The tokens are silent on the eyebrow-to-title gap, so Doxa's hero decides
      it: its <h1> takes `mt-3`. */
   margin: 0.75rem 0 1rem;
+  /* Balanced lines: at 390 the last word ("up?") was left alone on line two. */
+  text-wrap: balance;
 }
 
 .tool-hero .lede {

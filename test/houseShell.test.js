@@ -660,6 +660,10 @@ describe('the front page is the analyzer', () => {
     const matches = [...copy.matchAll(/heroTitle:\s*'([^']+)'/g)];
     expect(matches.length).toBe(2);
     for (const m of matches) expect((m[1].match(/\*/g) ?? []).length).toBe(2);
+    // ONE word, not a phrase (house contract §2; design audit 2026-10-09
+    // found "*hold up?*"): no whitespace inside the marker.
+    for (const m of matches) expect(m[1]).toMatch(/\*[^*\s]+\*/);
+    expect(ruleBody(css, '.tool-hero h1 {')).toMatch(/text-wrap:\s*balance/);
   });
 
   it('/analyze is a forced 301 to the root in both languages, query preserved (no explicit query in the rule)', () => {
