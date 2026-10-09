@@ -33,7 +33,7 @@ export const landingCopy = {
     // phrase in a switched face, not as the one word that carries the stress.
     heroTitle: 'Does this argument *hold* up?',
     heroLede:
-      'Elenchus does not check facts. It checks whether the conclusions follow from what came before — circular reasoning, false dilemmas, unsupported leaps, loaded framing. A tight argument on false premises scores well here; that is the tool working, not failing.',
+      'Elenchus does not check facts. It checks whether the conclusions follow from what came before: circular reasoning, false dilemmas, unsupported leaps, loaded framing. A tight argument on false premises scores well here; that is the tool working, not failing.',
     heroChips: ['Any text', 'Nothing to install', 'No account'],
 
     getHeading: 'What you get back',
@@ -41,7 +41,7 @@ export const landingCopy = {
       'A summary of what the text is actually arguing.',
       'An overall reasoning score: strong, moderate or weak.',
       'Each flaw found, with its severity and the passage it comes from.',
-      'The strengths — what the argument does well.',
+      'The strengths: what the argument does well.',
     ],
 
     // Two cards, not three (design audit 2026-10-09): a "Paste it" card used
@@ -51,7 +51,7 @@ export const landingCopy = {
     ways: [
       {
         name: 'One click while reading',
-        body: 'A bookmark that sends the page you are on — or the passage you selected — straight to the analyzer.',
+        body: 'A bookmark that sends the page you are on, or the passage you selected, straight to the analyzer.',
         cta: 'Get the bookmarklet',
         href: '/bookmarklet/',
       },
@@ -68,7 +68,7 @@ export const landingCopy = {
     // dry state from reading as a broken site.
     limitsHeading: 'The free demo is small on purpose',
     limitsText:
-      'This site runs on a free model tier: 2 analyses a day per visitor, and 150 a day across everyone. When the day’s allowance is gone, it is gone — the extension has its own separate allowance and takes your own API key for unlimited use.',
+      'This site runs on a free model tier: 2 analyses a day per visitor, and 150 a day across everyone. When the day’s allowance is gone, it is gone. The extension has its own separate allowance and takes your own API key for unlimited use.',
 
     privacyText: 'What happens to the text you submit is described in the ',
     privacyLink: 'privacy policy',
@@ -90,7 +90,7 @@ export const landingCopy = {
     // Un seul mot en italique (contrat maison §2). Espace insécable avant « ? ».
     heroTitle: 'Cet argument *tient-il* debout\u00a0?',
     heroLede:
-      'Elenchus ne vérifie pas les faits. Il examine si les conclusions découlent de ce qui les précède — raisonnement circulaire, faux dilemmes, sauts non justifiés, cadrage orienté. Un argument serré sur des prémisses fausses obtient un bon score ici ; c’est l’outil qui fonctionne, pas qui échoue.',
+      'Elenchus ne vérifie pas les faits. Il examine si les conclusions découlent de ce qui les précède : raisonnement circulaire, faux dilemmes, sauts non justifiés, cadrage orienté. Un argument serré sur des prémisses fausses obtient un bon score ici ; c’est l’outil qui fonctionne, pas qui échoue.',
     heroChips: ['Tout texte', 'Rien à installer', 'Sans compte'],
 
     getHeading: 'Ce que vous obtenez',
@@ -98,14 +98,14 @@ export const landingCopy = {
       'Un résumé de ce que le texte soutient réellement.',
       'Un score de raisonnement global : solide, modéré ou faible.',
       'Chaque faille repérée, avec sa gravité et le passage dont elle vient.',
-      'Les points forts — ce que l’argumentation réussit.',
+      'Les points forts : ce que l’argumentation réussit.',
     ],
 
     waysHeading: 'Deux autres façons de l’utiliser',
     ways: [
       {
         name: 'En un clic pendant la lecture',
-        body: 'Un favori qui envoie la page où vous êtes — ou le passage sélectionné — directement à l’analyseur.',
+        body: 'Un favori qui envoie la page où vous êtes, ou le passage sélectionné, directement à l’analyseur.',
         cta: 'Obtenir le bookmarklet',
         href: '/fr/bookmarklet/',
       },
@@ -119,7 +119,7 @@ export const landingCopy = {
 
     limitsHeading: 'La démonstration gratuite est volontairement petite',
     limitsText:
-      'Ce site fonctionne sur un palier de modèles gratuit : 2 analyses par jour et par visiteur, 150 par jour pour tout le monde. Une fois le quota du jour épuisé, il l’est — l’extension dispose de son propre quota et accepte votre clé API pour un usage illimité.',
+      'Ce site fonctionne sur un palier de modèles gratuit : 2 analyses par jour et par visiteur, 150 par jour pour tout le monde. Une fois le quota du jour épuisé, il l’est. L’extension dispose de son propre quota et accepte votre clé API pour un usage illimité.',
 
     privacyText: 'Le sort du texte que vous soumettez est décrit dans la ',
     privacyLink: 'politique de confidentialité',

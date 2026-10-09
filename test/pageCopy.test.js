@@ -31,3 +31,23 @@ describe('landingCopy.ways', () => {
     expect(landingCopy[lang].waysHeading).toMatch(/^(Two|Deux) /);
   });
 });
+
+// Regression (design audit 2026-10-09): em-dash bursts across the front
+// page — two in the bookmarklet card, one each in the lede, a "What you get"
+// item and the limits paragraph. At most one per block, and none in the
+// blocks the audit named.
+describe('front-page copy: em-dashes', () => {
+  const blocks = (C) => [C.heroLede, ...C.getItems, ...C.ways.map((w) => w.body), C.limitsText];
+  const dashes = (s) => (s.match(/—/g) ?? []).length;
+
+  it.each(['en', 'fr'])('%s: no visible block carries more than one em-dash', (lang) => {
+    for (const b of blocks(landingCopy[lang])) expect(dashes(b), b).toBeLessThanOrEqual(1);
+  });
+
+  it.each(['en', 'fr'])('%s: the blocks the audit named carry none', (lang) => {
+    const C = landingCopy[lang];
+    for (const b of [C.heroLede, C.getItems[3], C.ways[0].body, C.limitsText]) {
+      expect(dashes(b), b).toBe(0);
+    }
+  });
+});
