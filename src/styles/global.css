@@ -129,6 +129,16 @@ a {
   text-decoration: none;
 }
 
+/* The keyboard focus ring, drawn from the palette instead of the browser's
+   default blue. --link, not --accent: it clears 4.5:1 on --bg in both schemes,
+   so the ring is visible on every ground this site paints outside the hero
+   band, which holds nothing focusable. The per-control :focus-visible rules
+   below add their tint on top of this ring; none of them removes it. */
+:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 2px;
+}
+
 /* The three exclusions are on the rule that DECIDES the underline, not resets
    after it: `a:hover` (0,1,1) outranks `.way-card { color: var(--text) }`
    (0,1,0), so a hovered way card underlined its title, body and CTA at once

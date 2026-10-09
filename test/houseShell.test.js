@@ -1246,6 +1246,16 @@ describe('page components take the house geometry (spec §6)', () => {
   // the whole change exists to remove, restored by the browser. The reset
   // belongs on `button`, not back on .chrome-btn, whose own guard above
   // forbids a `border:` declaration there.
+  // Regression (design audit 2026-10-09): the focus ring was the browser's
+  // default blue, the one surface left undrawn. --link clears 4.5:1 on --bg in
+  // both schemes; --accent does not.
+  it('the focus ring is drawn from the palette', () => {
+    const ring = ruleBody(css, '\n:focus-visible {');
+    expect(ring).toMatch(/outline:\s*2px solid var\(--link\)/);
+    expect(ring).toMatch(/outline-offset:\s*2px/);
+    expect(css).not.toMatch(/:focus-visible\s*\{[^}]*outline:\s*(none|0)/);
+  });
+
   it('the button element reset cancels the UA border and fill', () => {
     const b = ruleBody(css, '\nbutton {');
     expect(b).toMatch(/border:\s*0/);
