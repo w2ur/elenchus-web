@@ -112,7 +112,7 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
     })();
   </script>
 
-  <button id="analyze-btn" class="btn-primary" type="submit" disabled>{T.analyzeBtn}</button>
+  <button id="analyze-btn" class="btn-primary" type="submit" aria-describedby="length-warning" disabled>{T.analyzeBtn}</button>
 </form>
 
 <!--
@@ -292,7 +292,9 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
     charCount.classList.toggle('over-limit', atLimit);
 
     const trimmedLen = textInput.value.trim().length;
-    const tooShort = trimmedLen > 0 && trimmedLen < MIN_LEN;
+    // Empty counts as too short: the Analyze button keeps its full fill while
+    // disabled, so this line is what says why it is waiting.
+    const tooShort = trimmedLen < MIN_LEN;
 
     if (atLimit) {
       lengthWarning.hidden = false;

@@ -1224,13 +1224,18 @@ describe('page components take the house geometry (spec §6)', () => {
     expect(notice).toMatch(/font-size:\s*13px/);
   });
 
-  it('the primary button dims when disabled instead of turning grey', () => {
+  // Regression (design audit 2026-10-09): opacity 0.5 made the resting,
+  // disabled CTA read as broken (1.2:1 on its label). It keeps its fill; the
+  // reason is stated as text the button points at.
+  it('the primary button keeps its fill when disabled and names its reason', () => {
     const btn = ruleBody(css, '.btn-primary {');
     expect(btn).toMatch(/border-radius:\s*var\(--radius-card\)/);
     expect(btn).toMatch(/padding:\s*0\.875rem 1\.5rem/);
     const off = ruleBody(css, '.btn-primary:disabled {');
-    expect(off).toMatch(/opacity:\s*0?\.5/);
+    expect(off).not.toMatch(/opacity:/);
     expect(off).not.toMatch(/background:/);
+    expect(analyzer).toMatch(/<button id="analyze-btn"[^>]*aria-describedby="length-warning"/);
+    expect(analyzer).toMatch(/const tooShort = trimmedLen < MIN_LEN;/);
     expect(css).toMatch(/@media \(max-width: 767px\)\s*\{[^}]*\.btn-primary\s*\{[^}]*width:\s*100%/s);
   });
 

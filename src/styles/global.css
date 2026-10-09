@@ -536,11 +536,13 @@ button {
   background: var(--accent-hover);
 }
 
-/* Dimmed, not repainted. The grey fill this replaced changed the button's
-   colour as well as its state, so a disabled CTA read as a different control
-   rather than as the same one, unavailable. */
+/* Neither dimmed nor repainted. A grey fill read as a different control; the
+   0.5 opacity that replaced it read as a broken one (measured 1.2:1 on the
+   label in light, design audit 2026-10-09), and the button is disabled for
+   most of a visit, since the box starts empty. It keeps its full fill and
+   ink, and the reason it waits is stated in words next to the counter
+   (#length-warning, which the button names via aria-describedby). */
 .btn-primary:disabled {
-  opacity: 0.5;
   cursor: not-allowed;
 }
 
