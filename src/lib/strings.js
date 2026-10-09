@@ -19,6 +19,9 @@
 //
 // Plain JS with JSDoc, not TypeScript — see CLAUDE.md.
 
+const EN_NUM = new Intl.NumberFormat('en-US');
+const FR_NUM = new Intl.NumberFormat('fr-FR');
+
 export const strings = {
   en: {
     houseLabel: 'Untilt',
@@ -28,7 +31,9 @@ export const strings = {
     subtitle: 'Paste text, get a reasoning analysis back.',
     textareaLabel: 'Text to analyze',
     textareaPlaceholder: 'Paste an article, post or argument to examine its reasoning…',
-    charCount: (count, max) => `${count} / ${max}`,
+    // A count carries its unit and a thousands separator: "0 / 15000" read as
+    // a bare ratio with no idea what was being counted.
+    charCount: (count, max) => `${EN_NUM.format(count)} / ${EN_NUM.format(max)} characters`,
     minLengthWarning: 'Enter at least 50 characters to analyze.',
     // The textarea itself has maxlength=15000 (mirroring the Worker's own
     // MAX_TEXT_LENGTH), so browsers refuse to type or paste past the cap —
@@ -174,7 +179,7 @@ export const strings = {
     subtitle: 'Collez un texte, obtenez une analyse de sa rigueur logique.',
     textareaLabel: 'Texte à analyser',
     textareaPlaceholder: 'Collez un article, un post ou une argumentation pour en examiner le raisonnement…',
-    charCount: (count, max) => `${count} / ${max}`,
+    charCount: (count, max) => `${FR_NUM.format(count)} / ${FR_NUM.format(max)} caractères`,
     minLengthWarning: 'Saisissez au moins 50 caractères pour lancer l’analyse.',
     maxLengthWarning: 'Vous avez atteint la limite de 15 000 caractères pour une analyse.',
 
