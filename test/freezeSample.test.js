@@ -4,11 +4,11 @@
 // the file shape, the fence-strip, and that nothing is written for a response
 // that is not an analysis.
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtempSync, readFileSync, writeFileSync, existsSync, rmSync, readdirSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync, rmSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
-  run, stripFences, promptVersion, readUpstream, loadEnglish, loadFrench, buildRequestBody, IDS,
+  run, validateSampleFile, stripFences, promptVersion, readUpstream, loadEnglish, loadFrench, buildRequestBody, IDS,
 } from '../scripts/freeze-sample.mjs';
 import { looksLikeAnalysis } from '../src/lib/proxyClient.js';
 
@@ -197,15 +197,57 @@ describe('inputs', () => {
   });
 });
 
-it('no sample file is checked in before a real run produced it', () => {
-  // Regression guard for the "no hand-written analysis" rule: the directory
-  // may only ever hold script output, which always carries servedBy.
-  const dir = join(import.meta.dirname, '..', 'src', 'data', 'samples');
-  if (!existsSync(dir)) return;
-  for (const f of readdirSync(dir)) {
-    const s = JSON.parse(readFileSync(join(dir, f), 'utf8'));
-    expect(looksLikeAnalysis(s.result)).toBe(true);
-    expect(s.servedBy).toBeTruthy();
-    expect(s.date).toBeTruthy();
-  }
+describe('validateSampleFile', () => {
+  const good = () => ({
+    id: '2-mixed', lang: 'en', title: 't', text: 'x', translated: false, result: ANALYSIS,
+    servedBy: 'google/gemma-4-26b-a4b-it:free', requestedModels: ['a'], promptVersion: 'v2',
+    date: '2026-10-11', attempt: 1, rerunReason: null,
+  });
+
+  it('accepts a well-formed record', () => {
+    expect(validateSampleFile(good())).toEqual([]);
+  });
+
+  it.each([
+    ['empty result', (r) => { r.result = {}; }],
+    ['bracket promptVersion', (r) => { r.promptVersion = '[v2 - x]'; }],
+    ['empty servedBy', (r) => { r.servedBy = ''; }],
+    ['bad date', (r) => { r.date = 'today'; }],
+    ['fr not marked translated', (r) => { r.lang = 'fr'; }],
+    ['attempt 2 without a reason', (r) => { r.attempt = 2; }],
+    ['attempt 1 with a reason', (r) => { r.rerunReason = 'why'; }],
+    ['missing key', (r) => { delete r.requestedModels; }],
+    ['unknown id', (r) => { r.id = 'x'; }],
+  ])('rejects %s', (_n, mutate) => {
+    const r = good();
+    mutate(r);
+    expect(validateSampleFile(r).length).toBeGreaterThan(0);
+  });
+
+  it('writes nothing when the response names no model', async () => {
+    const fetchImpl = mockFetch(JSON.stringify(ANALYSIS), { model: '' });
+    expect(await run(['2-mixed', 'en'], deps({ fetchImpl }))).toBe(1);
+    expect(readdirSync(outDir)).toEqual([]);
+  });
 });
+
+describe('flags', () => {
+  it('--reason without --force is a usage error', async () => {
+    const fetchImpl = mockFetch(JSON.stringify(ANALYSIS));
+    expect(await run(['2-mixed', 'en', '--reason', 'x'], deps({ fetchImpl }))).toBe(2);
+    expect(fetchImpl.calls).toHaveLength(0);
+  });
+
+  it('--force --reason on a missing file is a plain first run: attempt 1, no reason stored', async () => {
+    const code = await run(['2-mixed', 'en', '--force', '--reason', 'x'], deps({ fetchImpl: mockFetch(JSON.stringify(ANALYSIS)) }));
+    expect(code).toBe(0);
+    const saved = JSON.parse(readFileSync(join(outDir, '2-mixed.en.json'), 'utf8'));
+    expect(saved.attempt).toBe(1);
+    expect(saved.rerunReason).toBeNull();
+  });
+});
+
+// The on-disk pin (every committed sample passes validateSampleFile, plus the
+// sha256 of 2-mixed.{en,fr}.json per U2) lands with the owner's real runs. It
+// is a todo, not a vacuous pass.
+it.todo('pins src/data/samples/*.json: validateSampleFile on all six, and the sha256 of 2-mixed.{en,fr}.json');

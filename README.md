@@ -121,13 +121,15 @@ by hand:
     OPENROUTER_API_KEY=sk-or-... node scripts/freeze-sample.mjs --all
 
 Run it in your own terminal; the key is read from the environment only. It
-needs the sibling `elenchus-proxy` and `elenchus` checkouts: it sends the
+and its tests need the sibling checkouts `~/Dev/elenchus-proxy` and
+`~/Dev/elenchus` (they fail without them): it sends the
 production request (prompt, schema, token cap, model chain from
 `elenchus-proxy/wrangler.toml`), strips code fences the way the Worker does,
 and writes a file only if the answer passes `looksLikeAnalysis`. Each file
 records `servedBy` (the model that actually answered), `promptVersion`,
 `date`, `attempt` and `rerunReason`. One sample: `node scripts/freeze-sample.mjs 2-mixed en`.
-`--dry-run` prints the extracted texts and the exact request body without
+`--reason` without `--force` is an error; `--force` on a file that does not
+exist yet is just a first run (attempt 1, no reason stored). `--dry-run` prints the extracted texts and the exact request body without
 calling the network or needing a key.
 
 English inputs are extracted from `~/Dev/elenchus/testbed/<id>.html` with

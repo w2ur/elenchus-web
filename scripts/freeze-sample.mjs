@@ -13,7 +13,8 @@
 //   OPENROUTER_API_KEY=sk-or-... node scripts/freeze-sample.mjs 2-mixed en
 //   OPENROUTER_API_KEY=sk-or-... node scripts/freeze-sample.mjs --all
 //   node scripts/freeze-sample.mjs --all --dry-run       (no network, no key)
-//   ... --force --reason "<why>"                          (re-run an existing sample)
+//   ... --force --reason "<why>"                          (re-run an existing sample;
+//                                                         --force on a missing file is a plain first run: attempt 1, no reason stored)
 //
 // Exit: 0 healthy, 1 a finding (a run failed validation, or a refusal),
 // 2 could not run (no key, bad arguments, unreadable input).
@@ -29,6 +30,7 @@ import {
 } from '../../elenchus-proxy/src/prompt.mjs';
 import { extractText, normalizeText } from '../src/lib/extract.js';
 import { looksLikeAnalysis } from '../src/lib/proxyClient.js';
+import { MAX_TEXT_LENGTH, MIN_TEXT_LENGTH } from '../src/lib/limits.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 export const IDS = ['1-sound', '2-mixed', '3-short'];
@@ -98,6 +100,38 @@ export function loadFrench(id, inputDir = INPUT_DIR) {
   return { title, text };
 }
 
+/**
+ * Full shape check of a sample record. Returns the list of problems, empty when
+ * the record is acceptable. The script runs it before writing, and the
+ * on-disk pin runs it over the committed files.
+ *
+ * @param {unknown} s
+ * @returns {string[]}
+ */
+export function validateSampleFile(s) {
+  const KEYS = ['id', 'lang', 'title', 'text', 'translated', 'result', 'servedBy',
+    'requestedModels', 'promptVersion', 'date', 'attempt', 'rerunReason'];
+  if (typeof s !== 'object' || s === null || Array.isArray(s)) return ['not an object'];
+  const rec = /** @type {Record<string, any>} */ (s);
+  const p = [];
+  if (JSON.stringify(Object.keys(rec)) !== JSON.stringify(KEYS)) p.push('keys differ from the expected shape or order');
+  if (!IDS.includes(rec.id)) p.push('id is not a testbed id');
+  if (!LANGS.includes(rec.lang)) p.push('lang is not en|fr');
+  for (const k of ['title', 'text', 'servedBy']) {
+    if (typeof rec[k] !== 'string' || !rec[k].trim()) p.push(`${k} must be a non-empty string`);
+  }
+  if (rec.translated !== (rec.lang === 'fr')) p.push('translated must be true exactly for fr');
+  if (!Array.isArray(rec.requestedModels) || rec.requestedModels.length === 0
+    || !rec.requestedModels.every((m) => typeof m === 'string' && m)) p.push('requestedModels must be a non-empty string array');
+  if (typeof rec.promptVersion !== 'string' || !/^v\d+$/.test(rec.promptVersion)) p.push('promptVersion must match ^v\\d+$');
+  if (typeof rec.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(rec.date)) p.push('date must be YYYY-MM-DD');
+  if (!Number.isInteger(rec.attempt) || rec.attempt < 1) p.push('attempt must be an integer >= 1');
+  else if (rec.attempt === 1 && rec.rerunReason !== null) p.push('attempt 1 must have rerunReason null');
+  else if (rec.attempt > 1 && (typeof rec.rerunReason !== 'string' || !rec.rerunReason.trim())) p.push('attempt > 1 needs a rerunReason');
+  if (!looksLikeAnalysis(rec.result)) p.push('result fails looksLikeAnalysis');
+  return p;
+}
+
 function parseArgs(argv) {
   const flags = new Set();
   const positional = [];
@@ -145,6 +179,10 @@ export async function run(argv, deps = {}) {
     }
     jobs = [{ id, lang }];
   }
+  if (reason !== null && !flags.has('--force')) {
+    err('--reason only makes sense with --force.');
+    return 2;
+  }
   if (flags.has('--force') && !(reason && reason.trim())) {
     err('--force requires --reason "<why this run is allowed>". The first run that passes validation is the sample.');
     return 2;
@@ -176,6 +214,13 @@ export async function run(argv, deps = {}) {
       input = lang === 'en' ? loadEnglish(id, testbedDir) : loadFrench(id, inputDir);
     } catch (e) {
       err(`${label}: cannot load the input (${e.message}).`);
+      return 2;
+    }
+    // The Worker slices to MAX_TEXT_LENGTH and refuses a trimmed text under
+    // MIN_TEXT_LENGTH (elenchus-proxy/src/index.js:166-169); it does not trim.
+    input.text = input.text.slice(0, MAX_TEXT_LENGTH);
+    if (input.text.trim().length < MIN_TEXT_LENGTH) {
+      err(`${label}: the text is shorter than ${MIN_TEXT_LENGTH} characters; the Worker would refuse it.`);
       return 2;
     }
 
@@ -227,8 +272,7 @@ export async function run(argv, deps = {}) {
       const servedBy = typeof data.model === 'string' ? data.model : null;
       if (!servedBy) throw new Error('response carries no model field, so servedBy cannot be recorded');
 
-      mkdirSync(outDir, { recursive: true });
-      writeFileSync(file, `${JSON.stringify({
+      const record = {
         id,
         lang,
         title: input.title,
@@ -241,7 +285,11 @@ export async function run(argv, deps = {}) {
         date: now().toISOString().slice(0, 10),
         attempt,
         rerunReason,
-      }, null, 2)}\n`);
+      };
+      const problems = validateSampleFile(record);
+      if (problems.length > 0) throw new Error(`record invalid: ${problems.join('; ')}`);
+      mkdirSync(outDir, { recursive: true });
+      writeFileSync(file, `${JSON.stringify(record, null, 2)}\n`);
       out(`${label}: written (${servedBy}, attempt ${attempt}).`);
     } catch (e) {
       err(`${label}: FAILED, nothing written (${e.message}).`);
