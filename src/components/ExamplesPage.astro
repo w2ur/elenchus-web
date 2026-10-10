@@ -30,7 +30,9 @@ const paragraphs = (text: string) =>
 ---
 
 <h1>{E.heading}</h1>
-{E.intro.map((p) => <p class="examples-intro">{p}</p>)}
+{/* The intro describes saved runs ("three texts… the label above each one");
+    with none on the page it would contradict the notice right under it. */}
+{!none && E.intro.map((p) => <p class="examples-intro">{p}</p>)}
 
 {none && (
   <p class="notice">
