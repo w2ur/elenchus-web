@@ -325,8 +325,18 @@ the escaped markup (`innerHTML` contains `&lt;img`, not `<img`). The same
 rule killed an earlier assertion: `not.toContain('onerror')` is worthless,
 because the word `onerror` survives escaping legitimately.
 
-There is no test runner for the Astro pages themselves, so anything in
-`src/components/Analyzer.astro`'s client `<script>` is unreachable by
+A component's **server-rendered** markup is testable:
+`vitest.config.js` goes through `astro/config`'s `getViteConfig`, so a test can
+render an `.astro` file with Astro's container API
+(`experimental_AstroContainer`) — `test/sampleResult.test.js` does, for
+`SampleResult.astro`, under `// @vitest-environment node`. A saved sample
+reaches the static HTML through `analysisView()` in `src/lib/render.js`:
+plain data with enums clamped and free text **unescaped** (the sink escapes
+once — Astro's `{}`, `escapeHtml` or `textContent`), which `renderAnalysis()`
+also consumes. Never `set:html` with model text.
+
+Client `<script>`s are still unreachable: anything in
+`src/components/Analyzer.astro`'s client `<script>` cannot be run by
 `npx vitest run` — which is why the Worker call lives in
 `src/lib/proxyClient.js` and not inline in the component. Keep logic on
 that side of the line.

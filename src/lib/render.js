@@ -1,5 +1,7 @@
-// Renders an elenchus-proxy analysis result into DOM elements already
-// present on the page. Ported from the rendering pattern in
+// Turns an elenchus-proxy analysis result into a plain view model
+// (analysisView — no DOM, so it also runs at Astro build time for a saved
+// run in SampleResult.astro) and renders that view into DOM elements already
+// present on the page (renderAnalysis). Ported from the rendering pattern in
 // ~/Dev/elenchus/sidepanel/sidepanel.js (functions renderResult,
 // createFlawCard, escapeHtml — cited by name, not line: that's a different
 // repo, moving independently) — same posture, same reason:
@@ -17,7 +19,9 @@
 //   2. Free-text fields (type/quote/explanation/summary/strengths) are
 //      either set via `textContent` (never parsed as markup) or passed
 //      through escapeHtml() before being interpolated into an innerHTML
-//      template — never interpolated raw.
+//      template — never interpolated raw. At build time the same plain
+//      strings go through Astro's auto-escaping `{}` expressions; never
+//      `set:html` with model text.
 //
 // `flaws` and `strengths` are guarded with Array.isArray before iterating:
 // a hostile or malformed response can send a string or an object instead of
@@ -46,23 +50,134 @@ export function escapeHtml(value) {
 }
 
 /**
- * @param {{ type?: unknown, quote?: unknown, explanation?: unknown, severity?: unknown }} flaw
+ * Free text for a view model: a plain string, never markup. `null`/
+ * `undefined` become '' (same coercion escapeHtml() applies), anything else
+ * goes through String(). The string is NOT escaped here — escaping belongs to
+ * the sink: Astro's `{}` expressions escape it at build time, and the DOM
+ * path below escapes it (escapeHtml) or writes it with textContent.
+ *
+ * @param {unknown} value
+ * @returns {string}
+ */
+function plainText(value) {
+  return value == null ? '' : String(value);
+}
+
+/**
+ * @typedef {object} FlawView
+ * @property {string} type         plain text
+ * @property {string} quote        plain text
+ * @property {string} explanation  plain text
+ * @property {string} severity     clamped to SEVERITIES (safe as a class)
+ * @property {string} severityLabel
+ */
+
+/**
+ * @typedef {object} AnalysisView
+ * @property {string} summary      plain text ('' unless the model sent a string)
+ * @property {string} score        clamped to SCORES, or 'unknown'
+ * @property {string} scoreLabel
+ * @property {string} scoreClass   the badge's full class attribute
+ * @property {FlawView[]} flaws
+ * @property {string} flawsCount   '(n)', or '' when there are no flaws
+ * @property {string[]} strengths  non-blank strings only
+ */
+
+/**
+ * @param {unknown} flaw
  * @param {{ severities: Record<string, string> }} T
+ * @returns {FlawView}
+ */
+export function flawView(flaw, T) {
+  const f = /** @type {{ type?: unknown, quote?: unknown, explanation?: unknown, severity?: unknown } | null | undefined} */ (flaw);
+  const severity = oneOf(f?.severity, SEVERITIES, 'minor');
+  return {
+    type: plainText(f?.type),
+    quote: plainText(f?.quote),
+    explanation: plainText(f?.explanation),
+    severity,
+    severityLabel: T.severities[severity],
+  };
+}
+
+/**
+ * The analysis as plain data: every enum clamped via oneOf(), every free-text
+ * field a plain string, every array guarded with Array.isArray. No DOM, so it
+ * runs at Astro build time — SampleResult.astro renders a saved run from it
+ * with Astro's auto-escaping `{}` expressions (never `set:html`), and the
+ * live renderAnalysis() below consumes the same object, so a saved run and a
+ * live one cannot clamp or filter differently.
+ *
+ * @param {unknown} result
+ * @param {{ scores: Record<string, string>, severities: Record<string, string> }} T
+ * @returns {AnalysisView}
+ */
+export function analysisView(result, T) {
+  const r = /** @type {{ summary?: unknown, score?: unknown, flaws?: unknown, strengths?: unknown } | null | undefined} */ (result);
+  const score = oneOf(r?.score, SCORES, 'unknown');
+  // Array.isArray guard: a hostile or malformed response can send a string
+  // or an object here, and rendering must not throw.
+  const flaws = Array.isArray(r?.flaws) ? r.flaws.map((f) => flawView(f, T)) : [];
+  // Same guard, plus a filter for non-string/blank entries — the schema
+  // allows an empty array, and a malformed response could send anything
+  // inside it.
+  const strengths = Array.isArray(r?.strengths)
+    ? r.strengths.filter((s) => typeof s === 'string' && s.trim().length > 0)
+    : [];
+  return {
+    summary: typeof r?.summary === 'string' ? r.summary : '',
+    score,
+    scoreLabel: T.scores[score] || score,
+    scoreClass: `score-badge ${score === 'unknown' ? '' : score}`.trim(),
+    flaws,
+    flawsCount: flaws.length === 0 ? '' : `(${flaws.length})`,
+    strengths,
+  };
+}
+
+/**
+ * The provenance line over a saved run. Every value comes from the sample
+ * file (scripts/freeze-sample.mjs writes it); the caller escapes it (Astro
+ * `{}` or textContent). `translated` is the second line FR samples carry.
+ *
+ * @param {{ date?: unknown, servedBy?: unknown, promptVersion?: unknown, translated?: unknown }} sample
+ * @param {{ sampleLabel: (date: string, model: string, prompt: string) => string, sampleTranslated: string }} T
+ * @returns {{ label: string, translated: string | null }}
+ */
+export function sampleProvenance(sample, T) {
+  return {
+    label: T.sampleLabel(plainText(sample?.date), plainText(sample?.servedBy), plainText(sample?.promptVersion)),
+    translated: sample?.translated === true ? T.sampleTranslated : null,
+  };
+}
+
+/**
+ * Builds one flaw card from an already-clamped FlawView.
+ *
+ * @param {FlawView} view
  * @returns {HTMLElement}
  */
-export function renderFlawCard(flaw, T) {
-  const severity = oneOf(flaw?.severity, SEVERITIES, 'minor');
+function flawCardFromView(view) {
   const card = document.createElement('div');
   card.className = 'flaw-card';
   // Every value interpolated below is either the clamped `severity` enum
   // (never the raw model string) or has passed through escapeHtml().
   card.innerHTML = `
-    <div class="flaw-type">${escapeHtml(flaw?.type)}</div>
-    <span class="flaw-severity ${severity}">${escapeHtml(T.severities[severity])}</span>
-    <blockquote class="flaw-quote">&ldquo;${escapeHtml(flaw?.quote)}&rdquo;</blockquote>
-    <p class="flaw-explanation">${escapeHtml(flaw?.explanation)}</p>
+    <div class="flaw-type">${escapeHtml(view.type)}</div>
+    <span class="flaw-severity ${view.severity}">${escapeHtml(view.severityLabel)}</span>
+    <blockquote class="flaw-quote">&ldquo;${escapeHtml(view.quote)}&rdquo;</blockquote>
+    <p class="flaw-explanation">${escapeHtml(view.explanation)}</p>
   `;
   return card;
+}
+
+/**
+ * @param {unknown} flaw
+ * @param {{ severities: Record<string, string> }} T
+ * @returns {HTMLElement}
+ */
+export function renderFlawCard(flaw, T) {
+  return flawCardFromView(flawView(flaw, T));
 }
 
 /**
@@ -86,47 +201,28 @@ export function renderFlawCard(flaw, T) {
  * @param {{ scores: Record<string, string>, severities: Record<string, string> }} T
  */
 export function renderAnalysis(result, elements, T) {
+  const view = analysisView(result, T);
+
   // `summary` is set via textContent — it is prose, never markup, and never
   // needs to reach innerHTML at all.
-  elements.summaryEl.textContent = typeof result?.summary === 'string' ? result.summary : '';
+  elements.summaryEl.textContent = view.summary;
 
-  const score = oneOf(result?.score, SCORES, 'unknown');
-  elements.scoreBadgeEl.textContent = T.scores[score] || score;
-  elements.scoreBadgeEl.className = `score-badge ${score === 'unknown' ? '' : score}`.trim();
+  elements.scoreBadgeEl.textContent = view.scoreLabel;
+  elements.scoreBadgeEl.className = view.scoreClass;
 
   elements.flawsListEl.innerHTML = '';
-  // Array.isArray guard: a hostile or malformed response can send a string
-  // or an object here, and rendering must not throw.
-  const flaws = Array.isArray(result?.flaws) ? result.flaws : [];
-
-  if (flaws.length === 0) {
-    elements.noFlawsEl.hidden = false;
-    elements.flawsCountEl.textContent = '';
-  } else {
-    elements.noFlawsEl.hidden = true;
-    elements.flawsCountEl.textContent = `(${flaws.length})`;
-    for (const flaw of flaws) {
-      elements.flawsListEl.appendChild(renderFlawCard(flaw, T));
-    }
+  elements.flawsCountEl.textContent = view.flawsCount;
+  elements.noFlawsEl.hidden = view.flaws.length > 0;
+  for (const flaw of view.flaws) {
+    elements.flawsListEl.appendChild(flawCardFromView(flaw));
   }
 
   elements.strengthsListEl.innerHTML = '';
-  // Same Array.isArray guard, plus a filter for non-string/blank entries —
-  // the schema allows an empty array, and a malformed response could send
-  // anything inside it.
-  const strengths = Array.isArray(result?.strengths)
-    ? result.strengths.filter((s) => typeof s === 'string' && s.trim().length > 0)
-    : [];
-
-  if (strengths.length > 0) {
-    elements.strengthsSectionEl.hidden = false;
-    for (const s of strengths) {
-      const li = document.createElement('li');
-      // textContent, never innerHTML: strengths are plain prose strings.
-      li.textContent = s;
-      elements.strengthsListEl.appendChild(li);
-    }
-  } else {
-    elements.strengthsSectionEl.hidden = true;
+  elements.strengthsSectionEl.hidden = view.strengths.length === 0;
+  for (const s of view.strengths) {
+    const li = document.createElement('li');
+    // textContent, never innerHTML: strengths are plain prose strings.
+    li.textContent = s;
+    elements.strengthsListEl.appendChild(li);
   }
 }

@@ -147,6 +147,12 @@ The reason is stored in the file, `attempt` increments, and the label shown
 next to the sample must stay accurate. Saved output is AI-generated: name the
 model (`servedBy`) wherever it is shown.
 
+A sample is shown with `src/components/SampleResult.astro` (`<SampleResult
+sample={…} />`), which renders it into the static HTML at build time through
+the same `analysisView()` (`src/lib/render.js`) the live result uses, under
+the provenance label "Saved run · <date> · <servedBy> · prompt <promptVersion>
+· AI-generated" (French twin in `src/lib/strings.js`).
+
 ## Build
 
     npm run build

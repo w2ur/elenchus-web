@@ -617,7 +617,8 @@ button {
    it were a target. */
 .card,
 .flaw-card,
-#strengths-list li {
+#strengths-list li,
+.strengths-list li {
   background: var(--bg-card);
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
@@ -693,11 +694,13 @@ a.card:hover {
 
 /* The 20px that used to sit under .score-badge lives on the card now: inside
    a padded box the badge's own margin only opened dead space below it. */
-#result-summary-card {
+#result-summary-card,
+.result-summary-card {
   margin-bottom: 20px;
 }
 
-#result-summary {
+#result-summary,
+.result-summary {
   font-size: 14px;
   margin-bottom: 8px;
 }
@@ -762,7 +765,8 @@ a.card:hover {
   font-weight: 400;
 }
 
-#no-flaws {
+#no-flaws,
+.no-flaws {
   color: var(--score-strong);
   font-size: 13px;
   padding: 8px 0 16px;
@@ -821,7 +825,8 @@ a.card:hover {
   margin-bottom: 20px;
 }
 
-#strengths-list {
+#strengths-list,
+.strengths-list {
   list-style: none;
   /* `main ul`'s 20px left indent is for prose lists. These items are cards
      now, and an indented card sits 20px right of every other block on the
@@ -829,9 +834,19 @@ a.card:hover {
   margin: 0;
 }
 
-#strengths-list li {
+#strengths-list li,
+.strengths-list li {
   margin-bottom: 6px;
   font-size: 13px;
+}
+
+/* A saved run (src/components/SampleResult.astro). The class twins above
+   (.result-summary, .no-flaws, .strengths-list) exist because the sample can
+   share a page with the live result panel, which owns those ids. The frame
+   itself is house.css's .house-sample, which READS --sample-bar with a
+   fallback and never declares it; Elenchus's bar is its own accent. */
+.house-sample {
+  --sample-bar: var(--accent);
 }
 
 /* Screen-reader-only: present to assistive tech, invisible on screen. */

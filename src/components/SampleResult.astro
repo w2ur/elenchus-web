@@ -1,0 +1,76 @@
+---
+// A saved Elenchus run, rendered into the static HTML at build time (crawlers
+// and no-JS visitors see it; nothing shifts in after load). The sample object
+// is a file written by scripts/freeze-sample.mjs — the model's output,
+// committed as-is — so its `result` is as attacker-influenced as a live one
+// and goes through the same src/lib/render.js analysisView(): enums clamped
+// with oneOf(), free text kept as plain strings. Every value below reaches
+// the page through Astro's auto-escaping `{}` expressions; never `set:html`
+// with model text (test/sampleResult.test.js renders a hostile fixture).
+//
+// No ids: the frame can sit on the same page as Analyzer.astro, whose result
+// panel owns #result-summary, #no-flaws and #strengths-list. The class twins
+// here share those rules in global.css.
+//
+// The frame (.house-sample / .house-sample-label) is house.css's; the bar
+// colour is set by global.css's `.house-sample` rule (--sample-bar).
+import { SCORES, oneOf } from '../lib/clamp.js';
+import { analysisView, sampleProvenance } from '../lib/render.js';
+import { strings } from '../lib/strings.js';
+
+interface Props {
+  sample: {
+    lang?: unknown;
+    date?: unknown;
+    servedBy?: unknown;
+    promptVersion?: unknown;
+    translated?: unknown;
+    result?: unknown;
+  };
+}
+
+const { sample } = Astro.props;
+const lang = oneOf(sample?.lang, ['en', 'fr'], 'en') as 'en' | 'fr';
+const T = strings[lang];
+const view = analysisView(sample?.result, T);
+const provenance = sampleProvenance(sample, T);
+// Already clamped by analysisView; re-asserted so a future edit there cannot
+// widen what reaches the class attribute without this line noticing.
+const scoreClass = SCORES.includes(view.score) ? `score-badge ${view.score}` : 'score-badge';
+---
+
+<section class="house-sample" lang={lang}>
+  <p class="house-sample-label">
+    {provenance.label}
+    {provenance.translated && <><br />{provenance.translated}</>}
+  </p>
+
+  <h3 class="eyebrow">{T.summaryHeading}</h3>
+  <div class="card result-summary-card">
+    <p class="result-summary">{view.summary}</p>
+    <span class={scoreClass}>{view.scoreLabel}</span>
+  </div>
+
+  <h3 class="eyebrow">{T.flawsHeading} <span class="count-badge">{view.flawsCount}</span></h3>
+  {view.flaws.length === 0 ? (
+    <p class="no-flaws">{T.noFlaws}</p>
+  ) : (
+    view.flaws.map((flaw) => (
+      <div class="flaw-card">
+        <div class="flaw-type">{flaw.type}</div>
+        <span class={`flaw-severity ${flaw.severity}`}>{flaw.severityLabel}</span>
+        <blockquote class="flaw-quote">&ldquo;{flaw.quote}&rdquo;</blockquote>
+        <p class="flaw-explanation">{flaw.explanation}</p>
+      </div>
+    ))
+  )}
+
+  {view.strengths.length > 0 && (
+    <>
+      <h3 class="eyebrow">{T.strengthsHeading}</h3>
+      <ul class="strengths-list">
+        {view.strengths.map((s) => <li>{s}</li>)}
+      </ul>
+    </>
+  )}
+</section>

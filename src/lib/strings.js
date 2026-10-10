@@ -109,6 +109,17 @@ export const strings = {
     noFlaws: 'No reasoning flaws detected.',
     strengthsHeading: 'Strengths',
 
+    // The provenance line over a saved run (SampleResult.astro, through
+    // render.js sampleProvenance()). Owner decision 8 (2026-10-10): saved
+    // model output is republished only labelled AI-generated and naming the
+    // model that served it, wherever it is shown. The values come from the
+    // sample file as written by scripts/freeze-sample.mjs.
+    sampleLabel: (date, model, prompt) => `Saved run · ${date} · ${model} · prompt ${prompt} · AI-generated`,
+    // Only a translated sample shows this; FR samples are the translated
+    // ones today (translated from the English testbed), but the line follows
+    // the sample's own `translated` flag, so EN carries a neutral twin.
+    sampleTranslated: 'Text translated from the original',
+
     scores: { strong: 'strong', moderate: 'moderate', weak: 'weak', unknown: 'unknown' },
     severities: { minor: 'minor', significant: 'significant', critical: 'critical' },
 
@@ -229,6 +240,9 @@ export const strings = {
     flawsHeading: 'Failles',
     noFlaws: 'Aucune faille de raisonnement détectée.',
     strengthsHeading: 'Points forts',
+
+    sampleLabel: (date, model, prompt) => `Analyse enregistrée · ${date} · ${model} · prompt ${prompt} · générée par IA`,
+    sampleTranslated: "Texte traduit de l'original anglais",
 
     scores: { strong: 'solide', moderate: 'modéré', weak: 'faible', unknown: 'inconnu' },
     severities: { minor: 'mineure', significant: 'significative', critical: 'critique' },
