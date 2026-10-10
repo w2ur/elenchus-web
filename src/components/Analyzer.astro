@@ -161,13 +161,25 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
     data-sitekey={turnstileSiteKey}
     data-language={lang}
     data-theme="auto"
+    data-callback="elenchusTurnstileSolved"
   >
   </div>
+  {/* elenchusTurnstileSolved: Turnstile calls it with the token once the
+      challenge is solved, and the "complete the challenge first" line by
+      Analyze must not outlive that. Defined here, inline and before api.js
+      can render, not in the module script below: a deferred module may run
+      after the widget has rendered and read its data-callback. The module's
+      re-render on a theme change passes the same function. Pinned by
+      test/turnstileHint.test.js. */}
   <script is:inline>
     (function () {
       var c = document.getElementById('turnstile-container');
       var r = document.documentElement.classList;
       c.dataset.theme = r.contains('dark') ? 'dark' : r.contains('light') ? 'light' : 'auto';
+      window.elenchusTurnstileSolved = function (token) {
+        var hint = document.getElementById('turnstile-hint');
+        if (hint && typeof token === 'string' && token) hint.textContent = '';
+      };
     })();
   </script>
 </form>
@@ -489,6 +501,7 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
         sitekey: turnstileContainer.dataset.sitekey,
         language: turnstileContainer.dataset.language,
         theme,
+        callback: window.elenchusTurnstileSolved,
       });
     } catch {
       // Widget not rendered (script blocked): the submit handler already
