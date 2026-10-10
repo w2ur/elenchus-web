@@ -5,9 +5,12 @@
 // `MAX_OUTPUT_TOKENS` are imported from the sibling elenchus-proxy repo (not
 // copied), and the upstream URL and model chain are read from its
 // wrangler.toml, so a sample is exactly what the free tier would have served.
-// The fence-strip below mirrors elenchus-proxy/src/index.js, and the result
-// must pass `looksLikeAnalysis` before anything is written. A sample is never
-// hand-written: the file is the model's output, committed as-is.
+// The fence-strip below mirrors elenchus-proxy/src/index.js. The result must
+// pass `looksLikeAnalysis`, and the whole record src/lib/samples.js's
+// validateSampleFile(), before anything is written; the build runs that same
+// check on every file it ships (loadSample), so a file edited after the
+// freeze fails `astro build`. A sample is never hand-written: the file is
+// the model's output, committed as-is.
 //
 // Usage (the key comes from the environment only; never add a file fallback):
 //   OPENROUTER_API_KEY=sk-or-... node scripts/freeze-sample.mjs 2-mixed en
@@ -31,10 +34,9 @@ import {
 import { extractText, normalizeText } from '../src/lib/extract.js';
 import { looksLikeAnalysis } from '../src/lib/proxyClient.js';
 import { MAX_TEXT_LENGTH, MIN_TEXT_LENGTH } from '../src/lib/limits.js';
+import { SAMPLE_IDS as IDS, SAMPLE_LANGS as LANGS, validateSampleFile } from '../src/lib/samples.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-export const IDS = ['1-sound', '2-mixed', '3-short'];
-export const LANGS = ['en', 'fr'];
 const WRANGLER = join(ROOT, '..', 'elenchus-proxy', 'wrangler.toml');
 const TESTBED = join(ROOT, '..', 'elenchus', 'testbed');
 const INPUT_DIR = join(ROOT, 'scripts', 'samples-input');
@@ -98,38 +100,6 @@ export function loadEnglish(id, testbedDir = TESTBED) {
 export function loadFrench(id, inputDir = INPUT_DIR) {
   const { title, text } = JSON.parse(readFileSync(join(inputDir, `${id}.fr.json`), 'utf8'));
   return { title, text };
-}
-
-/**
- * Full shape check of a sample record. Returns the list of problems, empty when
- * the record is acceptable. The script runs it before writing, and the
- * on-disk pin runs it over the committed files.
- *
- * @param {unknown} s
- * @returns {string[]}
- */
-export function validateSampleFile(s) {
-  const KEYS = ['id', 'lang', 'title', 'text', 'translated', 'result', 'servedBy',
-    'requestedModels', 'promptVersion', 'date', 'attempt', 'rerunReason'];
-  if (typeof s !== 'object' || s === null || Array.isArray(s)) return ['not an object'];
-  const rec = /** @type {Record<string, any>} */ (s);
-  const p = [];
-  if (JSON.stringify(Object.keys(rec)) !== JSON.stringify(KEYS)) p.push('keys differ from the expected shape or order');
-  if (!IDS.includes(rec.id)) p.push('id is not a testbed id');
-  if (!LANGS.includes(rec.lang)) p.push('lang is not en|fr');
-  for (const k of ['title', 'text', 'servedBy']) {
-    if (typeof rec[k] !== 'string' || !rec[k].trim()) p.push(`${k} must be a non-empty string`);
-  }
-  if (rec.translated !== (rec.lang === 'fr')) p.push('translated must be true exactly for fr');
-  if (!Array.isArray(rec.requestedModels) || rec.requestedModels.length === 0
-    || !rec.requestedModels.every((m) => typeof m === 'string' && m)) p.push('requestedModels must be a non-empty string array');
-  if (typeof rec.promptVersion !== 'string' || !/^v\d+$/.test(rec.promptVersion)) p.push('promptVersion must match ^v\\d+$');
-  if (typeof rec.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(rec.date)) p.push('date must be YYYY-MM-DD');
-  if (!Number.isInteger(rec.attempt) || rec.attempt < 1) p.push('attempt must be an integer >= 1');
-  else if (rec.attempt === 1 && rec.rerunReason !== null) p.push('attempt 1 must have rerunReason null');
-  else if (rec.attempt > 1 && (typeof rec.rerunReason !== 'string' || !rec.rerunReason.trim())) p.push('attempt > 1 needs a rerunReason');
-  if (!looksLikeAnalysis(rec.result)) p.push('result fails looksLikeAnalysis');
-  return p;
 }
 
 function parseArgs(argv) {

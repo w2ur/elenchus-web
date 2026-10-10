@@ -91,6 +91,33 @@ describe('loadSample', () => {
   });
 });
 
+// Regression (final review A): the build checked only a subset of the record
+// (strings, a boolean `translated`, looksLikeAnalysis), so a shipped file the
+// freeze script itself would refuse still reached the page. loadSample now
+// runs the full validateSampleFile().
+describe('loadSample runs the full validateSampleFile on a shipped file', () => {
+  it.each([
+    ['an English run marked translated', { translated: true }],
+    ['attempt 2 with no rerun reason', { attempt: 2 }],
+    ['a bracketed prompt version', { promptVersion: '[v2 - x]' }],
+    ['a free-form date', { date: 'today' }],
+    ['no requested models', { requestedModels: [] }],
+  ])('fails the build on %s', (_name, override) => {
+    expect(() => loadSample('2-mixed', 'en', files(sample('2-mixed', 'en', override)))).toThrow(/2-mixed\.en\.json cannot be shown/);
+  });
+
+  it('fails the build on an extra key', () => {
+    const extra = { ...sample('2-mixed', 'en'), note: 'hand-edited' };
+    expect(() => loadSample('2-mixed', 'en', files(extra))).toThrow(/keys differ/);
+  });
+
+  it('is the same function the freeze script validates with', async () => {
+    const src = readFileSync(join(ROOT, 'scripts/freeze-sample.mjs'), 'utf8');
+    expect(src).toMatch(/import \{[^}]*validateSampleFile[^}]*\} from '\.\.\/src\/lib\/samples\.js'/);
+    expect(src).not.toMatch(/function validateSampleFile/);
+  });
+});
+
 describe('sampleProblems', () => {
   it('accepts the synthetic fixture and rejects a hollow one', () => {
     expect(sampleProblems(sample('3-short', 'en'), '3-short', 'en')).toEqual([]);

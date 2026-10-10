@@ -25,8 +25,21 @@ import { looksLikeAnalysis } from './proxyClient.js';
  * Every sample file on disk, keyed by its glob path
  * ('../data/samples/2-mixed.en.json'). Empty when none has been frozen yet.
  * `import: 'default'` gives the parsed JSON itself.
+ *
+ * Vite (astro build, vitest) rewrites the glob call at transform time and
+ * defines import.meta.env. Plain Node does neither: scripts/freeze-sample.mjs
+ * imports this module for validateSampleFile(), and there the call would
+ * throw at module scope, so it gets no files instead.
  */
-const FILES = import.meta.glob('../data/samples/*.json', { eager: true, import: 'default' });
+const FILES = import.meta.env
+  ? import.meta.glob('../data/samples/*.json', { eager: true, import: 'default' })
+  : {};
+
+/** The testbed ids a sample can be frozen from (scripts/freeze-sample.mjs). */
+export const SAMPLE_IDS = ['1-sound', '2-mixed', '3-short'];
+
+/** The languages a sample exists in. */
+export const SAMPLE_LANGS = ['en', 'fr'];
 
 /** The run both Untilt sites show (owner decision 7, 2026-10-10). */
 export const SHARED_SAMPLE_ID = '2-mixed';
@@ -51,11 +64,43 @@ export const EXAMPLE_IDS = ['2-mixed', '3-short', '1-sound'];
  */
 
 /**
- * The problems that stop a file from being shown. A subset of
- * scripts/freeze-sample.mjs's validateSampleFile(), which cannot be imported
- * here: it pulls the sibling elenchus-proxy repo and jsdom, neither of which
- * exists in the Netlify build. The fields checked are the ones the page
- * reads; the full record shape is the script's own pin.
+ * Full shape check of a sample record: every key, in order, with its type and
+ * its invariants. Returns the list of problems, empty when the record is
+ * acceptable. One check, two callers: scripts/freeze-sample.mjs runs it
+ * before writing a file, and loadSample() below runs it on every file the
+ * build ships, so a file edited by hand after the freeze fails the build.
+ *
+ * @param {unknown} s
+ * @returns {string[]}
+ */
+export function validateSampleFile(s) {
+  const KEYS = ['id', 'lang', 'title', 'text', 'translated', 'result', 'servedBy',
+    'requestedModels', 'promptVersion', 'date', 'attempt', 'rerunReason'];
+  if (typeof s !== 'object' || s === null || Array.isArray(s)) return ['not an object'];
+  const rec = /** @type {Record<string, any>} */ (s);
+  const p = [];
+  if (JSON.stringify(Object.keys(rec)) !== JSON.stringify(KEYS)) p.push('keys differ from the expected shape or order');
+  if (!SAMPLE_IDS.includes(rec.id)) p.push('id is not a testbed id');
+  if (!SAMPLE_LANGS.includes(rec.lang)) p.push('lang is not en|fr');
+  for (const k of ['title', 'text', 'servedBy']) {
+    if (typeof rec[k] !== 'string' || !rec[k].trim()) p.push(`${k} must be a non-empty string`);
+  }
+  if (rec.translated !== (rec.lang === 'fr')) p.push('translated must be true exactly for fr');
+  if (!Array.isArray(rec.requestedModels) || rec.requestedModels.length === 0
+    || !rec.requestedModels.every((m) => typeof m === 'string' && m)) p.push('requestedModels must be a non-empty string array');
+  if (typeof rec.promptVersion !== 'string' || !/^v\d+$/.test(rec.promptVersion)) p.push('promptVersion must match ^v\\d+$');
+  if (typeof rec.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(rec.date)) p.push('date must be YYYY-MM-DD');
+  if (!Number.isInteger(rec.attempt) || rec.attempt < 1) p.push('attempt must be an integer >= 1');
+  else if (rec.attempt === 1 && rec.rerunReason !== null) p.push('attempt 1 must have rerunReason null');
+  else if (rec.attempt > 1 && (typeof rec.rerunReason !== 'string' || !rec.rerunReason.trim())) p.push('attempt > 1 needs a rerunReason');
+  if (!looksLikeAnalysis(rec.result)) p.push('result fails looksLikeAnalysis');
+  return p;
+}
+
+/**
+ * The problems that stop the file `<id>.<lang>.json` from being shown: the
+ * full validateSampleFile() check, plus the record naming the same id and
+ * language as its file name.
  *
  * @param {unknown} s
  * @param {string} id
@@ -63,16 +108,11 @@ export const EXAMPLE_IDS = ['2-mixed', '3-short', '1-sound'];
  * @returns {string[]}
  */
 export function sampleProblems(s, id, lang) {
-  if (typeof s !== 'object' || s === null || Array.isArray(s)) return ['not an object'];
+  const p = validateSampleFile(s);
+  if (typeof s !== 'object' || s === null || Array.isArray(s)) return p;
   const rec = /** @type {Record<string, unknown>} */ (s);
-  const p = [];
   if (rec.id !== id) p.push(`id is not ${id}`);
   if (rec.lang !== lang) p.push(`lang is not ${lang}`);
-  for (const k of ['title', 'text', 'servedBy', 'promptVersion', 'date']) {
-    if (typeof rec[k] !== 'string' || !rec[k].trim()) p.push(`${k} must be a non-empty string`);
-  }
-  if (typeof rec.translated !== 'boolean') p.push('translated must be a boolean');
-  if (!looksLikeAnalysis(rec.result)) p.push('result fails looksLikeAnalysis');
   return p;
 }
 

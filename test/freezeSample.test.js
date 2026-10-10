@@ -8,9 +8,10 @@ import { mkdtempSync, readFileSync, writeFileSync, rmSync, readdirSync } from 'n
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
-  run, validateSampleFile, stripFences, promptVersion, readUpstream, loadEnglish, loadFrench, buildRequestBody, IDS,
+  run, stripFences, promptVersion, readUpstream, loadEnglish, loadFrench, buildRequestBody,
 } from '../scripts/freeze-sample.mjs';
 import { looksLikeAnalysis } from '../src/lib/proxyClient.js';
+import { SAMPLE_IDS as IDS, validateSampleFile } from '../src/lib/samples.js';
 
 const ANALYSIS = {
   summary: 'A short verdict.',
