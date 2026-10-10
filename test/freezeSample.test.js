@@ -267,6 +267,19 @@ describe('validateSampleFile', () => {
 });
 
 describe('flags (pure: refused before any config is read)', () => {
+  // Regression (final review D): `--all --force --reason x` re-froze all
+  // six samples, overwriting every one the owner had already looked at.
+  it('--force with --all is refused before any network call; it needs one <id> <lang>', async () => {
+    const fetchImpl = mockFetch(JSON.stringify(ANALYSIS));
+    for (const id of ['1-sound', '2-mixed', '3-short']) {
+      for (const lang of ['en', 'fr']) writeFileSync(join(outDir, `${id}.${lang}.json`), '{"attempt":1}\n');
+    }
+    expect(await run(['--all', '--force', '--reason', 'redo'], deps({ fetchImpl }))).toBe(2);
+    expect(errs.join('\n')).toMatch(/one sample at a time/);
+    expect(fetchImpl.calls).toHaveLength(0);
+    expect(readFileSync(join(outDir, '2-mixed.en.json'), 'utf8')).toBe('{"attempt":1}\n');
+  });
+
   it('--reason without --force is a usage error', async () => {
     const fetchImpl = mockFetch(JSON.stringify(ANALYSIS));
     expect(await run(['2-mixed', 'en', '--reason', 'x'], deps({ fetchImpl }))).toBe(2);

@@ -141,7 +141,8 @@ production request (prompt, schema, token cap, model chain from
 and writes a file only if the answer passes `looksLikeAnalysis`. Each file
 records `servedBy` (the model that actually answered), `promptVersion`,
 `date`, `attempt` and `rerunReason`. One sample: `node scripts/freeze-sample.mjs 2-mixed en`.
-`--reason` without `--force` is an error; `--force` on a file that does not
+`--reason` without `--force` is an error, and so is `--force` with `--all`
+(a forced re-run names one `<id> <lang>`); `--force` on a file that does not
 exist yet is just a first run (attempt 1, no reason stored). `--dry-run` prints the extracted texts and the exact request body without
 calling the network or needing a key.
 

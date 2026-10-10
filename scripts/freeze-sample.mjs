@@ -17,7 +17,7 @@
 //   OPENROUTER_API_KEY=sk-or-... node scripts/freeze-sample.mjs 2-mixed en
 //   OPENROUTER_API_KEY=sk-or-... node scripts/freeze-sample.mjs --all
 //   node scripts/freeze-sample.mjs --all --dry-run       (no network, no key)
-//   ... --force --reason "<why>"                          (re-run an existing sample;
+//   ... 2-mixed en --force --reason "<why>"               (re-run ONE existing sample, never with --all;
 //                                                         --force on a missing file is a plain first run: attempt 1, no reason stored)
 //
 // Exit: 0 healthy, 1 a finding (a run failed validation, or a refusal),
@@ -152,13 +152,20 @@ export async function run(argv, deps = {}) {
     if (!known.has(f)) { err(`Unknown flag ${f}.`); return 2; }
   }
 
+  // A forced re-run overwrites a sample someone already looked at, so it is
+  // one named sample at a time: `--all --force` would re-freeze all six.
+  if (flags.has('--all') && flags.has('--force')) {
+    err('--force re-runs one sample at a time: name it as <id> <lang>, not --all.');
+    return 2;
+  }
+
   let jobs;
   if (flags.has('--all')) {
     jobs = IDS.flatMap((id) => LANGS.map((lang) => ({ id, lang })));
   } else {
     const [id, lang] = positional;
     if (!IDS.includes(id) || !LANGS.includes(lang)) {
-      err(`Usage: freeze-sample.mjs <${IDS.join('|')}> <${LANGS.join('|')}> | --all  [--dry-run] [--force --reason "<text>"]`);
+      err(`Usage: freeze-sample.mjs <${IDS.join('|')}> <${LANGS.join('|')}> [--dry-run] [--force --reason "<text>"] | --all [--dry-run]`);
       return 2;
     }
     jobs = [{ id, lang }];
