@@ -77,6 +77,8 @@ header reach the Worker and come back as an opaque 403.
 
 ## Visual identity
 
+`DESIGN.md` records the project's identity and the house direction; `~/Dev/untilt/docs/house-contract.md` still wins on the shell.
+
 Two stylesheets, and the split is the point. `src/styles/house.css` is the
 Untilt house shell, an **adapted copy** of
 `untilt/client/src/styles/house.css` — read its header before touching it.
