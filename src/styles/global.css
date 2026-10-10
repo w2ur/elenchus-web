@@ -328,7 +328,7 @@ footer {
     height: auto;
   }
 
-  /* Same price on the anchors: the 10px tab-bar label is declared on
+  /* Same price on the anchors: the 12px tab-bar label is declared on
      `.tool-nav-bar a`, which matches at every width. The desktop pill takes
      the shell's control size back. */
   .tool-nav a {

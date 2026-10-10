@@ -16,7 +16,6 @@
 // eyebrows (owner decision 18, 2026-10-10): an uppercase kicker over each
 // block read as a label with no heading under it.
 import MethodBand from './MethodBand.astro';
-import { analysisView } from '../lib/render.js';
 import { examplesCopy, landingCopy } from '../lib/pageCopy.js';
 import { EXAMPLE_IDS } from '../lib/samples.js';
 import { strings } from '../lib/strings.js';
@@ -32,15 +31,18 @@ const C = landingCopy[lang];
 const E = examplesCopy[lang];
 const T = strings[lang];
 
-// One card per example id, in the chips' order. The kind line is static
-// copy, so a card exists before its run does and its anchor on the Examples
-// page always resolves; the run's own title and score join it once the file
-// is there.
+// One card per saved run that EXISTS, in the chips' order. A card for a run
+// not frozen yet would promise "See the full run" and land on "being
+// prepared"; with no run at all the section (heading included) is not
+// rendered. The card carries the text's title, which is the input, and no
+// model output: a score badge here would be saved output shown without its
+// AI-generated label and model name (owner decision 8), and that label does
+// not fit a three-across card. The full run, label included, is one click
+// away on the Examples page.
 const examplesBase = lang === 'fr' ? '/fr/examples/' : '/examples/';
-const cards = EXAMPLE_IDS.map((id) => {
+const cards = EXAMPLE_IDS.flatMap((id) => {
   const sample = examples.find((s) => s.id === id);
-  const view = sample ? analysisView(sample.result, T) : null;
-  return { id, href: `${examplesBase}#${id}`, ...E.kinds[id], title: sample?.title ?? null, view };
+  return sample ? [{ id, href: `${examplesBase}#${id}`, ...E.kinds[id], title: sample.title }] : [];
 });
 
 // Same listing URL and per-language `?hl=` form the analyzer and the
@@ -67,20 +69,23 @@ const HOUSE_URL = 'https://untilt.app/';
 <div id="landing-content">
   <MethodBand lang={lang} />
 
-  <h2 class="section-heading">{C.getHeading}</h2>
-  <ul class="ways example-cards">
-    {cards.map((card) => (
-      <li class="way">
-        <a class="card way-card" href={card.href}>
-          <span class="way-title">{card.name}</span>
-          <span class="way-body">{card.body}</span>
-          {card.title && <span class="example-card-title">&ldquo;{card.title}&rdquo;</span>}
-          {card.view && card.view.score !== 'unknown' && <span class={card.view.scoreClass}>{card.view.scoreLabel}</span>}
-          <span class="way-cta">{C.getCta}</span>
-        </a>
-      </li>
-    ))}
-  </ul>
+  {cards.length > 0 && (
+    <>
+      <h2 class="section-heading">{C.getHeading}</h2>
+      <ul class="ways example-cards">
+        {cards.map((card) => (
+          <li class="way">
+            <a class="card way-card" href={card.href}>
+              <span class="way-title">{card.name}</span>
+              <span class="way-body">{card.body}</span>
+              <span class="example-card-title">&ldquo;{card.title}&rdquo;</span>
+              <span class="way-cta">{C.getCta}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </>
+  )}
 
   <h2 class="section-heading">{C.waysHeading}</h2>
   <ul class="ways">

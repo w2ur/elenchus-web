@@ -141,10 +141,10 @@ The front page (`src/pages/index.astro` + `src/pages/fr/index.astro`) IS the
 analyzer: `<ToolHero>` (band, title, the two-line "does not fact-check"
 lede, chips), then `<Analyzer>` (input card: example chips, paste box,
 counter · free-tier line · Analyze, Turnstile under it; the saved run beside
-it from 1024px; results panel), then `<Landing>` (method band, cards into
-`/examples/`). **`src/lib/samples.js` runs in page frontmatter only**: its
+it from 1024px; results panel), then `<Landing>` (method band, a card per
+saved run). **`src/lib/samples.js` runs in page frontmatter only**: its
 glob would put both languages in the client bundle. No sample files: no
-slot, no chips, and `/examples/` says the runs are being prepared, never a
+slot, chips or cards, and `/examples/` says the runs are being prepared, never a
 stand-in.
 `src/pages/analyze.astro` and `src/pages/fr/analyze.astro` still exist —
 `test/configFailLoud.test.js` hard-codes them as the build-time env gate —

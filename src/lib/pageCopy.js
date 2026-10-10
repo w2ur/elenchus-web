@@ -43,13 +43,14 @@ export const landingCopy = {
     // The method band: four panels, each a contour drawing and one caption
     // with one line under it. Product copy, truthful to the prompt
     // (elenchus-proxy/src/prompt.mjs): it quotes each flaw, rates its
-    // severity, and returns a three-level score plus optional strengths.
+    // severity, and returns a three-level score plus strengths only when it
+    // finds any (an empty list is valid), so no line promises them.
     methodHeading: 'How it reads a text',
     method: [
       { caption: 'Finds the conclusion', line: 'What the text is trying to get you to accept.' },
       { caption: 'Traces what supports it', line: 'The reasons and evidence it offers on the way there.' },
       { caption: 'Flags the gap', line: 'Each step that does not follow, quoted, with how serious it is.' },
-      { caption: 'Scores the whole', line: 'Strong, moderate or weak, and what the argument does well.' },
+      { caption: 'Scores the whole', line: 'Strong, moderate or weak, and its strengths, when it has any.' },
     ],
 
     // Three cards, one per saved run, each linking to its section on the
@@ -112,7 +113,7 @@ export const landingCopy = {
       { caption: 'Repère la conclusion', line: 'Ce que le texte cherche à vous faire admettre.' },
       { caption: 'Remonte ce qui la soutient', line: 'Les raisons et les éléments qu’il avance pour y arriver.' },
       { caption: 'Signale la faille', line: 'Chaque étape qui ne suit pas, citée, avec sa gravité.' },
-      { caption: 'Note l’ensemble', line: 'Solide, modéré ou faible, et ce que l’argument réussit.' },
+      { caption: 'Note l’ensemble', line: 'Solide, modéré ou faible, et ses points forts, s’il en a.' },
     ],
 
     getHeading: 'Ce que vous obtenez',

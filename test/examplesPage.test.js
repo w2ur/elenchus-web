@@ -7,7 +7,7 @@
 //
 // Fixtures are synthetic and live here, never under src/data/samples/: a
 // sample there is a real model run written by scripts/freeze-sample.mjs.
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
@@ -105,24 +105,68 @@ describe('the Examples page', () => {
   });
 });
 
+// The built <head>, not the source prop: reads dist/ the way houseShell's
+// cssTarget block does, and fails by name (never a silent skip) when no
+// build has run, since a check over nothing must not read as a pass.
+describe('the built Examples pages carry canonical and hreflang', () => {
+  const SITE = 'https://elenchus.untilt.app';
+  const built = { en: 'dist/examples/index.html', fr: 'dist/fr/examples/index.html' };
+  if (!existsSync(join(ROOT, built.en)) || !existsSync(join(ROOT, built.fr))) {
+    it('SKIPPED — run `npm run build` first: dist/examples not found, nothing to read', () => {
+      throw new Error('dist/examples not found — this check verified nothing; run `npm run build` first.');
+    });
+  } else {
+    it.each(['en', 'fr'])('%s', (lang) => {
+      const head = new JSDOM(src(built[lang])).window.document.head;
+      const href = (sel) => head.querySelector(sel)?.getAttribute('href');
+      expect(href('link[rel="canonical"]')).toBe(`${SITE}${lang === 'fr' ? '/fr' : ''}/examples/`);
+      expect(href('link[hreflang="en"]')).toBe(`${SITE}/examples/`);
+      expect(href('link[hreflang="fr"]')).toBe(`${SITE}/fr/examples/`);
+      expect(href('link[hreflang="x-default"]')).toBe(`${SITE}/examples/`);
+    });
+  }
+});
+
 describe('the front page below the fold', () => {
-  it.each(['en', 'fr'])('%s: three example cards link to their Examples anchors', async (lang) => {
-    const { doc: d } = await doc(Landing, { lang, examples: [] });
+  it.each(['en', 'fr'])('%s: every saved run gets a card linking to its Examples anchor, in chip order', async (lang) => {
+    const examples = EXAMPLE_IDS.map((id) => sample(id, lang));
+    const { doc: d } = await doc(Landing, { lang, examples });
     const base = lang === 'fr' ? '/fr/examples/' : '/examples/';
     const hrefs = [...d.querySelectorAll('.example-cards a')].map((a) => a.getAttribute('href'));
     expect(hrefs).toEqual(EXAMPLE_IDS.map((id) => `${base}#${id}`));
+    expect(d.body.textContent).toContain(landingCopy[lang].getHeading);
   });
 
-  it('a card carries its run title and score once the run exists', async () => {
+  // Review E3, round 1: with no run, a card promised "See the full run" and
+  // landed on "being prepared". No run, no card and no heading.
+  it.each(['en', 'fr'])('%s: with no saved run, neither the cards nor their heading render', async (lang) => {
+    const { doc: d } = await doc(Landing, { lang, examples: [] });
+    expect(d.querySelector('.example-cards')).toBeNull();
+    expect(d.body.textContent).not.toContain(landingCopy[lang].getHeading);
+  });
+
+  it('only the runs that exist get a card', async () => {
     const { doc: d } = await doc(Landing, { lang: 'en', examples: [sample('3-short', 'en')] });
-    const card = d.querySelector('.example-cards a[href="/examples/#3-short"]');
-    expect(card.querySelector('.example-card-title').textContent).toContain('Synthetic 3-short en');
-    expect(card.querySelector('.score-badge.weak')).not.toBeNull();
+    const cards = d.querySelectorAll('.example-cards a');
+    expect(cards).toHaveLength(1);
+    expect(cards[0].getAttribute('href')).toBe('/examples/#3-short');
+    expect(cards[0].querySelector('.example-card-title').textContent).toContain('Synthetic 3-short en');
+  });
+
+  // Review E3, round 1 (owner decision 8): saved output shown anywhere carries
+  // its AI-generated label and model. The cards carry no model output at all
+  // (the title is the input text), so they need no label; the score and the
+  // labelled run live on the Examples page.
+  it('a card shows no model output: no score, no summary', async () => {
+    const { doc: d } = await doc(Landing, { lang: 'en', examples: EXAMPLE_IDS.map((id) => sample(id, 'en')) });
+    const list = d.querySelector('.example-cards');
+    expect(list.querySelector('.score-badge')).toBeNull();
+    expect(list.textContent).not.toMatch(/Synthetic summary|Weak|Hasty generalization/);
   });
 
   // Owner decision 18 (2026-10-10): sentence-case headings, no kickers.
   it.each(['en', 'fr'])('%s: every landing heading is a sentence-case h2, not an eyebrow', async (lang) => {
-    const { doc: d } = await doc(Landing, { lang, examples: [] });
+    const { doc: d } = await doc(Landing, { lang, examples: [sample('2-mixed', lang)] });
     const h2s = [...d.querySelectorAll('h2')];
     expect(h2s.length).toBe(4);
     for (const h of h2s) {
@@ -146,6 +190,12 @@ describe('the front page below the fold', () => {
 });
 
 describe('the method band', () => {
+  // Review E3, round 1: strengths may be empty (prompt v2), so no line may
+  // promise them unconditionally.
+  it.each([['en', /when it has any/], ['fr', /s’il en a/]])('%s: the score line makes strengths conditional', (lang, cond) => {
+    expect(landingCopy[lang].method[3].line).toMatch(cond);
+  });
+
   it('EN captions are the four agreed ones, FR has four too', () => {
     expect(landingCopy.en.method.map((m) => m.caption)).toEqual([
       'Finds the conclusion', 'Traces what supports it', 'Flags the gap', 'Scores the whole',

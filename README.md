@@ -39,8 +39,9 @@ the paste box, a footer row with the character counter, a one-line free-tier
 note linking to the privacy policy's Elenchus web section, and Analyze),
 with the Turnstile widget under it and a saved sample run beside the card
 from 1024px wide (under it on a phone), then the rest of the landing content
-below: a four-panel method band, three cards into the Examples page, the
-bookmarklet and extension, the free-tier limits. The "reasoning, not facts" caveat sits next to the score on every
+below: a four-panel method band, one card per saved run into the Examples
+page (none until a run is frozen), the bookmarklet and extension, the
+free-tier limits. The "reasoning, not facts" caveat sits next to the score on every
 result, live or saved.
 
 | Page | English | French |
