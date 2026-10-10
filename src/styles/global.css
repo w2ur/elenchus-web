@@ -595,12 +595,14 @@ textarea#text-input:focus {
   color: var(--muted);
 }
 
-/* One line of muted 12px: the disclosure stays on the first screen without
-   the weight of a box. Its own width rule beats `main p`'s 48ch: the footer
-   cell already bounds it. */
+/* Muted 12px: the disclosure stays on the first screen without the weight
+   of a box. Its own width rule beats `main p`'s 48ch, but the footer cell
+   alone let a line run to ~97 characters at 1440 with no saved run beside
+   the card (design-detect line-length, design review v2, 2026-10-10). 68ch is the
+   measure, not a guess: re-measure with design-detect after changing it. */
 .free-tier-line {
   margin: 0.125rem 0 0;
-  max-width: none;
+  max-width: 68ch;
   font-size: 12px;
   line-height: 1.4;
   color: var(--muted);
@@ -1091,6 +1093,10 @@ main p {
   line-height: 1.55;
   margin-bottom: 16px;
   max-width: 48ch;
+  /* No one-word last line ("privacy / policy.", "penser / droit."): at 48ch a
+     lone closing word was visible on / and /fr/ at 1440 (design review v2,
+     2026-10-10). Browsers without text-wrap: pretty wrap as before. */
+  text-wrap: pretty;
 }
 
 /* The form's action and the next section touched: the Analyze button sat
@@ -1249,6 +1255,9 @@ main a {
 }
 
 .method-caption {
+  /* Four short captions in a 4-up row: "Traces what supports / it" left one
+     word on its own line at 1440. */
+  text-wrap: balance;
   font-family: 'Instrument Sans', system-ui, -apple-system, sans-serif;
   font-size: 1rem;
   font-weight: 600;
