@@ -423,7 +423,7 @@ const STATUS = {
 // extension's #d97706, used as TEXT on .flaw-severity.minor and
 // .warning-notice at 3.19:1 on a card. A saved sample put a minor flaw in
 // the first screen's static HTML, where Lighthouse failed it. Same hue,
-// darkened; the web value now diverges from sidepanel.css on purpose.
+// darkened; sidepanel.css took the same value on 2026-10-10.
 describe('light --severity-minor clears 4.5:1 as text on every surface it sits on', () => {
   const tint = (fg, bg, a) => '#' + [1,3,5].map((i) => Math.round(a*parseInt(fg.slice(i,i+2),16) + (1-a)*parseInt(bg.slice(i,i+2),16)).toString(16).padStart(2,'0')).join('');
   const minor = STATUS['--severity-minor'][0];
@@ -433,7 +433,7 @@ describe('light --severity-minor clears 4.5:1 as text on every surface it sits o
     ['.warning-notice: its own 12% tint over the page', tint(minor, HOUSE_LIGHT['--bg'], 0.12)],
   ];
   for (const [name, bg] of SURFACES) it(name, () => expect(ratio(minor, bg)).toBeGreaterThanOrEqual(4.5));
-  it("the extension's #d97706 fails the same sum: not vacuous", () => {
+  it("the old #d97706 fails the same sum: not vacuous", () => {
     expect(ratio('#d97706', HOUSE_LIGHT['--bg-card'])).toBeLessThan(4.5);
   });
   it('both text rules read the token', () => {
@@ -905,14 +905,16 @@ describe('the eyebrow follows the house contract (§2: Instrument Sans, uppercas
     expect(css).toMatch(/\.tool-hero \.eyebrow,\s*\.tool-hero \.lede\s*\{[^}]*var\(--hero-muted\)/s);
   });
 
-  it('every section heading carries it — the install page and the results', () => {
-    for (const [name, src] of [
-      ['BookmarkletInstall.astro', bookmarkletInstall],
-      ['Analyzer.astro', analyzer],
+  // DESIGN.md: one eyebrow per hero, sentence-case headings below. The
+  // install page and the results used to set every h2 as an eyebrow.
+  it('section headings below the hero are sentence case, never the eyebrow', () => {
+    for (const [name, src, cls] of [
+      ['BookmarkletInstall.astro', bookmarkletInstall, 'section-heading'],
+      ['Analyzer.astro', analyzer, 'result-heading'],
     ]) {
       const h2s = src.match(/<h2[^>]*>/g) ?? [];
       expect(h2s.length, name).toBeGreaterThan(0);
-      for (const h of h2s) expect(h, `${name}: ${h}`).toMatch(/class="eyebrow"/);
+      for (const h of h2s) expect(h, `${name}: ${h}`).toMatch(new RegExp(`class="${cls}"`));
     }
   });
 });

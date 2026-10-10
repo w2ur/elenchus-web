@@ -51,14 +51,14 @@ const provenance = sampleProvenance(sample, T);
     {provenance.translated && <><br />{provenance.translated}</>}
   </p>
 
-  <H class="eyebrow">{T.summaryHeading}</H>
+  <H class="result-heading">{T.summaryHeading}</H>
   <div class="card result-summary-card">
     <p class="result-summary">{view.summary}</p>
     <span class={view.scoreClass}>{view.scoreLabel}</span>
     <p class="score-caveat">{T.scoreCaveat}</p>
   </div>
 
-  <H class="eyebrow">{T.flawsHeading}{" "}<span class="count-badge">{view.flawsCount}</span></H>
+  <H class="result-heading">{T.flawsHeading}{" "}<span class="count-badge">{view.flawsCount}</span></H>
   {view.flaws.length === 0 ? (
     <p class="no-flaws">{T.noFlaws}</p>
   ) : (
@@ -74,7 +74,7 @@ const provenance = sampleProvenance(sample, T);
 
   {view.strengths.length > 0 && (
     <>
-      <H class="eyebrow">{T.strengthsHeading}</H>
+      <H class="result-heading">{T.strengthsHeading}</H>
       <ul class="strengths-list">
         {view.strengths.map((s) => <li>{s}</li>)}
       </ul>

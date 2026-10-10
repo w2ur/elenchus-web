@@ -7,13 +7,11 @@
    What is left here is Elenchus's own: ACCENT + STATUS (--accent,
    --accent-hover, --link, --severity-*, --score-*). The severity/score scale
    is copied verbatim from ~/Dev/elenchus/sidepanel/sidepanel.css so the same
-   analysis reads with the same colours in the extension and on the web, with
-   ONE divergence: light --severity-minor is #9a5404 here, not the extension's
-   #d97706. It is TEXT (.flaw-severity.minor, .warning-notice) and #d97706
-   measured 3.19:1 on a card, failing 4.5:1; once a saved sample put a minor
-   flaw on the first screen (task E2, 2026-10-10) that failure sat in the
-   static HTML. #9a5404 is the same hue darkened until it clears 4.5:1 on the
-   card, the page and .warning-notice's 12% tint (5.76 / 5.47 / 4.62,
+   analysis reads with the same colours in the extension and on the web.
+   Light --severity-minor is #9a5404 in both: it is TEXT (.flaw-severity.minor,
+   .warning-notice), and the earlier #d97706 measured 3.19:1 on a card,
+   failing 4.5:1. #9a5404 is the same hue darkened until it clears 4.5:1 on
+   the card, the page and .warning-notice's 12% tint (5.76 / 5.47 / 4.62,
    pinned in test/houseShell.test.js). --score-moderate keeps #d97706: it is
    a fill carrying ink, legal as is. They
    are semantic status colours, not "the accent colour", so the portfolio's
@@ -603,7 +601,8 @@ textarea#text-input:focus {
    (86 on /fr/). Under 80 needs about 480px at this size; not changed yet. */
 .free-tier-line {
   margin: 0.125rem 0 0;
-  max-width: 68ch;
+  /* About 75 characters at 12px; 68ch measured 93, since ch is a digit's width. */
+  max-width: 30rem;
   font-size: 12px;
   line-height: 1.4;
   color: var(--muted);
@@ -1219,6 +1218,17 @@ main a {
    Sentence-case headings, not eyebrows (owner decision 18, 2026-10-10): the
    uppercase kicker stays where it labels something under it (the hero, the
    result sections); a landing section is introduced by a real heading. */
+/* Headings inside a result (the live panel and the saved-run frame): sentence
+   case, the size of the UI text around them. DESIGN.md: one eyebrow per hero,
+   sentence-case headings below. */
+.result-heading {
+  font-family: 'Instrument Sans', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text);
+}
+
 .section-heading {
   font-family: 'Instrument Sans', system-ui, -apple-system, sans-serif;
   font-size: 1.25rem;

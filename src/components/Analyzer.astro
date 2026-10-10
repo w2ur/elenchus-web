@@ -231,7 +231,7 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
   <p id="result-provenance" class="house-sample-label" hidden></p>
   <p id="truncation-warning" class="warning-notice" hidden>{T.truncationWarning}</p>
 
-  <h2 class="eyebrow">{T.summaryHeading}</h2>
+  <h2 class="result-heading">{T.summaryHeading}</h2>
   {/* The summary is a card like the flaws below it — and, like them, not a
       link: global.css scopes the card's hover to `a.card`, so this block
       never lights up under a pointer that cannot click it. The wrapper is
@@ -245,12 +245,12 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
     <p class="score-caveat">{T.scoreCaveat}</p>
   </div>
 
-  <h2 class="eyebrow">{T.flawsHeading} <span id="flaws-count" class="count-badge"></span></h2>
+  <h2 class="result-heading">{T.flawsHeading} <span id="flaws-count" class="count-badge"></span></h2>
   <p id="no-flaws" hidden>{T.noFlaws}</p>
   <div id="flaws-list"></div>
 
   <div id="strengths-section" hidden>
-    <h2 class="eyebrow">{T.strengthsHeading}</h2>
+    <h2 class="result-heading">{T.strengthsHeading}</h2>
     <ul id="strengths-list"></ul>
   </div>
 

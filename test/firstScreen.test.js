@@ -77,7 +77,8 @@ describe('Analyzer first screen, with samples', () => {
     const slot = doc.querySelector('.first-screen > .first-screen-sample .house-sample');
     expect(slot).not.toBeNull();
     expect(slot.querySelector('h3')).toBeNull();
-    expect(slot.querySelector('h2.eyebrow')).not.toBeNull();
+    expect(slot.querySelector('h2.result-heading')).not.toBeNull();
+    expect(slot.querySelector('.eyebrow')).toBeNull();
   });
 
   it('embeds the samples as an escaped data attribute, never as markup', async () => {

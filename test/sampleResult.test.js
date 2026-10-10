@@ -102,7 +102,7 @@ describe('SampleResult.astro', () => {
   // sample present, task E2).
   it('takes h2 headings when asked, h3 by default', async () => {
     const two = (await render(sample(), { headingLevel: 2 })).frame;
-    expect(two.querySelectorAll('h2.eyebrow').length).toBeGreaterThan(0);
+    expect(two.querySelectorAll('h2.result-heading').length).toBeGreaterThan(0);
     expect(two.querySelector('h3')).toBeNull();
     const three = (await render(sample())).frame;
     expect(three.querySelector('h2')).toBeNull();
@@ -112,7 +112,7 @@ describe('SampleResult.astro', () => {
   // the saved run read "FLAWS(3)".
   it('separates the Flaws heading from its count', async () => {
     const { frame } = await render(sample());
-    const heading = [...frame.querySelectorAll('.eyebrow')].find((h) => h.querySelector('.count-badge'));
+    const heading = [...frame.querySelectorAll('.result-heading')].find((h) => h.querySelector('.count-badge'));
     expect(heading.textContent).toBe(`${strings.en.flawsHeading} (1)`);
   });
 
