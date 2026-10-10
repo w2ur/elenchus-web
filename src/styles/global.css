@@ -606,6 +606,23 @@ textarea#text-input:focus {
   color: var(--muted);
 }
 
+/* "Complete the challenge first", by Analyze (Analyzer.astro). Empty, and so
+   zero-height, until Analyze is pressed with the challenge unsolved; the
+   element stays in the layout either way so its live region is never
+   display: none. */
+.turnstile-hint {
+  margin: 0;
+  max-width: none;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.turnstile-hint:not(:empty) {
+  margin-top: 0.375rem;
+}
+
 /* The false-premises caveat, next to the score on a live result and on a
    saved one (owner decision 16). */
 .score-caveat {

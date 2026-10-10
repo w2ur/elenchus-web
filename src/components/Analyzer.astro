@@ -135,6 +135,12 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
           <span id="length-warning" hidden></span>
         </div>
         <p class="free-tier-line">{T.freeTierLine} <a href={CHROME_WEB_STORE_URL} target="_blank" rel="noopener noreferrer">{T.freeTierOwnKey}</a>{T.freeTierEnd} <a href={privacyDetailsUrl} target="_blank" rel="noopener">{T.freeTierDetails}</a></p>
+        {/* Filled when Analyze is pressed with the challenge below unsolved
+            (errorState.js turnstileGate): the form stays on screen and focus
+            moves to the widget. Always in the DOM, empty until then, so the
+            polite live region exists before its text arrives. Polite, never
+            role="alert", like the three state panels. */}
+        <p id="turnstile-hint" class="turnstile-hint" role="status"></p>
       </div>
       <button id="analyze-btn" class="btn-primary" type="submit" aria-describedby="length-warning" disabled>{T.analyzeBtn}</button>
     </div>
@@ -151,6 +157,7 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
   <div
     id="turnstile-container"
     class="cf-turnstile"
+    tabindex="-1"
     data-sitekey={turnstileSiteKey}
     data-language={lang}
     data-theme="auto"
@@ -290,7 +297,7 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
 </div>
 
 <script type="module">
-  import { canRetry, renderFailureState } from '../lib/errorState.js';
+  import { canRetry, renderFailureState, turnstileGate } from '../lib/errorState.js';
   import {
     PROTOCOL_VERSION,
     READY_TYPE,
@@ -335,6 +342,7 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
   const exportPrintBtn = document.getElementById('export-print');
   const exportRow = exportCopyBtn.parentElement;
   const sampleData = document.getElementById('sample-data');
+  const turnstileHint = document.getElementById('turnstile-hint');
 
   // Set the moment a result renders (see renderAnalysis() call below), so
   // the export row always exports the analysis currently on screen — never
@@ -511,25 +519,37 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
     // Two different situations, and they need different copy. Turnstile
     // creates its own hidden <input name="cf-turnstile-response"> inside
     // this form when it RENDERS the widget, empty until the challenge is
-    // solved. So:
+    // solved. turnstileGate() (errorState.js) reads it:
     //
     //   null  → no input exists: challenges.cloudflare.com never loaded
     //           (uBlock Origin, Firefox strict mode, a corporate proxy) or
     //           the widget failed to render. There is no challenge on the
     //           page, so "please complete the challenge" names an action
-    //           that cannot be taken and Retry cannot help — 'turnstileBlocked'.
+    //           that cannot be taken and Retry cannot help — 'turnstileBlocked',
+    //           in the error panel.
     //   ''    → the widget is there and simply is not solved yet —
-    //           'turnstileUnsolved', where Retry after solving is exactly
-    //           the right next step.
+    //           'turnstileUnsolved', INLINE: the form (and the widget under
+    //           it) stays on screen, the line by Analyze says what to do and
+    //           focus moves to the widget.
     //
     // showFailure() also resets the stale '.is-dry-state' class and Retry
     // visibility a PREVIOUS failed attempt may have left behind.
-    const tokenField = formData.get('cf-turnstile-response');
-    const turnstileToken = typeof tokenField === 'string' ? tokenField : '';
-    if (!turnstileToken) {
-      showFailure(tokenField === null ? 'turnstileBlocked' : 'turnstileUnsolved');
+    const gate = turnstileGate(formData.get('cf-turnstile-response'));
+    if (!gate.ok) {
+      if (gate.inline) {
+        // Emptied first so a second press re-announces the same text.
+        turnstileHint.textContent = '';
+        requestAnimationFrame(() => {
+          turnstileHint.textContent = T.errTurnstileUnsolved;
+        });
+        turnstileContainer.focus();
+      } else {
+        showFailure(gate.state);
+      }
       return;
     }
+    turnstileHint.textContent = '';
+    const turnstileToken = gate.token;
 
     // Cap mirrors the Worker's own MAX_TEXT_LENGTH; the textarea's
     // maxlength already prevents typing/pasting past this in practice, but

@@ -68,8 +68,9 @@ export const FAILURE_STATES = [
  *     shape is not an analysis. `callProxy` (src/lib/proxyClient.js)
  *     returns it directly.
  *   - `'turnstileUnsolved'` / `'turnstileBlocked'`: raised before any
- *     request is made at all, by the submit handler in
- *     src/components/Analyzer.astro — there is no Worker outcome yet.
+ *     request is made at all, by turnstileGate() below (called from the
+ *     submit handler in src/components/Analyzer.astro) — there is no Worker
+ *     outcome yet.
  *
  * @param {{ networkError?: boolean, status?: number, reason?: unknown }} [outcome]
  * @returns {FailureState}
@@ -126,7 +127,9 @@ export function isDryState(state) {
  *     copy is written to avoid.
  *
  * `turnstileUnsolved` DOES keep Retry: the widget is right there, and
- * completing it then retrying is the actual path forward. So do `network`,
+ * completing it then retrying is the actual path forward. (The analyzer no
+ * longer routes it to the error panel at all — see turnstileGate() — but the
+ * state keeps its answer for any caller that does.) So do `network`,
  * `generic`, `forbidden` and `invalid` — the last three are rare,
  * config-level problems, but a retry is not provably futile for any of them
  * (a 403 can be a transient origin hiccup; a malformed body can be a
@@ -137,6 +140,31 @@ export function isDryState(state) {
  */
 export function canRetry(state) {
   return !(state === 'ip' || state === 'service' || state === 'turnstileBlocked');
+}
+
+/**
+ * What the submit handler does with Turnstile's hidden
+ * `cf-turnstile-response` field (`FormData.get()`), before any request:
+ *
+ *   - a non-empty string: proceed, with that token;
+ *   - `null`: the widget never rendered (challenges.cloudflare.com blocked)
+ *     → `turnstileBlocked`, shown in the error panel in place of the form:
+ *     there is no challenge on the page to point at;
+ *   - anything else (`''`): the widget is there, unsolved →
+ *     `turnstileUnsolved`, shown INLINE (`inline: true`). The form stays on
+ *     screen and focus moves to the widget. The two modes never share copy.
+ *
+ * Inline because Analyze sits above the widget: hiding the form for an
+ * unsolved challenge took the challenge off the screen with it, so the
+ * visitor was told to complete something they could no longer see.
+ *
+ * @param {FormDataEntryValue | null} tokenField
+ * @returns {{ ok: true, token: string } | { ok: false, state: 'turnstileBlocked' | 'turnstileUnsolved', inline: boolean }}
+ */
+export function turnstileGate(tokenField) {
+  if (typeof tokenField === 'string' && tokenField) return { ok: true, token: tokenField };
+  if (tokenField === null) return { ok: false, state: 'turnstileBlocked', inline: false };
+  return { ok: false, state: 'turnstileUnsolved', inline: true };
 }
 
 /**

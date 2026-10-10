@@ -62,3 +62,28 @@ describe('Analyzer.astro live regions carry the ARIA that makes them audible', (
     expect(tag).not.toMatch(/role="status"/);
   });
 });
+
+// Regression (final review B): an unsolved challenge used to hide the form,
+// and the widget with it. The hint is inline by Analyze now, a polite live
+// region, and focus moves to the widget, which must be focusable for that.
+describe('the unsolved-challenge hint', () => {
+  const script = SOURCE.slice(SOURCE.indexOf('<script type="module">'));
+  const footer = SOURCE.slice(SOURCE.indexOf('<div class="input-footer">'), SOURCE.indexOf('id="analyze-btn"'));
+
+  it('is a polite live region in the footer row, never role="alert"', () => {
+    const tag = footer.match(/<p id="turnstile-hint"[^>]*>/);
+    expect(tag, 'no <p id="turnstile-hint"> in the footer row').not.toBeNull();
+    expect(tag[0]).toMatch(/role="status"/);
+    expect(SOURCE).not.toMatch(/<[a-z]+\s[^>]*role="alert"/);
+  });
+
+  it('keeps the form and moves focus to a focusable widget', () => {
+    expect(SOURCE).toMatch(/<div\s+id="turnstile-container"[^>]*tabindex="-1"/);
+    expect(script).toMatch(/turnstileGate\(formData\.get\('cf-turnstile-response'\)\)/);
+    const inline = script.slice(script.indexOf('if (gate.inline)'), script.indexOf('} else {', script.indexOf('if (gate.inline)')));
+    expect(inline).toContain('T.errTurnstileUnsolved');
+    expect(inline).toContain('turnstileContainer.focus()');
+    expect(inline).not.toMatch(/showState|showFailure/);
+    expect(script).not.toMatch(/showFailure\([^)]*'turnstileUnsolved'/);
+  });
+});

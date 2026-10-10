@@ -11,6 +11,7 @@
 // person away for the day for no reason.
 import { describe, expect, it } from 'vitest';
 import {
+  turnstileGate,
   FAILURE_STATES,
   canRetry,
   isDryState,
@@ -319,6 +320,24 @@ describe('the two Turnstile states', () => {
 });
 
 // Coverage guard, derived from the enum rather than a hand-copied list.
+// Regression (final review B): Analyze sits above the Turnstile widget, and
+// an unsolved challenge hid the whole form, widget included, behind "please
+// complete the verification challenge". turnstileGate() now marks that case
+// inline: the form stays, the hint goes by Analyze, focus goes to the widget.
+describe('turnstileGate', () => {
+  it('passes a solved token through', () => {
+    expect(turnstileGate('tok-123')).toEqual({ ok: true, token: 'tok-123' });
+  });
+
+  it('an unsolved widget is inline, never the error panel', () => {
+    expect(turnstileGate('')).toEqual({ ok: false, state: 'turnstileUnsolved', inline: true });
+  });
+
+  it('a widget that never rendered is the error panel, with its own copy', () => {
+    expect(turnstileGate(null)).toEqual({ ok: false, state: 'turnstileBlocked', inline: false });
+  });
+});
+
 describe('every failure state renders real copy in both languages', () => {
   it.each(FAILURE_STATES)('%s renders non-empty text in en and fr', (state) => {
     for (const lang of ['en', 'fr']) {

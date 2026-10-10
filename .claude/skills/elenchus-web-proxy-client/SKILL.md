@@ -89,7 +89,10 @@ copy obeys. The two are told apart by Turnstile's own hidden
 rendered: **`null` → `turnstileBlocked`** (no challenge on the page; honest
 copy naming the blocker, a link to the extension, no Retry) and **`''` →
 `turnstileUnsolved`** (the widget is there and unsolved; the original copy,
-Retry offered). The claim that the extension needs no challenge is a fact,
+shown inline by Analyze in `#turnstile-hint`, a polite live region, with the
+form kept on screen and focus moved to the widget: Analyze sits above the
+widget, so hiding the form for this state hid the challenge it asked for).
+`errorState.js`'s `turnstileGate()` makes that split. The claim that the extension needs no challenge is a fact,
 not reassurance — the Worker makes zero siteverify calls on the extension's
 path, an invariant pinned by a call counter in
 `elenchus-proxy/test/turnstile.test.js`.
