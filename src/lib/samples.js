@@ -20,6 +20,7 @@
 // Plain JS with JSDoc, not TypeScript — see CLAUDE.md.
 
 import { looksLikeAnalysis } from './proxyClient.js';
+import { SCORES, SEVERITIES } from './clamp.js';
 
 /**
  * Every sample file on disk, keyed by its glob path
@@ -94,6 +95,14 @@ export function validateSampleFile(s) {
   else if (rec.attempt === 1 && rec.rerunReason !== null) p.push('attempt 1 must have rerunReason null');
   else if (rec.attempt > 1 && (typeof rec.rerunReason !== 'string' || !rec.rerunReason.trim())) p.push('attempt > 1 needs a rerunReason');
   if (!looksLikeAnalysis(rec.result)) p.push('result fails looksLikeAnalysis');
+  else {
+    // The render clamps an unknown enum to 'unknown' / 'minor' without a word;
+    // on a frozen file that would show a label the model never gave, so the
+    // build refuses it instead.
+    if (!SCORES.includes(rec.result.score)) p.push('result.score is not one of SCORES');
+    const flaws = Array.isArray(rec.result.flaws) ? rec.result.flaws : [];
+    if (flaws.some((f) => !SEVERITIES.includes(f?.severity))) p.push('a flaw severity is not one of SEVERITIES');
+  }
   return p;
 }
 

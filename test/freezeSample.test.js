@@ -12,6 +12,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync, rmSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { createHash } from 'node:crypto';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -38,7 +39,7 @@ function requireSiblings() {
 const ANALYSIS = {
   summary: 'A short verdict.',
   score: 'weak',
-  flaws: [{ type: 'hasty_generalization', severity: 'high', quote: 'q', explanation: 'e' }],
+  flaws: [{ type: 'hasty_generalization', severity: 'significant', quote: 'q', explanation: 'e' }],
   strengths: [],
 };
 
@@ -259,6 +260,8 @@ describe('validateSampleFile', () => {
     ['attempt 1 with a reason', (r) => { r.rerunReason = 'why'; }],
     ['missing key', (r) => { delete r.requestedModels; }],
     ['unknown id', (r) => { r.id = 'x'; }],
+    ['out-of-enum score', (r) => { r.result = { ...r.result, score: 'excellent' }; }],
+    ['out-of-enum severity', (r) => { r.result = { ...r.result, flaws: [{ type: 't', quote: 'q', explanation: 'e', severity: 'fatal' }] }; }],
   ])('rejects %s', (_n, mutate) => {
     const r = good();
     mutate(r);
@@ -344,7 +347,21 @@ describe('without the sibling repo', () => {
   });
 });
 
-// The on-disk pin (every committed sample passes validateSampleFile, plus the
-// sha256 of 2-mixed.{en,fr}.json per U2) lands with the owner's real runs. It
-// is a todo, not a vacuous pass.
-it.todo('pins src/data/samples/*.json: validateSampleFile on all six, and the sha256 of 2-mixed.{en,fr}.json');
+// The on-disk pin: the six committed runs (owner run 2026-10-10) all pass
+// validateSampleFile, and 2-mixed.{en,fr}.json are pinned by sha256 because
+// untilt/client/src/data/elenchus-sample.{en,fr}.json are byte copies of them
+// (untilt pins the same two hashes). A re-freeze changes a hash: update both.
+describe('committed samples', () => {
+  const dir = join(ROOT, 'src/data/samples');
+  it('all six exist and pass validateSampleFile', () => {
+    const files = readdirSync(dir).filter((f) => f.endsWith('.json')).sort();
+    expect(files).toEqual(IDS.flatMap((id) => ['en', 'fr'].map((l) => `${id}.${l}.json`)).sort());
+    for (const f of files) expect([f, validateSampleFile(JSON.parse(readFileSync(join(dir, f), 'utf8')))]).toEqual([f, []]);
+  });
+  it.each([
+    ['2-mixed.en.json', '1677f2dd66360259eeb3e37326168346bfb5f854078ae8e2d7b38b5cfd1dffd3'],
+    ['2-mixed.fr.json', '446383f0b8f7032f9498992d74afd1a5bc2ca1c14b4a1e4f7c6ba620f5e68de7'],
+  ])('%s is pinned', (f, sha) => {
+    expect(createHash('sha256').update(readFileSync(join(dir, f))).digest('hex')).toBe(sha);
+  });
+});
