@@ -10,7 +10,7 @@
  * copy: the three surfaces need three different transforms (see below, plus
  * the elenchus extension's own two token renames), so it would be a code
  * generator whose output in the one repo with no test framework at all would
- * be unverified. Three divergences here, each marked [ADAPTED] at its site:
+ * be unverified. Divergences here, each marked [ADAPTED] or [ELENCHUS ADDITION] at its site:
  *
  *   1. DARK MODE IS A MEDIA QUERY FOR *SYSTEM* PREFERENCE. Upstream declares
  *      the dark values under `.dark`, because untilt has a class toggle. This
@@ -371,4 +371,28 @@
 @media (prefers-reduced-motion: reduce) {
   .house-bloom-ring { animation: none; }
   .house-bloom.is-settled { animation: none; transform: none; }
+}
+
+/* --- The sample frame -------------------------------------------------------
+   Contract §2c. Copied verbatim from untilt's house.css (not adapted). A
+   real, saved result of a tool, shown inside one card the shell draws and the
+   tool fills. Shell tokens only. The top bar reads `--sample-bar`, then the
+   tool's `--accent`, then currentColor: read with a fallback and NEVER
+   declared here (same reason as .house-bloom; global.css sets --sample-bar).
+   The bar is an inset box-shadow, not a border-top: a shadow takes no space,
+   so the card's box and its content do not move by 4px when a copy omits it,
+   and it follows the rounded corners. Print drops shadows, hence the border
+   fallback is deliberately absent: the bar is decoration, the label carries
+   the provenance. */
+.house-sample {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: var(--space-card);
+  box-shadow: inset 0 4px 0 0 var(--sample-bar, var(--accent, currentColor));
+}
+
+.house-sample-label {
+  color: var(--muted);
+  font-size: var(--text-ui);
 }

@@ -273,12 +273,12 @@ footer {
   z-index: 40;
 }
 
-/* The tab-bar label floor: 10px, a literal at this one site (contract §2b —
+/* The tab-bar label floor: 12px, a literal at this one site (contract §2b —
    a token for a single site is a constant). Declared AFTER `.tool-nav a` so
    it wins on the shared element below 768px, and reset back to --text-ui
    inside the desktop block, where the same element becomes the pill row. */
 .tool-nav-bar a {
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .house-controls {
@@ -489,17 +489,21 @@ button {
   color: inherit;
 }
 
-/* Borderless, card-less, --control-h square: the shell control, not a card.
-   The 44px bordered box came from the extension's side panel and set the
-   whole bar's height. 32px clears WCAG 2.5.8 on its own (the AA floor is
-   24px; 44px is AAA), so no ::after hit area is needed to make up the
-   difference — and adding one would put an invisible box back over the
-   layout the boxes were removed from. */
+/* The theme button: a bordered 44px square, the same box as .lang-toggle
+   below (contract §2b). Same hairline, radius, fill and link colour, so the
+   two header controls read as a pair; min-width/min-height rather than
+   width/height so a larger text size can only grow it. 44px is a literal at
+   this site and at .lang-toggle, deliberately not a @geometry token (the
+   block is copied byte-identical). The border sits inside the box
+   (box-sizing), so no ::after hit area is needed or wanted. */
 .chrome-btn {
-  width: var(--control-h);
-  height: var(--control-h);
+  box-sizing: border-box;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  border: 1px solid var(--line);
   border-radius: var(--radius-control);
-  color: var(--muted);
+  background: var(--tint);
+  color: var(--link);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -507,16 +511,19 @@ button {
 
 .chrome-btn:hover,
 .chrome-btn:focus-visible {
-  color: var(--text);
-  background: var(--tint);
+  color: var(--link-hover);
+  background: var(--tint-strong);
 }
 
 /* The language toggle: a compact pill, not a second icon square, because it
    carries a two-letter word as well as a glyph. --link on --tint, hover to
    --tint-strong — the same two surfaces every other control here paints,
-   with a hairline so it reads as a control rather than as running text. */
+   with a hairline so it reads as a control rather than as running text.
+   min-height 44px is the touch target (contract §2b), shared with
+   .chrome-btn above. */
 .lang-toggle {
-  height: var(--control-h);
+  box-sizing: border-box;
+  min-height: 2.75rem;
   padding: 0 0.625rem;
   border: 1px solid var(--line);
   border-radius: var(--radius-control);

@@ -958,15 +958,39 @@ describe('the shell geometry', () => {
     expect(selectorList).toContain('.house-bar');
   });
 
-  it('the chrome button is borderless and card-less, with no phantom hit area', () => {
+  it('the theme button is the language pill\'s box: bordered, 44px, same radius and colour', () => {
     const btn = ruleBody(css, '.chrome-btn {');
-    expect(btn).not.toMatch(/border:/);
-    expect(btn).not.toMatch(/background:\s*var\(--bg-card\)/);
-    expect(btn).toMatch(/height:\s*var\(--control-h\)/);
-    expect(btn).toMatch(/border-radius:\s*var\(--radius-control\)/);
-    // 32px already clears WCAG 2.5.8 (24px, AA); the 44px ::after pad was
-    // the only reason these were boxes.
+    const pill = ruleBody(css, '.lang-toggle {');
+    // Contract 2b: both header controls are a 44px touch target on every page.
+    // 44px is a literal (2.75rem), not a @geometry token.
+    for (const rule of [btn, pill]) {
+      expect(rule).toMatch(/min-height:\s*2\.75rem/);
+      expect(rule).toMatch(/box-sizing:\s*border-box/);
+      expect(rule).toMatch(/border:\s*1px solid var\(--line\)/);
+      expect(rule).toMatch(/border-radius:\s*var\(--radius-control\)/);
+      expect(rule).toMatch(/background:\s*var\(--tint\)/);
+      expect(rule).toMatch(/color:\s*var\(--link\)/);
+    }
+    // The theme button is a square; the pill grows with its word.
+    expect(btn).toMatch(/min-width:\s*2\.75rem/);
+    // The box is the hit area: no height cap and no invisible ::after pad.
+    expect(btn).not.toMatch(/(^|[^-])height:/);
+    expect(pill).not.toMatch(/(^|[^-])height:/);
     expect(css).not.toMatch(/\.chrome-btn::after/);
+    expect(ruleBody(css, '.chrome-btn:hover,\n.chrome-btn:focus-visible {')).toMatch(/background:\s*var\(--tint-strong\)/);
+  });
+
+  it('the sample frame reads the tool accent for its top bar and declares none', () => {
+    const frame = ruleBody(houseCss, '.house-sample {');
+    expect(frame).toMatch(/background:\s*var\(--bg-card\)/);
+    expect(frame).toMatch(/border-radius:\s*var\(--radius-card\)/);
+    expect(frame).toMatch(/padding:\s*var\(--space-card\)/);
+    // Inset shadow, not border-top: the bar must not move the card's content.
+    expect(frame).toMatch(/box-shadow:\s*inset 0 4px 0 0 var\(--sample-bar, var\(--accent, currentColor\)\)/);
+    expect(frame).not.toMatch(/border-top/);
+    // Read with a fallback, never declared in the shell (same rule as the bloom).
+    expect(houseCss).not.toMatch(/--sample-bar\s*:/);
+    expect(ruleBody(houseCss, '.house-sample-label {')).toMatch(/color:\s*var\(--muted\)/);
   });
 
   it('the nav pill is the shell control, tinted from --text rather than from the accent', () => {
@@ -983,9 +1007,9 @@ describe('the shell geometry', () => {
     expect(nav).not.toMatch(/color-mix\([^)]*--accent/);
   });
 
-  it('the mobile bar keeps the 10px label floor at a 4rem height', () => {
+  it('the mobile bar keeps the 12px label floor at a 4rem height', () => {
     expect(ruleBody(css, '.tool-nav-bar {')).toMatch(/height:\s*4rem/);
-    expect(ruleBody(css, '.tool-nav-bar a {')).toMatch(/font-size:\s*10px/);
+    expect(ruleBody(css, '.tool-nav-bar a {')).toMatch(/font-size:\s*12px/);
   });
 
   it('the language toggle is a pill showing the destination code, drawn in the inline-SVG convention', () => {
