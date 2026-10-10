@@ -3,15 +3,37 @@
 // What is pinned is the contract the owner relies on when running it for real:
 // the file shape, the fence-strip, and that nothing is written for a response
 // that is not an analysis.
+//
+// Two groups. The pure ones (argument handling, validation, the fence-strip)
+// run in any checkout. The ones that send the production request or read the
+// testbed need the sibling repos ../elenchus-proxy and ../elenchus; without
+// them they FAIL, each one, with a message naming what is missing. They never
+// skip: a skipped pin reads as a passing one.
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtempSync, readFileSync, writeFileSync, rmSync, readdirSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync, rmSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
-  run, stripFences, promptVersion, readUpstream, loadEnglish, loadFrench, buildRequestBody,
+  run, stripFences, promptVersion, readUpstream, loadEnglish, loadFrench, buildRequestBody, loadPrompt,
 } from '../scripts/freeze-sample.mjs';
 import { looksLikeAnalysis } from '../src/lib/proxyClient.js';
 import { SAMPLE_IDS as IDS, validateSampleFile } from '../src/lib/samples.js';
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const SIBLINGS = [
+  join(ROOT, '..', 'elenchus-proxy', 'src', 'prompt.mjs'),
+  join(ROOT, '..', 'elenchus-proxy', 'wrangler.toml'),
+  join(ROOT, '..', 'elenchus', 'testbed'),
+];
+
+/** beforeEach for the groups that run against the real production config. */
+function requireSiblings() {
+  const missing = SIBLINGS.filter((p) => !existsSync(p));
+  if (missing.length > 0) {
+    throw new Error(`this test needs the sibling repos elenchus-proxy and elenchus cloned next to elenchus-web; missing: ${missing.join(', ')}`);
+  }
+}
 
 const ANALYSIS = {
   summary: 'A short verdict.',
@@ -54,7 +76,9 @@ const deps = (over = {}) => ({
   ...over,
 });
 
-describe('freeze-sample', () => {
+describe('freeze-sample run (needs ../elenchus-proxy and ../elenchus)', () => {
+  beforeEach(requireSiblings);
+
   it('writes the exact shape on success and sends the production request', async () => {
     const fetchImpl = mockFetch(JSON.stringify(ANALYSIS));
     const code = await run(['2-mixed', 'en'], deps({ fetchImpl }));
@@ -82,7 +106,7 @@ describe('freeze-sample', () => {
     const { url, init } = fetchImpl.calls[0];
     expect(url).toBe(readUpstream().url);
     expect(init.headers.Authorization).toBe('Bearer test-key');
-    expect(JSON.parse(init.body)).toEqual(buildRequestBody(saved.requestedModels, saved.text, 'en'));
+    expect(JSON.parse(init.body)).toEqual(buildRequestBody(await loadPrompt(), saved.requestedModels, saved.text, 'en'));
   });
 
   it('marks French samples as translated and sends the French instruction', async () => {
@@ -161,6 +185,20 @@ describe('freeze-sample', () => {
     );
   });
 
+  it('writes nothing when the response names no model', async () => {
+    const fetchImpl = mockFetch(JSON.stringify(ANALYSIS), { model: '' });
+    expect(await run(['2-mixed', 'en'], deps({ fetchImpl }))).toBe(1);
+    expect(readdirSync(outDir)).toEqual([]);
+  });
+
+  it('--force --reason on a missing file is a plain first run: attempt 1, no reason stored', async () => {
+    const code = await run(['2-mixed', 'en', '--force', '--reason', 'x'], deps({ fetchImpl: mockFetch(JSON.stringify(ANALYSIS)) }));
+    expect(code).toBe(0);
+    const saved = JSON.parse(readFileSync(join(outDir, '2-mixed.en.json'), 'utf8'));
+    expect(saved.attempt).toBe(1);
+    expect(saved.rerunReason).toBeNull();
+  });
+
   it('--dry-run needs no key, makes no call, writes no file', async () => {
     const fetchImpl = mockFetch('unused');
     expect(await run(['--all', '--dry-run'], deps({ env: {}, fetchImpl }))).toBe(0);
@@ -170,7 +208,9 @@ describe('freeze-sample', () => {
   });
 });
 
-describe('inputs', () => {
+describe('inputs (needs ../elenchus-proxy and ../elenchus)', () => {
+  beforeEach(requireSiblings);
+
   it('EN extraction keeps paragraph breaks and excludes title, nav and the .expect block', () => {
     const { title, text } = loadEnglish('2-mixed');
     expect(title).toBe('Why remote work is destroying our industry');
@@ -188,8 +228,8 @@ describe('inputs', () => {
     }
   });
 
-  it('the prompt version is the bare token', () => {
-    expect(promptVersion()).toMatch(/^v\d+$/);
+  it('the prompt version is the bare token', async () => {
+    expect(promptVersion((await loadPrompt()).SYSTEM_PROMPT)).toMatch(/^v\d+$/);
   });
 
   it('looksLikeAnalysis is the shared guard', () => {
@@ -224,27 +264,37 @@ describe('validateSampleFile', () => {
     mutate(r);
     expect(validateSampleFile(r).length).toBeGreaterThan(0);
   });
-
-  it('writes nothing when the response names no model', async () => {
-    const fetchImpl = mockFetch(JSON.stringify(ANALYSIS), { model: '' });
-    expect(await run(['2-mixed', 'en'], deps({ fetchImpl }))).toBe(1);
-    expect(readdirSync(outDir)).toEqual([]);
-  });
 });
 
-describe('flags', () => {
+describe('flags (pure: refused before any config is read)', () => {
   it('--reason without --force is a usage error', async () => {
     const fetchImpl = mockFetch(JSON.stringify(ANALYSIS));
     expect(await run(['2-mixed', 'en', '--reason', 'x'], deps({ fetchImpl }))).toBe(2);
     expect(fetchImpl.calls).toHaveLength(0);
   });
+});
 
-  it('--force --reason on a missing file is a plain first run: attempt 1, no reason stored', async () => {
-    const code = await run(['2-mixed', 'en', '--force', '--reason', 'x'], deps({ fetchImpl: mockFetch(JSON.stringify(ANALYSIS)) }));
-    expect(code).toBe(0);
-    const saved = JSON.parse(readFileSync(join(outDir, '2-mixed.en.json'), 'utf8'));
-    expect(saved.attempt).toBe(1);
-    expect(saved.rerunReason).toBeNull();
+// Regression (final review M): the script imported elenchus-proxy's
+// prompt.mjs statically, so loading the module at all failed in a checkout
+// without the sibling repo, and `npm test` went red on every test here,
+// including the pure ones. The import is dynamic now, on the run path only.
+describe('without the sibling repo', () => {
+  it('the script has no static import of the sibling repo', () => {
+    const src = readFileSync(join(ROOT, 'scripts/freeze-sample.mjs'), 'utf8');
+    expect(src).not.toMatch(/^import[^;]*elenchus-proxy/m);
+  });
+
+  it('a run exits 2 naming the missing repo, before any network call', async () => {
+    const wranglerPath = join(outDir, 'wrangler.toml');
+    writeFileSync(wranglerPath, 'UPSTREAM_URL = "https://example.invalid/v1"\nUPSTREAM_MODEL = "example/m"\n');
+    const fetchImpl = mockFetch(JSON.stringify(ANALYSIS));
+    const code = await run(['1-sound', 'fr'], deps({
+      fetchImpl, wranglerPath, promptPath: join(outDir, 'nope', 'prompt.mjs'),
+    }));
+    expect(code).toBe(2);
+    expect(errs.join('\n')).toMatch(/elenchus-proxy repo must be cloned/);
+    expect(fetchImpl.calls).toHaveLength(0);
+    expect(readdirSync(outDir)).toEqual(['wrangler.toml']);
   });
 });
 

@@ -129,9 +129,13 @@ never written by hand:
 
     OPENROUTER_API_KEY=sk-or-... node scripts/freeze-sample.mjs --all
 
-Run it in your own terminal; the key is read from the environment only. It
-and its tests need the sibling checkouts `~/Dev/elenchus-proxy` and
-`~/Dev/elenchus` (they fail without them): it sends the
+Run it in your own terminal; the key is read from the environment only. A
+run needs the sibling checkouts `~/Dev/elenchus-proxy` and `~/Dev/elenchus`
+(it exits 2 naming the missing one). The script loads the prompt module
+dynamically, so `npm test` runs its pure tests (arguments, validation,
+fence-strip) in any checkout; the tests that send the production request or
+read the testbed fail one by one, each naming the missing sibling, and never
+skip. It sends the
 production request (prompt, schema, token cap, model chain from
 `elenchus-proxy/wrangler.toml`), strips code fences the way the Worker does,
 and writes a file only if the answer passes `looksLikeAnalysis`. Each file

@@ -3,7 +3,8 @@
 //
 // Sends the PRODUCTION request: `buildMessages`, `analysisSchema` and
 // `MAX_OUTPUT_TOKENS` are imported from the sibling elenchus-proxy repo (not
-// copied), and the upstream URL and model chain are read from its
+// copied; dynamically, on the run path only, so this module and its pure
+// functions load in a checkout without that repo), and the upstream URL and model chain are read from its
 // wrangler.toml, so a sample is exactly what the free tier would have served.
 // The fence-strip below mirrors elenchus-proxy/src/index.js. The result must
 // pass `looksLikeAnalysis`, and the whole record src/lib/samples.js's
@@ -25,12 +26,6 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 import { JSDOM } from 'jsdom';
-import {
-  buildMessages,
-  analysisSchema,
-  MAX_OUTPUT_TOKENS,
-  SYSTEM_PROMPT,
-} from '../../elenchus-proxy/src/prompt.mjs';
 import { extractText, normalizeText } from '../src/lib/extract.js';
 import { looksLikeAnalysis } from '../src/lib/proxyClient.js';
 import { MAX_TEXT_LENGTH, MIN_TEXT_LENGTH } from '../src/lib/limits.js';
@@ -38,6 +33,7 @@ import { SAMPLE_IDS as IDS, SAMPLE_LANGS as LANGS, validateSampleFile } from '..
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const WRANGLER = join(ROOT, '..', 'elenchus-proxy', 'wrangler.toml');
+const PROMPT = join(ROOT, '..', 'elenchus-proxy', 'src', 'prompt.mjs');
 const TESTBED = join(ROOT, '..', 'elenchus', 'testbed');
 const INPUT_DIR = join(ROOT, 'scripts', 'samples-input');
 const OUT_DIR = join(ROOT, 'src', 'data', 'samples');
@@ -57,8 +53,25 @@ export function readUpstream(wranglerPath = WRANGLER) {
   return { url: tomlString(toml, 'UPSTREAM_URL'), models };
 }
 
+/**
+ * The production prompt module, from the sibling elenchus-proxy repo. A
+ * dynamic import, never a static one: a static import fails at module load,
+ * which took down every test of this script (and `npm test`) in any checkout
+ * without the sibling, including the tests that never touch the prompt.
+ *
+ * @param {string} [promptPath]
+ * @returns {Promise<{ buildMessages: Function, analysisSchema: Function, MAX_OUTPUT_TOKENS: number, SYSTEM_PROMPT: string }>}
+ */
+export async function loadPrompt(promptPath = PROMPT) {
+  if (!existsSync(promptPath)) {
+    throw new Error(`${promptPath} not found: the elenchus-proxy repo must be cloned next to this one (../elenchus-proxy)`);
+  }
+  return import(pathToFileURL(promptPath).href);
+}
+
 /** The proxy's request body, key for key (elenchus-proxy/src/index.js). */
-export function buildRequestBody(models, text, lang) {
+export function buildRequestBody(prompt, models, text, lang) {
+  const { MAX_OUTPUT_TOKENS, analysisSchema, buildMessages } = prompt;
   return {
     model: models[0],
     ...(models.length > 1 ? { models } : {}),
@@ -79,9 +92,9 @@ export function stripFences(content) {
     .trim();
 }
 
-/** `[v2 — …]` tag to the bare `v2` token. */
-export function promptVersion() {
-  const m = SYSTEM_PROMPT.match(/^\[(v\d+)\b/);
+/** `[v2 — …]` tag to the bare `v2` token. @param {string} systemPrompt */
+export function promptVersion(systemPrompt) {
+  const m = String(systemPrompt).match(/^\[(v\d+)\b/);
   if (!m) throw new Error('prompt version tag not found at the start of SYSTEM_PROMPT');
   return m[1];
 }
@@ -127,6 +140,7 @@ export async function run(argv, deps = {}) {
     err = (s) => console.error(s),
     outDir = OUT_DIR,
     wranglerPath = WRANGLER,
+    promptPath = PROMPT,
     testbedDir = TESTBED,
     inputDir = INPUT_DIR,
     now = () => new Date(),
@@ -165,10 +179,12 @@ export async function run(argv, deps = {}) {
   }
 
   let upstream;
+  let prompt;
   let version;
   try {
     upstream = readUpstream(wranglerPath);
-    version = promptVersion();
+    prompt = await loadPrompt(promptPath);
+    version = promptVersion(prompt.SYSTEM_PROMPT);
   } catch (e) {
     err(`Cannot read the production config: ${e.message}`);
     return 2;
@@ -201,7 +217,7 @@ export async function run(argv, deps = {}) {
       out(input.text);
       out(`POST ${upstream.url}`);
       out('request body:');
-      out(JSON.stringify(buildRequestBody(upstream.models, input.text, lang), null, 2));
+      out(JSON.stringify(buildRequestBody(prompt, upstream.models, input.text, lang), null, 2));
       continue;
     }
 
@@ -226,7 +242,7 @@ export async function run(argv, deps = {}) {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
         },
-        body: JSON.stringify(buildRequestBody(upstream.models, input.text, lang)),
+        body: JSON.stringify(buildRequestBody(prompt, upstream.models, input.text, lang)),
       });
       if (!res.ok) throw new Error(`upstream answered HTTP ${res.status}`);
       const data = await res.json();
