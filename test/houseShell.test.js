@@ -823,6 +823,20 @@ describe('the front page does not reflow its own form when fonts finish loading'
 // [hidden] rule, so hiding the row for a loaded example left all three export
 // buttons on screen (measured in Chrome at 1440). Final review G: the one-off
 // `.export-row[hidden]` became a base rule that covers every element.
+// Regression (final review N): the box's outline was removed and the focus
+// ring drawn on the card through :has(), with no fallback, so a browser
+// without :has() showed no focus indicator on the paste box at all.
+describe('the paste box keeps a focus ring without :has()', () => {
+  it('a @supports not selector(:has(*)) block restores the box outline', () => {
+    const i = css.indexOf('@supports not selector(:has(*))');
+    expect(i).toBeGreaterThan(-1);
+    const block = css.slice(i, css.indexOf('}\n}', i) + 3);
+    expect(block).toMatch(/textarea#text-input:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--accent\)/);
+    // After the rule that removes the outline, so it wins at equal specificity.
+    expect(i).toBeGreaterThan(css.indexOf('textarea#text-input:focus {'));
+  });
+});
+
 describe('the export row can be hidden', () => {
   it('a base [hidden] rule wins over any element\'s own display', () => {
     expect(css).toMatch(/(^|\n)\[hidden\] \{\s*display:\s*none !important;\s*\}/);
