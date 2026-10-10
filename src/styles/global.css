@@ -598,8 +598,9 @@ textarea#text-input:focus {
 /* Muted 12px: the disclosure stays on the first screen without the weight
    of a box. Its own width rule beats `main p`'s 48ch, but the footer cell
    alone let a line run to ~97 characters at 1440 with no saved run beside
-   the card (design-detect line-length, design review v2, 2026-10-10). 68ch is the
-   measure, not a guess: re-measure with design-detect after changing it. */
+   the card (design-detect line-length, design review v2, 2026-10-10). 68ch
+   is NOT enough: re-measured at 558px, still ~93 by the detector's estimate
+   (86 on /fr/). Under 80 needs about 480px at this size; not changed yet. */
 .free-tier-line {
   margin: 0.125rem 0 0;
   max-width: 68ch;
