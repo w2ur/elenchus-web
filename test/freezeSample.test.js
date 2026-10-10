@@ -10,7 +10,7 @@
 // them they FAIL, each one, with a message naming what is missing. They never
 // skip: a skipped pin reads as a passing one.
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { existsSync, mkdtempSync, readFileSync, writeFileSync, rmSync, readdirSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync, rmSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -284,6 +284,39 @@ describe('flags (pure: refused before any config is read)', () => {
     const fetchImpl = mockFetch(JSON.stringify(ANALYSIS));
     expect(await run(['2-mixed', 'en', '--reason', 'x'], deps({ fetchImpl }))).toBe(2);
     expect(fetchImpl.calls).toHaveLength(0);
+  });
+});
+
+// Regression (final review E): inputs were loaded one job at a time, so with
+// --all a bad input further down the list exited 2 after the earlier jobs had
+// made paid calls and written their files. Every input is loaded and checked
+// first now. Synthetic testbed and input dirs: no sibling repo needed, since
+// the refusal comes before the production config is read.
+describe('inputs are all checked before the first network call', () => {
+  const PARA = 'A paragraph long enough to clear the minimum length the Worker enforces on a text.';
+
+  it.each([
+    ['a missing input file', null],
+    ['an input under the minimum length', JSON.stringify({ title: 'T', text: 'short' })],
+    ['an input with no text', JSON.stringify({ title: 'T' })],
+  ])('--all exits 2 on %s further down the list, with no call and no file', async (_name, frContent) => {
+    const testbedDir = join(outDir, 'testbed');
+    const inputDir = join(outDir, 'input');
+    const samplesDir = join(outDir, 'samples');
+    mkdirSync(testbedDir);
+    mkdirSync(inputDir);
+    for (const id of ['1-sound', '2-mixed', '3-short']) {
+      writeFileSync(join(testbedDir, `${id}.html`), `<html><body><article><h1>Title ${id}</h1><p>${PARA}</p><p>${PARA}</p></article></body></html>`);
+      if (id !== '3-short') writeFileSync(join(inputDir, `${id}.fr.json`), JSON.stringify({ title: `Titre ${id}`, text: `${PARA}\n\n${PARA}` }));
+    }
+    // 3-short.fr is the last job of --all: everything before it is valid.
+    if (frContent !== null) writeFileSync(join(inputDir, '3-short.fr.json'), frContent);
+    const fetchImpl = mockFetch(JSON.stringify(ANALYSIS));
+    const code = await run(['--all'], deps({ fetchImpl, testbedDir, inputDir, outDir: samplesDir }));
+    expect(code).toBe(2);
+    expect(errs.join('\n')).toMatch(/3-short\.fr/);
+    expect(fetchImpl.calls).toHaveLength(0);
+    expect(existsSync(samplesDir)).toBe(false);
   });
 });
 

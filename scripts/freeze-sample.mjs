@@ -185,6 +185,33 @@ export async function run(argv, deps = {}) {
     return 2;
   }
 
+  // Every input is loaded and checked before the first network call: a bad
+  // input later in the list used to exit 2 after the earlier jobs had already
+  // made paid calls and written their files.
+  const inputs = new Map();
+  for (const { id, lang } of jobs) {
+    const label = `${id}.${lang}`;
+    let input;
+    try {
+      input = lang === 'en' ? loadEnglish(id, testbedDir) : loadFrench(id, inputDir);
+    } catch (e) {
+      err(`${label}: cannot load the input (${e.message}).`);
+      return 2;
+    }
+    if (typeof input.title !== 'string' || !input.title.trim() || typeof input.text !== 'string') {
+      err(`${label}: the input has no title or no text.`);
+      return 2;
+    }
+    // The Worker slices to MAX_TEXT_LENGTH and refuses a trimmed text under
+    // MIN_TEXT_LENGTH (elenchus-proxy/src/index.js:166-169); it does not trim.
+    input.text = input.text.slice(0, MAX_TEXT_LENGTH);
+    if (input.text.trim().length < MIN_TEXT_LENGTH) {
+      err(`${label}: the text is shorter than ${MIN_TEXT_LENGTH} characters; the Worker would refuse it.`);
+      return 2;
+    }
+    inputs.set(label, input);
+  }
+
   let upstream;
   let prompt;
   let version;
@@ -201,21 +228,7 @@ export async function run(argv, deps = {}) {
   for (const { id, lang } of jobs) {
     const file = join(outDir, `${id}.${lang}.json`);
     const label = `${id}.${lang}`;
-
-    let input;
-    try {
-      input = lang === 'en' ? loadEnglish(id, testbedDir) : loadFrench(id, inputDir);
-    } catch (e) {
-      err(`${label}: cannot load the input (${e.message}).`);
-      return 2;
-    }
-    // The Worker slices to MAX_TEXT_LENGTH and refuses a trimmed text under
-    // MIN_TEXT_LENGTH (elenchus-proxy/src/index.js:166-169); it does not trim.
-    input.text = input.text.slice(0, MAX_TEXT_LENGTH);
-    if (input.text.trim().length < MIN_TEXT_LENGTH) {
-      err(`${label}: the text is shorter than ${MIN_TEXT_LENGTH} characters; the Worker would refuse it.`);
-      return 2;
-    }
+    const input = inputs.get(label);
 
     if (dry) {
       out(`=== ${label} ===`);
