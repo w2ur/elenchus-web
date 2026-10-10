@@ -172,15 +172,6 @@ function flawCardFromView(view) {
 }
 
 /**
- * @param {unknown} flaw
- * @param {{ severities: Record<string, string> }} T
- * @returns {HTMLElement}
- */
-export function renderFlawCard(flaw, T) {
-  return flawCardFromView(flawView(flaw, T));
-}
-
-/**
  * @typedef {object} ResultElements
  * @property {HTMLElement} summaryEl
  * @property {HTMLElement} scoreBadgeEl

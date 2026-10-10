@@ -14,7 +14,7 @@
 //
 // The frame (.house-sample / .house-sample-label) is house.css's; the bar
 // colour is set by global.css's `.house-sample` rule (--sample-bar).
-import { SCORES, oneOf } from '../lib/clamp.js';
+import { oneOf } from '../lib/clamp.js';
 import { analysisView, sampleProvenance } from '../lib/render.js';
 import { strings } from '../lib/strings.js';
 
@@ -43,9 +43,6 @@ const lang = oneOf(sample?.lang, ['en', 'fr'], 'en') as 'en' | 'fr';
 const T = strings[lang];
 const view = analysisView(sample?.result, T);
 const provenance = sampleProvenance(sample, T);
-// Already clamped by analysisView; re-asserted so a future edit there cannot
-// widen what reaches the class attribute without this line noticing.
-const scoreClass = SCORES.includes(view.score) ? `score-badge ${view.score}` : 'score-badge';
 ---
 
 <section class="house-sample" lang={lang}>
@@ -57,7 +54,7 @@ const scoreClass = SCORES.includes(view.score) ? `score-badge ${view.score}` : '
   <H class="eyebrow">{T.summaryHeading}</H>
   <div class="card result-summary-card">
     <p class="result-summary">{view.summary}</p>
-    <span class={scoreClass}>{view.scoreLabel}</span>
+    <span class={view.scoreClass}>{view.scoreLabel}</span>
     <p class="score-caveat">{T.scoreCaveat}</p>
   </div>
 
