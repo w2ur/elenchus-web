@@ -14,6 +14,7 @@ import {
   EXAMPLE_IDS,
   SHARED_SAMPLE_ID,
   clientSample,
+  examplesPageSamples,
   frontPageSamples,
   loadSample,
   sampleProblems,
@@ -119,6 +120,29 @@ describe('frontPageSamples', () => {
     expect(shared).toBeNull();
     expect(examples.map((s) => s.id)).toEqual(['3-short']);
     expect(note).not.toHaveBeenCalled();
+  });
+});
+
+describe('examplesPageSamples', () => {
+  it('keeps one slot per example id, in order, null where no run exists', () => {
+    const note = vi.fn();
+    const { ids, samples } = examplesPageSamples('fr', files(sample('1-sound', 'fr'), sample('1-sound', 'en')), note);
+    expect(ids).toEqual(EXAMPLE_IDS);
+    expect(samples.map((x) => x && x.id)).toEqual([null, null, '1-sound']);
+    expect(samples[2].lang).toBe('fr');
+    expect(note).not.toHaveBeenCalled();
+  });
+
+  it('with no file at all, keeps every slot empty and says so once', () => {
+    const note = vi.fn();
+    const { samples } = examplesPageSamples('en', {}, note);
+    expect(samples).toEqual([null, null, null]);
+    expect(note).toHaveBeenCalledTimes(1);
+    expect(note.mock.calls[0][0]).toMatch(/no saved sample for "en".*empty state/);
+  });
+
+  it('fails on a malformed file rather than dropping it', () => {
+    expect(() => examplesPageSamples('en', files(sample('2-mixed', 'en', { servedBy: '' })), () => {})).toThrow(/2-mixed\.en\.json cannot be shown/);
   });
 });
 

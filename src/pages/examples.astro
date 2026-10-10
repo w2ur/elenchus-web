@@ -1,0 +1,16 @@
+---
+// Three saved runs in full (src/components/ExamplesPage.astro). The front
+// page's "What you get back" cards link here, one anchor per run. Samples
+// are read in frontmatter only, this language's files only (samples.js).
+import ExamplesPage from '../components/ExamplesPage.astro';
+import Layout from '../layouts/Layout.astro';
+import { examplesCopy } from '../lib/pageCopy.js';
+import { examplesPageSamples } from '../lib/samples.js';
+
+const E = examplesCopy.en;
+const { ids, samples } = examplesPageSamples('en');
+---
+
+<Layout title={E.title} description={E.description} lang="en" path="/examples/" wide={samples.some((s) => s !== null)}>
+  <ExamplesPage lang="en" ids={ids} samples={samples} />
+</Layout>

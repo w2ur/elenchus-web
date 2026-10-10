@@ -103,6 +103,7 @@ export const strings = {
     // US spelling, like every other English string here ("Analyze" button,
     // "analyzing"): the nav said "Analyse" beside an "Analyze" button.
     navAnalyse: 'Analyze',
+    navExamples: 'Examples',
     navBookmarklet: 'Bookmarklet',
     navExtension: 'Extension',
 
@@ -241,6 +242,7 @@ export const strings = {
     navLabel: 'Elenchus',
     navAnalyseHref: '/fr/',
     navAnalyse: 'Analyser',
+    navExamples: 'Exemples',
     navBookmarklet: 'Bookmarklet',
     navExtension: 'Extension',
 

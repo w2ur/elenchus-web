@@ -1,0 +1,14 @@
+---
+// Same reasoning as src/pages/examples.astro (its EN twin).
+import ExamplesPage from '../../components/ExamplesPage.astro';
+import Layout from '../../layouts/Layout.astro';
+import { examplesCopy } from '../../lib/pageCopy.js';
+import { examplesPageSamples } from '../../lib/samples.js';
+
+const E = examplesCopy.fr;
+const { ids, samples } = examplesPageSamples('fr');
+---
+
+<Layout title={E.title} description={E.description} lang="fr" path="/examples/" wide={samples.some((s) => s !== null)}>
+  <ExamplesPage lang="fr" ids={ids} samples={samples} />
+</Layout>

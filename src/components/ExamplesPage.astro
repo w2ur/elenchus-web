@@ -1,0 +1,62 @@
+---
+// The Examples page body, shared by /examples/ and /fr/examples/ so the two
+// languages cannot drift structurally (Landing.astro's arrangement). Each
+// saved run is shown in full: the text that was sent, then the analysis in a
+// SampleResult.astro frame, whose label carries the provenance (date, model,
+// prompt version, AI-generated, and the translation note on FR).
+//
+// One section per example id, ALWAYS rendered, so the front-page cards'
+// `#<id>` anchors land on something even before a run is frozen. A missing
+// run is said to be missing; nothing stands in for it. With no run at all
+// the page says so once, above the sections, instead of three times.
+import SampleResult from './SampleResult.astro';
+import { examplesCopy } from '../lib/pageCopy.js';
+
+interface Props {
+  lang: 'en' | 'fr';
+  /** This language's saved runs (samples.js examplesPageSamples). */
+  samples: ({ id: string; title: string; text: string; lang?: unknown; result?: unknown } | null)[];
+  ids: string[];
+}
+
+const { lang, samples, ids } = Astro.props;
+const E = examplesCopy[lang];
+const none = samples.every((s) => s === null);
+
+// The sample text keeps the article's paragraph breaks (freeze-sample.mjs
+// extracts with them), so a blank line is a paragraph here too.
+const paragraphs = (text: string) =>
+  text.split(/\n\s*\n/).map((p) => p.trim()).filter((p) => p.length > 0);
+---
+
+<h1>{E.heading}</h1>
+{E.intro.map((p) => <p class="examples-intro">{p}</p>)}
+
+{none && (
+  <p class="notice">
+    <span class="notice-text">{E.empty}</span>
+  </p>
+)}
+
+{ids.map((id, i) => {
+  const sample = samples[i];
+  const kind = E.kinds[id];
+  return (
+    <section class="example" id={id} aria-labelledby={`${id}-heading`}>
+      <h2 class="section-heading" id={`${id}-heading`}>{kind.name}</h2>
+      <p class="example-kind">{kind.body}</p>
+      {sample ? (
+        <div class="example-run">
+          <article class="example-text" lang={lang}>
+            <p class="example-text-label">{E.textLabel}</p>
+            <h3 class="example-text-title">{sample.title}</h3>
+            {paragraphs(sample.text).map((p) => <p>{p}</p>)}
+          </article>
+          <SampleResult sample={sample} />
+        </div>
+      ) : (
+        !none && <p class="example-missing">{E.missing}</p>
+      )}
+    </section>
+  );
+})}

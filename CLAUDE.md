@@ -129,13 +129,11 @@ through `data-language` (the page language, never the browser locale) and
 `data-theme` (`turnstileTheme()` in `src/lib/theme.js`, so an explicit
 toggle choice wins over the system scheme; the widget re-renders on toggle).
 Its dark variant paints Cloudflare's own grey panel with a light hairline,
-the one surface on the dark page not drawn from the palette. That is
-accepted as third-party, not a defect to restyle: nothing outside the
-iframe can reach inside it. The same iframe logs `%c%d
+the one surface on the dark page not drawn from the palette: third-party,
+not a defect to restyle, since nothing outside the iframe reaches inside it. The same iframe logs `%c%d
 font-size:0;color:transparent NaN` at every console level (two of them as
-errors) on production: measured 2026-10-10, every entry sourced from
-`challenges.cloudflare.com/cdn-cgi/challenge-platform/…/turnstile/…`, the
-challenge's own console probing. Accepted noise, not this site's error. The
+errors) on production, every entry from `challenges.cloudflare.com`
+(measured 2026-10-10). Accepted noise, not this site's error. The
 `1x00000000000000000000AA` test key does not run that challenge, so a local
 capture's console stays empty.
 
@@ -143,9 +141,10 @@ The front page (`src/pages/index.astro` + `src/pages/fr/index.astro`) IS the
 analyzer: `<ToolHero>` (band, title, the two-line "does not fact-check"
 lede, chips), then `<Analyzer>` (input card: example chips, paste box,
 counter · free-tier line · Analyze, Turnstile under it; the saved run beside
-it from 1024px; results panel), then `<Landing>`. **`src/lib/samples.js`
-runs in page frontmatter only**: its glob would put both languages in the
-client bundle. No sample files: no slot, no chips.
+it from 1024px; results panel), then `<Landing>`. **`src/lib/samples.js` runs in page frontmatter only**: its
+glob would put both languages in the client bundle. No sample files: no
+slot, no chips, and `/examples/` says the runs are being prepared, never a
+stand-in.
 `src/pages/analyze.astro` and `src/pages/fr/analyze.astro` still exist —
 `test/configFailLoud.test.js` hard-codes them as the build-time env gate —
 but now carry a `noindex` meta and a forced Netlify 301 to the front page

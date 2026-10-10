@@ -221,13 +221,18 @@ describe('the contract header', () => {
     expect(header).toMatch(/data-lang-toggle[^>]*href=\{otherHref\}/);
     expect(header).toMatch(/hreflang=\{otherLang\}/);
   });
-  it('nav has exactly three items and the extension one opens the store', () => {
+  // Four since E3 (owner decision 19, 2026-10-10): Analyze, Examples,
+  // Bookmarklet, Extension. Named here, in order, so a fifth item or a
+  // reordering fails with the list it broke rather than a bare count.
+  it('nav has exactly four items (Analyze, Examples, Bookmarklet, Extension) and the extension one opens the store', () => {
     const nav = readFileSync('src/components/ToolNav.astro', 'utf-8');
-    expect(nav.match(/<a /g)?.length).toBe(3);
+    expect(nav.match(/<a /g)?.length).toBe(4);
+    const labels = [...nav.matchAll(/\{t\.(nav\w+)\}\s*<\/a>/g)].map((m) => m[1]);
+    expect(labels).toEqual(['navAnalyse', 'navExamples', 'navBookmarklet', 'navExtension']);
     expect(nav).toMatch(/chromewebstore\.google\.com/);
     expect(nav).toMatch(/hl=\$\{lang\}|hl=\{lang\}/);
   });
-  it('the mobile bar exists, is the same three items, and is hidden on desktop', () => {
+  it('the mobile bar exists, is the same four items, and is hidden on desktop', () => {
     expect(css).toMatch(/\.tool-nav-bar\s*\{[^}]*position:\s*fixed;[^}]*bottom:\s*0/s);
     expect(css).toMatch(/@media \(min-width: 768px\)\s*\{[^}]*\.tool-nav-bar\s*\{[^}]*display:\s*none/s);
     // Item 4: the bar's own padding is 0.5rem, and only the BOTTOM edge adds
@@ -262,7 +267,11 @@ describe('the contract header', () => {
   });
   it('the mobile bar carries an icon above each label, hidden at >=768px (Item 9)', () => {
     const nav = readFileSync('src/components/ToolNav.astro', 'utf-8');
-    expect(nav.match(/<svg /g)?.length).toBe(3);
+    // One icon per item, Examples included (four since E3).
+    expect(nav.match(/<svg /g)?.length).toBe(4);
+    expect(nav.match(/<svg [^>]*>[\s\S]*?<\/svg>\s*\{t\.(nav\w+)\}/g)?.map((m) => m.match(/\{t\.(nav\w+)\}/)[1])).toEqual([
+      'navAnalyse', 'navExamples', 'navBookmarklet', 'navExtension',
+    ]);
     for (const svg of nav.match(/<svg [^>]*>/g) ?? []) {
       expect(svg).toMatch(/aria-hidden="true"/);
       expect(svg).toMatch(/stroke="currentColor"/);
@@ -1266,10 +1275,11 @@ describe('page components take the house geometry (spec §6)', () => {
     const start = landing.indexOf('class="way-icon"');
     expect(start).toBeGreaterThan(0);
     const tile = landing.slice(start, landing.indexOf('</span>', start));
-    expect(dOf(toolNav)).toHaveLength(3);
+    expect(dOf(toolNav)).toHaveLength(4);
     // The nav's first icon is the paste box's, which has no card: the box is
-    // directly above this list (design audit 2026-10-09).
-    expect(dOf(tile)).toEqual(dOf(toolNav).slice(1));
+    // directly above this list (design audit 2026-10-09). The second is
+    // Examples, whose cards sit just above the ways (E3).
+    expect(dOf(tile)).toEqual(dOf(toolNav).slice(2));
   });
 
   it('the summary block is a card too, and the badges keep their colours', () => {

@@ -140,3 +140,23 @@ export function clientSample(s) {
     date: s.date,
   };
 }
+
+/**
+ * What the Examples page renders for one language: every example id in
+ * EXAMPLE_IDS order, each paired with its run or null, so the page can keep
+ * a section (and its anchor) for a run that is not frozen yet. Same
+ * one-language lookup, same fail-on-malformed rule, and the same single
+ * build note when this language has no run at all.
+ *
+ * @param {'en' | 'fr'} lang
+ * @param {Record<string, unknown>} [files]
+ * @param {(msg: string) => void} [note]
+ * @returns {{ ids: string[], samples: (Sample | null)[] }}
+ */
+export function examplesPageSamples(lang, files = FILES, note = (msg) => console.info(msg)) {
+  const samples = EXAMPLE_IDS.map((id) => loadSample(id, lang, files));
+  if (samples.every((s) => s === null)) {
+    note(`\n[samples] no saved sample for "${lang}" under src/data/samples/: the Examples page renders its empty state. Run scripts/freeze-sample.mjs to create them.`);
+  }
+  return { ids: [...EXAMPLE_IDS], samples };
+}

@@ -56,13 +56,14 @@ const HOUSE_URL = 'https://untilt.app/';
           >
             {/* The two icons are ToolNav.astro's own, REPEATED here rather
                 than factored into a shared component: test/houseShell.test.js
-                counts three <svg in ToolNav.astro's SOURCE (Item 9), so
+                counts the <svg in ToolNav.astro's SOURCE (Item 9), so
                 moving them out would break that guard. A second guard pins
-                every `d=` in this tile equal to ToolNav's, in order, so the
-                repetition cannot drift into two different drawings. The order
-                is landingCopy.ways' order — bookmarklet, extension — which
-                is the nav's order too, minus its first item: the paste box
-                is above this list, so it has no card here. */}
+                every `d=` in this tile equal to ToolNav's last two, in
+                order, so the repetition cannot drift into two different
+                drawings. The order is landingCopy.ways' order (bookmarklet,
+                extension), which is the nav's order too, minus Analyze and
+                Examples: the paste box is above this list and the example
+                cards just above it, so neither gets a card here. */}
             <span class="way-icon" aria-hidden="true">
               {i === 0 && (
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

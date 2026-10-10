@@ -287,6 +287,14 @@ footer {
    inside the desktop block, where the same element becomes the pill row. */
 .tool-nav-bar a {
   font-size: 12px;
+  /* Four equal cells (E3 added Examples). At 320px the bar's inner width is
+     304px, 76px a cell; with the pill's 0.75rem side padding the four
+     items measured 320px and Extension ran off the right edge, in EN and
+     FR. "Bookmarklet", the longest label, is ~71px at 12px, so the cell
+     keeps only a 0.125rem side padding and min-width: 0 lets it share. */
+  flex: 1 1 0;
+  min-width: 0;
+  padding-inline: 0.125rem;
 }
 
 .house-controls {
@@ -325,6 +333,8 @@ footer {
      the shell's control size back. */
   .tool-nav a {
     font-size: var(--text-ui);
+    flex: none;
+    padding-inline: 0.75rem;
   }
 
   /* Item 9: the mobile bar's icons (see ToolNav.astro) have no place in the
@@ -1158,6 +1168,80 @@ main a {
 @media (min-width: 720px) {
   .ways {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* --- Section headings (E3) ------------------------------------------------
+   Sentence-case headings, not eyebrows (owner decision 18, 2026-10-10): the
+   uppercase kicker stays where it labels something under it (the hero, the
+   result sections); a page section is introduced by a real heading. */
+.section-heading {
+  font-family: 'Instrument Sans', system-ui, -apple-system, sans-serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  margin: 2.5rem 0 1rem;
+}
+
+/* --- The Examples page (src/components/ExamplesPage.astro) --------------- */
+.example {
+  scroll-margin-top: 5rem;
+}
+
+main .example-kind {
+  color: var(--muted);
+}
+
+.example-missing {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.example-run {
+  display: grid;
+  gap: 1.5rem;
+}
+
+/* The text as it was sent, on the card surface so it reads as a document
+   beside the frame, not as more page prose. */
+.example-text {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: var(--space-card);
+}
+
+main .example-text p {
+  font-size: 14px;
+}
+
+main .example-text .example-text-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+
+.example-text-title {
+  font-family: 'Instrument Sans', system-ui, -apple-system, sans-serif;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+}
+
+@media (min-width: 1024px) {
+  .example-run {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  /* The analysis runs longer than the text it quotes; the text stays in
+     view beside it, under the sticky header bar. */
+  .example-text {
+    position: sticky;
+    top: 5rem;
   }
 }
 

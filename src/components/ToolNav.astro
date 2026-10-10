@@ -2,9 +2,9 @@
 // ToolNav.astro — the contract header's tool nav (docs/house-contract.md §1
 // in the untilt repo) and its mobile twin (§6: "The nav becomes a bottom tab
 // bar"). One <nav> carries BOTH `.tool-nav` and `.tool-nav-bar`: the pill
-// row and the fixed bottom bar are two CSS treatments of the SAME three
+// row and the fixed bottom bar are two CSS treatments of the SAME four
 // anchors below, not two copies of the markup. That is a deliberate choice,
-// not a shortcut — it is what makes "is the same three items" (see
+// not a shortcut — it is what makes "is the same four items" (see
 // test/houseShell.test.js) literally true rather than "looks the same",
 // and it means the page never carries two `<nav>` landmarks at once for a
 // screen reader to puzzle over: only one of the two classes' `display` wins
@@ -19,6 +19,7 @@ interface Props {
 const { lang = 'en', path } = Astro.props;
 const t = strings[lang] ?? strings.en;
 
+const examplesHref = lang === 'fr' ? '/fr/examples/' : '/examples/';
 const bookmarkletHref = lang === 'fr' ? '/fr/bookmarklet/' : '/bookmarklet/';
 
 // The Chrome Web Store listing, `?hl=` matching the per-language form used
@@ -33,6 +34,7 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
 // English-canonical value regardless of `lang`. That also means the check
 // keeps working unchanged once sub-project 2c flips navAnalyseHref to '/'.
 const isAnalyseActive = path === strings.en.navAnalyseHref;
+const isExamplesActive = path === '/examples/';
 const isBookmarkletActive = path === '/bookmarklet/';
 ---
 
@@ -51,6 +53,15 @@ const isBookmarkletActive = path === '/bookmarklet/';
       <path d="m20 20-4.3-4.3"></path>
     </svg>
     {t.navAnalyse}
+  </a>
+  {/* A page of saved runs: a document with ruled lines, drawn as ONE path
+      (several subpaths) so test/houseShell.test.js's d= count stays one per
+      icon. */}
+  <a href={examplesHref} aria-current={isExamplesActive ? 'page' : undefined}>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M14 3H7a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7ZM14 3v4h4M9 12h6M9 16h4"></path>
+    </svg>
+    {t.navExamples}
   </a>
   <a href={bookmarkletHref} aria-current={isBookmarkletActive ? 'page' : undefined}>
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

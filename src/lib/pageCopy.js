@@ -226,3 +226,72 @@ export const bookmarkletCopy = {
     privacyEnd: '.',
   },
 };
+
+// The Examples page (/examples/, /fr/examples/) and the three front-page
+// cards that link into it. `kinds` describes each testbed text without
+// predicting what the model made of it: the run itself says that. Keys are
+// the sample ids (src/lib/samples.js EXAMPLE_IDS), so each card's anchor and
+// the section it lands on share one name.
+//
+// The intro is the provenance the republishing condition asks for (owner
+// decision 8, 2026-10-10): AI-generated, saved on a date, by a named model,
+// and the French texts are translations of the English originals. The date
+// and the model are per run, so the intro points at the label that carries
+// them rather than restating values a re-freeze would make stale.
+export const examplesCopy = {
+  en: {
+    title: 'Elenchus examples: three saved runs',
+    description:
+      'Three texts analysed by Elenchus and saved as the model returned them: an opinion piece, a three-line claim and a policy memo.',
+    heading: 'Examples',
+    intro: [
+      'Three texts, each analysed by Elenchus and saved exactly as the model returned it. Nothing in the analyses has been edited.',
+      'Every analysis here is AI-generated. The label above each one gives the date it was saved and names the model that wrote it. On the French version of this page, the texts are translations of these English originals.',
+    ],
+    empty: 'Examples are being prepared. The three runs will appear here once they have been saved.',
+    missing: 'This run is being prepared.',
+    textLabel: 'The text analysed',
+    kinds: {
+      '2-mixed': {
+        name: 'An opinion piece',
+        body: 'A manager’s case against remote work, in five paragraphs.',
+      },
+      '3-short': {
+        name: 'A three-line claim',
+        body: 'Founders, early mornings and settled science, in three sentences.',
+      },
+      '1-sound': {
+        name: 'A policy memo',
+        body: 'Why a bridge is due for inspection, worked out from a rule and a year of traffic counts.',
+      },
+    },
+  },
+
+  fr: {
+    title: 'Exemples Elenchus : trois analyses enregistrées',
+    description:
+      'Trois textes analysés par Elenchus et enregistrés tels que le modèle les a rendus : une tribune, une affirmation en trois lignes et une note de service.',
+    heading: 'Exemples',
+    intro: [
+      'Trois textes, chacun analysé par Elenchus et enregistré exactement tel que le modèle l’a rendu. Rien dans les analyses n’a été retouché.',
+      'Chaque analyse ici est générée par IA. L’étiquette au-dessus de chacune donne la date de son enregistrement et nomme le modèle qui l’a écrite. Les textes de cette page sont des traductions des originaux anglais.',
+    ],
+    empty: 'Les exemples sont en préparation. Les trois analyses apparaîtront ici une fois enregistrées.',
+    missing: 'Cette analyse est en préparation.',
+    textLabel: 'Le texte analysé',
+    kinds: {
+      '2-mixed': {
+        name: 'Une tribune',
+        body: 'Un manager plaide contre le télétravail, en cinq paragraphes.',
+      },
+      '3-short': {
+        name: 'Une affirmation en trois lignes',
+        body: 'Des fondateurs, des réveils matinaux et une science établie, en trois phrases.',
+      },
+      '1-sound': {
+        name: 'Une note de service',
+        body: 'Pourquoi un pont doit être inspecté, démontré à partir d’une règle et d’un an de comptages.',
+      },
+    },
+  },
+};
