@@ -1,0 +1,256 @@
+#!/usr/bin/env node
+// Freezes a real Elenchus analysis as a saved sample file.
+//
+// Sends the PRODUCTION request: `buildMessages`, `analysisSchema` and
+// `MAX_OUTPUT_TOKENS` are imported from the sibling elenchus-proxy repo (not
+// copied), and the upstream URL and model chain are read from its
+// wrangler.toml, so a sample is exactly what the free tier would have served.
+// The fence-strip below mirrors elenchus-proxy/src/index.js, and the result
+// must pass `looksLikeAnalysis` before anything is written. A sample is never
+// hand-written: the file is the model's output, committed as-is.
+//
+// Usage (the key comes from the environment only; never add a file fallback):
+//   OPENROUTER_API_KEY=sk-or-... node scripts/freeze-sample.mjs 2-mixed en
+//   OPENROUTER_API_KEY=sk-or-... node scripts/freeze-sample.mjs --all
+//   node scripts/freeze-sample.mjs --all --dry-run       (no network, no key)
+//   ... --force --reason "<why>"                          (re-run an existing sample)
+//
+// Exit: 0 healthy, 1 a finding (a run failed validation, or a refusal),
+// 2 could not run (no key, bad arguments, unreadable input).
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { dirname, join } from 'node:path';
+import { JSDOM } from 'jsdom';
+import {
+  buildMessages,
+  analysisSchema,
+  MAX_OUTPUT_TOKENS,
+  SYSTEM_PROMPT,
+} from '../../elenchus-proxy/src/prompt.mjs';
+import { extractText, normalizeText } from '../src/lib/extract.js';
+import { looksLikeAnalysis } from '../src/lib/proxyClient.js';
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+export const IDS = ['1-sound', '2-mixed', '3-short'];
+export const LANGS = ['en', 'fr'];
+const WRANGLER = join(ROOT, '..', 'elenchus-proxy', 'wrangler.toml');
+const TESTBED = join(ROOT, '..', 'elenchus', 'testbed');
+const INPUT_DIR = join(ROOT, 'scripts', 'samples-input');
+const OUT_DIR = join(ROOT, 'src', 'data', 'samples');
+
+/** @param {string} toml @param {string} key */
+export function tomlString(toml, key) {
+  const m = toml.match(new RegExp(`^${key}\\s*=\\s*"([^"]*)"`, 'm'));
+  if (!m) throw new Error(`${key} not found in wrangler.toml`);
+  return m[1];
+}
+
+/** Same shape as the Worker's upstream config: first model is `model`. */
+export function readUpstream(wranglerPath = WRANGLER) {
+  const toml = readFileSync(wranglerPath, 'utf8');
+  const models = tomlString(toml, 'UPSTREAM_MODEL').split(',').map((s) => s.trim()).filter(Boolean);
+  if (models.length === 0) throw new Error('UPSTREAM_MODEL parsed to zero entries');
+  return { url: tomlString(toml, 'UPSTREAM_URL'), models };
+}
+
+/** The proxy's request body, key for key (elenchus-proxy/src/index.js). */
+export function buildRequestBody(models, text, lang) {
+  return {
+    model: models[0],
+    ...(models.length > 1 ? { models } : {}),
+    max_tokens: MAX_OUTPUT_TOKENS,
+    response_format: {
+      type: 'json_schema',
+      json_schema: { name: 'reasoning_analysis', strict: true, schema: analysisSchema(lang) },
+    },
+    messages: buildMessages(text, lang),
+  };
+}
+
+/** The proxy's fence-strip (elenchus-proxy/src/index.js). */
+export function stripFences(content) {
+  return content
+    .replace(/^```(?:json)?\s*\n?/i, '')
+    .replace(/\n?```\s*$/i, '')
+    .trim();
+}
+
+/** `[v2 — …]` tag to the bare `v2` token. */
+export function promptVersion() {
+  const m = SYSTEM_PROMPT.match(/^\[(v\d+)\b/);
+  if (!m) throw new Error('prompt version tag not found at the start of SYSTEM_PROMPT');
+  return m[1];
+}
+
+/** EN input: what the bookmarklet would send from the testbed page, h1 as title. */
+export function loadEnglish(id, testbedDir = TESTBED) {
+  const html = readFileSync(join(testbedDir, `${id}.html`), 'utf8');
+  const { document } = new JSDOM(html).window;
+  const h1 = document.querySelector('h1');
+  const title = normalizeText(h1?.textContent);
+  h1?.remove();
+  return { title, text: extractText(document, '') };
+}
+
+/** FR input: committed translation. */
+export function loadFrench(id, inputDir = INPUT_DIR) {
+  const { title, text } = JSON.parse(readFileSync(join(inputDir, `${id}.fr.json`), 'utf8'));
+  return { title, text };
+}
+
+function parseArgs(argv) {
+  const flags = new Set();
+  const positional = [];
+  let reason = null;
+  for (let i = 0; i < argv.length; i += 1) {
+    const a = argv[i];
+    if (a === '--reason') { reason = argv[i + 1] ?? ''; i += 1; } else if (a.startsWith('--')) flags.add(a);
+    else positional.push(a);
+  }
+  return { flags, positional, reason };
+}
+
+/**
+ * @param {string[]} argv
+ * @param {object} [deps]
+ * @returns {Promise<number>} exit code
+ */
+export async function run(argv, deps = {}) {
+  const {
+    env = process.env,
+    fetchImpl = globalThis.fetch,
+    out = (s) => console.log(s),
+    err = (s) => console.error(s),
+    outDir = OUT_DIR,
+    wranglerPath = WRANGLER,
+    testbedDir = TESTBED,
+    inputDir = INPUT_DIR,
+    now = () => new Date(),
+  } = deps;
+
+  const { flags, positional, reason } = parseArgs(argv);
+  const known = new Set(['--all', '--dry-run', '--force']);
+  for (const f of flags) {
+    if (!known.has(f)) { err(`Unknown flag ${f}.`); return 2; }
+  }
+
+  let jobs;
+  if (flags.has('--all')) {
+    jobs = IDS.flatMap((id) => LANGS.map((lang) => ({ id, lang })));
+  } else {
+    const [id, lang] = positional;
+    if (!IDS.includes(id) || !LANGS.includes(lang)) {
+      err(`Usage: freeze-sample.mjs <${IDS.join('|')}> <${LANGS.join('|')}> | --all  [--dry-run] [--force --reason "<text>"]`);
+      return 2;
+    }
+    jobs = [{ id, lang }];
+  }
+  if (flags.has('--force') && !(reason && reason.trim())) {
+    err('--force requires --reason "<why this run is allowed>". The first run that passes validation is the sample.');
+    return 2;
+  }
+
+  const dry = flags.has('--dry-run');
+  if (!dry && !env.OPENROUTER_API_KEY) {
+    err('OPENROUTER_API_KEY is not set. Export it in your own shell; do not put it in a file.');
+    return 2;
+  }
+
+  let upstream;
+  let version;
+  try {
+    upstream = readUpstream(wranglerPath);
+    version = promptVersion();
+  } catch (e) {
+    err(`Cannot read the production config: ${e.message}`);
+    return 2;
+  }
+
+  let failures = 0;
+  for (const { id, lang } of jobs) {
+    const file = join(outDir, `${id}.${lang}.json`);
+    const label = `${id}.${lang}`;
+
+    let input;
+    try {
+      input = lang === 'en' ? loadEnglish(id, testbedDir) : loadFrench(id, inputDir);
+    } catch (e) {
+      err(`${label}: cannot load the input (${e.message}).`);
+      return 2;
+    }
+
+    if (dry) {
+      out(`=== ${label} ===`);
+      out(`title: ${input.title}`);
+      out('text:');
+      out(input.text);
+      out(`POST ${upstream.url}`);
+      out('request body:');
+      out(JSON.stringify(buildRequestBody(upstream.models, input.text, lang), null, 2));
+      continue;
+    }
+
+    let attempt = 1;
+    let rerunReason = null;
+    if (existsSync(file)) {
+      if (!flags.has('--force')) {
+        err(`${label}: ${file} already exists. The first run that passes validation is the sample; re-run only with --force --reason "<text>".`);
+        failures += 1;
+        continue;
+      }
+      let previous = 1;
+      try { previous = Number(JSON.parse(readFileSync(file, 'utf8')).attempt) || 1; } catch { previous = 1; }
+      attempt = previous + 1;
+      rerunReason = reason.trim();
+    }
+
+    try {
+      const res = await fetchImpl(upstream.url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
+        },
+        body: JSON.stringify(buildRequestBody(upstream.models, input.text, lang)),
+      });
+      if (!res.ok) throw new Error(`upstream answered HTTP ${res.status}`);
+      const data = await res.json();
+      const content = data?.choices?.[0]?.message?.content;
+      if (!content) throw new Error('empty response');
+      let result;
+      try {
+        result = JSON.parse(stripFences(content));
+      } catch {
+        throw new Error('response is not parseable JSON');
+      }
+      if (!looksLikeAnalysis(result)) throw new Error('response failed looksLikeAnalysis');
+      const servedBy = typeof data.model === 'string' ? data.model : null;
+      if (!servedBy) throw new Error('response carries no model field, so servedBy cannot be recorded');
+
+      mkdirSync(outDir, { recursive: true });
+      writeFileSync(file, `${JSON.stringify({
+        id,
+        lang,
+        title: input.title,
+        text: input.text,
+        translated: lang === 'fr',
+        result,
+        servedBy,
+        requestedModels: upstream.models,
+        promptVersion: version,
+        date: now().toISOString().slice(0, 10),
+        attempt,
+        rerunReason,
+      }, null, 2)}\n`);
+      out(`${label}: written (${servedBy}, attempt ${attempt}).`);
+    } catch (e) {
+      err(`${label}: FAILED, nothing written (${e.message}).`);
+      failures += 1;
+    }
+  }
+  return failures > 0 ? 1 : 0;
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  run(process.argv.slice(2)).then((code) => process.exit(code));
+}

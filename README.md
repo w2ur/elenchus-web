@@ -111,6 +111,40 @@ Advisory drift-check: exits 1 if the severity/score labels in
 `src/lib/strings.js` no longer match `~/Dev/elenchus/i18n/strings.js` — see
 `CLAUDE.md`, "Label drift-check", for what it does and doesn't compare.
 
+## Saved samples
+
+`src/data/samples/<id>.<lang>.json` holds real Elenchus analyses of the
+testbed texts (`1-sound`, `2-mixed`, `3-short`, in `en` and `fr`), rendered
+as examples on the Untilt sites. They are frozen by a script, never written
+by hand:
+
+    OPENROUTER_API_KEY=sk-or-... node scripts/freeze-sample.mjs --all
+
+Run it in your own terminal; the key is read from the environment only. It
+needs the sibling `elenchus-proxy` and `elenchus` checkouts: it sends the
+production request (prompt, schema, token cap, model chain from
+`elenchus-proxy/wrangler.toml`), strips code fences the way the Worker does,
+and writes a file only if the answer passes `looksLikeAnalysis`. Each file
+records `servedBy` (the model that actually answered), `promptVersion`,
+`date`, `attempt` and `rerunReason`. One sample: `node scripts/freeze-sample.mjs 2-mixed en`.
+`--dry-run` prints the extracted texts and the exact request body without
+calling the network or needing a key.
+
+English inputs are extracted from `~/Dev/elenchus/testbed/<id>.html` with
+`src/lib/extract.js` (the title is stored apart from the text). French
+inputs are committed translations in `scripts/samples-input/<id>.fr.json`,
+and their samples carry `translated: true`.
+
+**Re-run rule:** the first run that passes validation is the sample. An
+existing file is never overwritten unless a run failed validation or the
+owner rejected it for a stated reason, in which case:
+
+    node scripts/freeze-sample.mjs 2-mixed en --force --reason "<why>"
+
+The reason is stored in the file, `attempt` increments, and the label shown
+next to the sample must stay accurate. Saved output is AI-generated: name the
+model (`servedBy`) wherever it is shown.
+
 ## Build
 
     npm run build

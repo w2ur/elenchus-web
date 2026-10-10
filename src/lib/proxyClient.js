@@ -46,7 +46,7 @@ import { selectFailureState } from './errorState.js';
  * @param {unknown} data
  * @returns {boolean}
  */
-function looksLikeAnalysis(data) {
+export function looksLikeAnalysis(data) {
   return (
     typeof data === 'object'
     && data !== null
