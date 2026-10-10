@@ -7,7 +7,15 @@
    What is left here is Elenchus's own: ACCENT + STATUS (--accent,
    --accent-hover, --link, --severity-*, --score-*). The severity/score scale
    is copied verbatim from ~/Dev/elenchus/sidepanel/sidepanel.css so the same
-   analysis reads with the same colours in the extension and on the web. They
+   analysis reads with the same colours in the extension and on the web, with
+   ONE divergence: light --severity-minor is #9a5404 here, not the extension's
+   #d97706. It is TEXT (.flaw-severity.minor, .warning-notice) and #d97706
+   measured 3.19:1 on a card, failing 4.5:1; once a saved sample put a minor
+   flaw on the first screen (task E2, 2026-10-10) that failure sat in the
+   static HTML. #9a5404 is the same hue darkened until it clears 4.5:1 on the
+   card, the page and .warning-notice's 12% tint (5.76 / 5.47 / 4.62,
+   pinned in test/houseShell.test.js). --score-moderate keeps #d97706: it is
+   a fill carrying ink, legal as is. They
    are semantic status colours, not "the accent colour", so the portfolio's
    never-purple rule does not apply to them. Do not fold them into the house
    shell — a tool that adopted the shell would inherit an accent it has no use
@@ -26,7 +34,7 @@
   --band: #176763;
   --link: #176763;
   --link-hover: #0F5552;
-  --severity-minor: #d97706;
+  --severity-minor: #9a5404;
   --severity-significant: #dc2626;
   --severity-critical: #7c2d12;
   --score-strong: #16a34a;
@@ -62,7 +70,7 @@
    from the two blocks above — keep them equal (test/houseShell.test.js pins
    the sets, derived, not hand-listed). */
 :root.dark { --accent: #5FC2BC; --on-accent: #0F1117; --accent-hover: #7FD0CB; --link: #5FC2BC; --link-hover: #7FD0CB; --severity-minor: #fbbf24; --severity-significant: #f87171; --severity-critical: #fca5a5; --score-strong: #4ade80; --score-moderate: #fbbf24; --score-weak: #f87171; }
-:root.light { --accent: #1E7A76; --on-accent: #FFFFFF; --accent-hover: #176763; --link: #176763; --link-hover: #0F5552; --severity-minor: #d97706; --severity-significant: #dc2626; --severity-critical: #7c2d12; --score-strong: #16a34a; --score-moderate: #d97706; --score-weak: #dc2626; }
+:root.light { --accent: #1E7A76; --on-accent: #FFFFFF; --accent-hover: #176763; --link: #176763; --link-hover: #0F5552; --severity-minor: #9a5404; --severity-significant: #dc2626; --severity-critical: #7c2d12; --score-strong: #16a34a; --score-moderate: #d97706; --score-weak: #dc2626; }
 
 * {
   margin: 0;

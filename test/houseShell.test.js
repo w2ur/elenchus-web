@@ -392,13 +392,36 @@ describe('explicit theme classes restate every media-query token (derived, not h
 // branch deleted. Semantic status colours, not house-shell or per-tool
 // accent tokens — see global.css's file header.
 const STATUS = {
-  '--severity-minor': ['#d97706', '#fbbf24'],
+  '--severity-minor': ['#9a5404', '#fbbf24'],
   '--severity-significant': ['#dc2626', '#f87171'],
   '--severity-critical': ['#7c2d12', '#fca5a5'],
   '--score-strong': ['#16a34a', '#4ade80'],
   '--score-moderate': ['#d97706', '#fbbf24'],
   '--score-weak': ['#dc2626', '#f87171'],
 };
+// Regression (task E2 fix round 1): light --severity-minor was the
+// extension's #d97706, used as TEXT on .flaw-severity.minor and
+// .warning-notice at 3.19:1 on a card. A saved sample put a minor flaw in
+// the first screen's static HTML, where Lighthouse failed it. Same hue,
+// darkened; the web value now diverges from sidepanel.css on purpose.
+describe('light --severity-minor clears 4.5:1 as text on every surface it sits on', () => {
+  const tint = (fg, bg, a) => '#' + [1,3,5].map((i) => Math.round(a*parseInt(fg.slice(i,i+2),16) + (1-a)*parseInt(bg.slice(i,i+2),16)).toString(16).padStart(2,'0')).join('');
+  const minor = STATUS['--severity-minor'][0];
+  const SURFACES = [
+    ['a card (.flaw-card, the sample frame)', HOUSE_LIGHT['--bg-card']],
+    ['the page', HOUSE_LIGHT['--bg']],
+    ['.warning-notice: its own 12% tint over the page', tint(minor, HOUSE_LIGHT['--bg'], 0.12)],
+  ];
+  for (const [name, bg] of SURFACES) it(name, () => expect(ratio(minor, bg)).toBeGreaterThanOrEqual(4.5));
+  it("the extension's #d97706 fails the same sum: not vacuous", () => {
+    expect(ratio('#d97706', HOUSE_LIGHT['--bg-card'])).toBeLessThan(4.5);
+  });
+  it('both text rules read the token', () => {
+    expect(ruleBody(css, '.flaw-severity.minor {')).toMatch(/color:\s*var\(--severity-minor\)/);
+    expect(ruleBody(css, '.warning-notice {')).toMatch(/color:\s*var\(--severity-minor\)/);
+  });
+});
+
 describe('status scale tokens, both schemes', () => {
   for (const [t, [l, d]] of Object.entries(STATUS)) {
     it(`${t} is ${l} light / ${d} dark`, () => {

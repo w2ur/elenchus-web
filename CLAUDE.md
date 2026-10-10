@@ -100,9 +100,9 @@ read against each other by eye. `test/houseShell.test.js` pins them, so that
 `elenchus.untilt.app` reads as one product with `untilt.app`; there is no
 cross-repo drift check, so a rename on either side is invisible to the other
 suite and each copy pins itself. The
-severity/score scale is copied verbatim from `~/Dev/elenchus/sidepanel/
-sidepanel.css` instead, and must not be folded into the house surface
-tokens — they are semantic status colours, not the house shell. The one
+severity/score scale comes from `~/Dev/elenchus/sidepanel/sidepanel.css`
+(light `--severity-minor` diverges for contrast: global.css header) and
+must never be folded into the house surface tokens. The one
 deliberate difference from the house is the accent colour — the portfolio
 hub assigns Elenchus the teal accent `#1E7A76` (`src/styles/global.css`),
 not `untilt.app`'s blue-grey. Stay in that teal family.

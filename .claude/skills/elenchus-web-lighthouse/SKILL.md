@@ -36,8 +36,19 @@ always-passes-visible test key) renders and solves like production without
 touching a real siteverify call. `.env` is gitignored, so this is a
 local-only substitution, never committed.
 
-A run of `--only-categories=performance,accessibility,best-practices,seo
---preset=desktop` against `astro preview` scores, in light mode with a
+**Current figures (2026-10-10, branch house-direction-b, same command,
+light, test key):** `/` **99/96/100/100**, CLS **0.0585** (three runs) with
+no sample frozen, and 100/96/100/100, CLS 0.0082 with a (synthetic) sample
+beside the input card; `/fr/` CLS **0.122** with no sample, 0.0061 with
+one. The `/fr/` 0.122 predates this branch: BASE 9882f7c measured 0.1221 on
+the same machine, every shift a "Web font loaded" on `body > main`. The 96
+is `link-in-text-block` on the footer credit link (`--link`, no underline,
+beside muted text), also present at BASE. Light `--severity-minor` failed
+colour-contrast once a sample put a minor flaw on the first screen and was
+darkened (see global.css's header). The paragraph below is the history.
+
+Earlier, a run of `--only-categories=performance,accessibility,best-practices,seo
+--preset=desktop` against `astro preview` scored, in light mode with a
 working Turnstile key: `/fr/` **100/100/100/100** (CLS ~0.006); `/`
 **95/100/100/100** across three consecutive runs (CLS ~0.139) — since
 sub-project 2c put the analyzer directly on `/`, that page now carries more
@@ -56,5 +67,5 @@ fontTools — it made both perf and CLS measurably *worse* (92/100, CLS
 0.179) rather than better, so it was reverted rather than shipped on the
 strength of the calculation alone; `font-display: optional` is the change
 that was actually verified to move the score, not the one that looked
-more principled on paper. axe-core reports zero violations on `/` and
-`/fr/` in both colour schemes.
+more principled on paper. axe-core reported zero violations on `/` and
+`/fr/` in both colour schemes at that time.
