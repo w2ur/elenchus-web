@@ -306,7 +306,8 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
     readFragment,
   } from '../lib/handoff.js';
   import { callProxy } from '../lib/proxyClient.js';
-  import { pickSample, renderAnalysis, renderSample } from '../lib/render.js';
+  import { panelsFor, stateAfterInput } from '../lib/analyzerState.js';
+  import { clearResult, pickSample, renderAnalysis, renderSample } from '../lib/render.js';
   import { strings as STRINGS } from '../lib/strings.js';
   import { toMarkdown, exportFilename } from '../lib/exportMarkdown.js';
   import { turnstileTheme } from '../lib/theme.js';
@@ -360,18 +361,23 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
     provenanceEl: document.getElementById('result-provenance'),
   };
 
+  /** @type {import('../lib/analyzerState.js').AnalyzerState} */
+  let currentState = 'form';
+
   /**
    * 'sample' keeps the form AND the result on screen: a loaded example shows
    * the text that was analysed above what the model said about it, and the
-   * visitor can still press Analyze on it.
+   * visitor can still press Analyze on it (src/lib/analyzerState.js).
    *
-   * @param {'form' | 'loading' | 'error' | 'result' | 'sample'} state
+   * @param {import('../lib/analyzerState.js').AnalyzerState} state
    */
   function showState(state) {
-    form.hidden = state !== 'form' && state !== 'sample';
-    loadingState.hidden = state !== 'loading';
-    errorState.hidden = state !== 'error';
-    resultState.hidden = state !== 'result' && state !== 'sample';
+    currentState = state;
+    const panels = panelsFor(state);
+    form.hidden = !panels.form;
+    loadingState.hidden = !panels.loading;
+    errorState.hidden = !panels.error;
+    resultState.hidden = !panels.result;
   }
 
   function updateMeta() {
@@ -405,6 +411,14 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
     // edits the box, it is no longer a statement about what is in it.
     handoffNotice.hidden = true;
     handoffNoticeText.textContent = '';
+    // Same for a loaded example: its saved result and "Saved run" label
+    // describe the loaded text, so the first edit clears them and returns
+    // to the bare form.
+    const next = stateAfterInput(currentState);
+    if (next !== currentState) {
+      clearResult(resultElements);
+      showState(next);
+    }
   });
   updateMeta();
 

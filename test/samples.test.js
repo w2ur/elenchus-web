@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { renderAnalysis, renderSample, pickSample } from '../src/lib/render.js';
+import { clearResult, renderAnalysis, renderSample, pickSample } from '../src/lib/render.js';
 import {
   EXAMPLE_IDS,
   SHARED_SAMPLE_ID,
@@ -220,6 +220,23 @@ describe('loading an example into the live panel', () => {
     expect(el.provenanceEl.hidden).toBe(true);
     expect(el.provenanceEl.textContent).toBe('');
     expect(el.summaryEl.textContent).toBe('A live run.');
+  });
+
+  // Regression (final review C): editing a loaded example's text left its
+  // saved result and provenance in place. clearResult() empties the panel.
+  it('clearResult removes the saved run and its provenance line', () => {
+    const el = panel();
+    renderSample(clientSample(sample('2-mixed', 'en')), el, strings.en);
+    clearResult(el);
+    expect(el.provenanceEl.hidden).toBe(true);
+    expect(el.provenanceEl.textContent).toBe('');
+    expect(el.summaryEl.textContent).toBe('');
+    expect(el.scoreBadgeEl.textContent).toBe('');
+    expect(el.scoreBadgeEl.className).toBe('score-badge');
+    expect(el.flawsCountEl.textContent).toBe('');
+    expect(el.flawsListEl.children).toHaveLength(0);
+    expect(el.strengthsListEl.children).toHaveLength(0);
+    expect(el.strengthsSectionEl.hidden).toBe(true);
   });
 
   it('carries the translated line for a French sample, in French', () => {

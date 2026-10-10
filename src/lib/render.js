@@ -256,6 +256,29 @@ export function renderSample(sample, elements, T) {
 }
 
 /**
+ * Empties the result panel: the provenance line, the summary, the badge, the
+ * flaws and the strengths. Used when the visitor edits the text of a loaded
+ * example, so the saved run and its "Saved run · …" label never stay in the
+ * DOM under a text they no longer describe.
+ *
+ * @param {ResultElements} elements
+ */
+export function clearResult(elements) {
+  if (elements.provenanceEl) {
+    elements.provenanceEl.textContent = '';
+    elements.provenanceEl.hidden = true;
+  }
+  elements.summaryEl.textContent = '';
+  elements.scoreBadgeEl.textContent = '';
+  elements.scoreBadgeEl.className = 'score-badge';
+  elements.flawsCountEl.textContent = '';
+  elements.flawsListEl.innerHTML = '';
+  elements.noFlawsEl.hidden = true;
+  elements.strengthsListEl.innerHTML = '';
+  elements.strengthsSectionEl.hidden = true;
+}
+
+/**
  * Finds one sample in the JSON the page embedded at build time
  * (Analyzer.astro's #sample-data, written from src/lib/samples.js). No
  * fetch: the page already holds its own language's samples, and only those.
