@@ -821,10 +821,13 @@ describe('the front page does not reflow its own form when fonts finish loading'
 // look at, so neither had ever been checked against it.
 // Regression (task E2): `.export-row { display: flex }` outranks the UA
 // [hidden] rule, so hiding the row for a loaded example left all three export
-// buttons on screen (measured in Chrome at 1440).
+// buttons on screen (measured in Chrome at 1440). Final review G: the one-off
+// `.export-row[hidden]` became a base rule that covers every element.
 describe('the export row can be hidden', () => {
-  it('[hidden] wins over the row\'s own display', () => {
-    expect(ruleBody(css, '.export-row[hidden] {')).toMatch(/display:\s*none/);
+  it('a base [hidden] rule wins over any element\'s own display', () => {
+    expect(css).toMatch(/(^|\n)\[hidden\] \{\s*display:\s*none !important;\s*\}/);
+    expect(css).toMatch(/\.export-row \{[^}]*display:\s*flex/);
+    expect(css).not.toMatch(/\.export-row\[hidden\]/);
   });
 });
 

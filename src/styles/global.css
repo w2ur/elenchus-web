@@ -78,6 +78,15 @@
   box-sizing: border-box;
 }
 
+/* `hidden` always hides. The UA's [hidden] { display: none } loses to any
+   author `display` rule on the same element: `.export-row { display: flex }`
+   left the export buttons on screen for a loaded example (measured in Chrome
+   at 1440). One general rule instead of a one-off per component. Does not
+   reach an <svg> (see .theme-icon below): `hidden` is not reflected there. */
+[hidden] {
+  display: none !important;
+}
+
 /* Regression: `html, body { height: 100% }` made the body box exactly one
    viewport tall whatever the page's length, and .house-bar is `position:
    sticky` — which is constrained by its containing block, so the bar stopped
@@ -1314,13 +1323,6 @@ main .example-text .example-text-label {
   flex-wrap: wrap;
   gap: 0.5rem;
   margin-top: 1.25rem;
-}
-
-/* Regression: the row's own `display: flex` outranks the UA's [hidden]
-   rule, so hiding it for a loaded example (Analyzer.astro) left all three
-   export buttons on screen, measured in Chrome at 1440. */
-.export-row[hidden] {
-  display: none;
 }
 
 /* --- ToolHero: the band atop the front page (sub-project 2c, Task 3) ------
