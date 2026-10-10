@@ -182,6 +182,23 @@ export function clientSample(s) {
 }
 
 /**
+ * Whether this language has at least one saved run to show. The Examples nav
+ * item (ToolNav.astro) is rendered only when it does: before the owner
+ * freezes any sample, the item would lead every visitor to a page that says
+ * the runs are being prepared. Same one-language lookup and the same
+ * fail-on-malformed rule as loadSample(), and no build note: the pages that
+ * render samples already print one.
+ *
+ * @param {string} lang
+ * @param {Record<string, unknown>} [files]
+ * @returns {boolean}
+ */
+export function hasSamples(lang, files = FILES) {
+  const l = /** @type {'en' | 'fr'} */ (lang);
+  return EXAMPLE_IDS.some((id) => loadSample(id, l, files) !== null);
+}
+
+/**
  * What the Examples page renders for one language: every example id in
  * EXAMPLE_IDS order, each paired with its run or null, so the page can keep
  * a section (and its anchor) for a run that is not frozen yet. Same

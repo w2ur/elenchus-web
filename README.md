@@ -27,7 +27,7 @@ adapted copy of untilt's; its header records what differs and why. The header
 itself (`src/components/HouseHeader.astro`) follows the suite's tool-chrome
 contract: lockup, nav, theme toggle, then language toggle, in that order,
 with the same nav (`src/components/ToolNav.astro`: Analyze, Examples,
-Bookmarklet, Extension) doubling as a fixed bottom bar below 768px.
+Bookmarklet, Extension; Examples only once a saved run exists) doubling as a fixed bottom bar below 768px.
 
 Instrument Sans and DM Sans, self-hosted under `public/fonts/`, are both
 SIL Open Font License 1.1 — see `public/fonts/OFL.txt`.
@@ -124,7 +124,8 @@ Advisory drift-check: exits 1 if the severity/score labels in
 `src/data/samples/<id>.<lang>.json` holds real Elenchus analyses of the
 testbed texts (`1-sound`, `2-mixed`, `3-short`, in `en` and `fr`), rendered
 as examples on the Untilt sites and in full on `/examples/` (which says
-they are being prepared while none exists). They are frozen by a script,
+they are being prepared, carries `noindex` and has no nav item while none
+exists). They are frozen by a script,
 never written by hand:
 
     OPENROUTER_API_KEY=sk-or-... node scripts/freeze-sample.mjs --all

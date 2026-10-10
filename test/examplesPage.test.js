@@ -108,7 +108,7 @@ describe('the Examples page', () => {
 // The built <head>, not the source prop: reads dist/ the way houseShell's
 // cssTarget block does, and fails by name (never a silent skip) when no
 // build has run, since a check over nothing must not read as a pass.
-describe('the built Examples pages carry canonical and hreflang', () => {
+describe('the built Examples pages carry canonical and hreflang, and noindex while empty', () => {
   const SITE = 'https://elenchus.untilt.app';
   const built = { en: 'dist/examples/index.html', fr: 'dist/fr/examples/index.html' };
   if (!existsSync(join(ROOT, built.en)) || !existsSync(join(ROOT, built.fr))) {
@@ -123,6 +123,11 @@ describe('the built Examples pages carry canonical and hreflang', () => {
       expect(href('link[hreflang="en"]')).toBe(`${SITE}/examples/`);
       expect(href('link[hreflang="fr"]')).toBe(`${SITE}/fr/examples/`);
       expect(href('link[hreflang="x-default"]')).toBe(`${SITE}/examples/`);
+      // Regression (final review F): the page was indexable while it held
+      // nothing but "being prepared". noindex exactly when no run is shown.
+      const page = new JSDOM(src(built[lang])).window.document;
+      const empty = page.querySelectorAll('.house-sample').length === 0;
+      expect(head.querySelector('meta[name="robots"][content="noindex"]') !== null).toBe(empty);
     });
   }
 });

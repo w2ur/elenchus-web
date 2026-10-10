@@ -7,8 +7,11 @@ import { examplesPageSamples } from '../../lib/samples.js';
 
 const E = examplesCopy.fr;
 const { ids, samples } = examplesPageSamples('fr');
+// Not indexed while it holds no run: the page then only says the runs are
+// being prepared, and the nav does not link to it (ToolNav.astro).
+const empty = samples.every((s) => s === null);
 ---
 
-<Layout title={E.title} description={E.description} lang="fr" path="/examples/" wide={samples.some((s) => s !== null)}>
+<Layout title={E.title} description={E.description} lang="fr" path="/examples/" wide={!empty} noindex={empty}>
   <ExamplesPage lang="fr" ids={ids} samples={samples} />
 </Layout>

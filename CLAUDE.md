@@ -144,8 +144,8 @@ counter · free-tier line · Analyze, Turnstile under it; the saved run beside
 it from 1024px; results panel), then `<Landing>` (method band, a card per
 saved run). **`src/lib/samples.js` runs in page frontmatter only**: its
 glob would put both languages in the client bundle. No sample files: no
-slot, chips or cards, and `/examples/` says the runs are being prepared, never a
-stand-in.
+slot, chips, cards or Examples nav item; `/examples/` (noindex) says the runs are
+being prepared, never a stand-in.
 `src/pages/analyze.astro` and `src/pages/fr/analyze.astro` still exist —
 `test/configFailLoud.test.js` hard-codes them as the build-time env gate —
 but now carry a `noindex` meta and a forced Netlify 301 to the front page
