@@ -27,9 +27,18 @@ interface Props {
     translated?: unknown;
     result?: unknown;
   };
+  /**
+   * The level of the three section headings. 3 by default (a frame inside a
+   * section that already has its own h2); 2 where the frame sits directly
+   * under the page's h1, as it does beside the input card on the front page,
+   * since an h3 with no h2 above it breaks the heading order (axe
+   * heading-order, measured with Lighthouse on / with a sample present).
+   */
+  headingLevel?: 2 | 3;
 }
 
-const { sample } = Astro.props;
+const { sample, headingLevel = 3 } = Astro.props;
+const H = headingLevel === 2 ? 'h2' : 'h3';
 const lang = oneOf(sample?.lang, ['en', 'fr'], 'en') as 'en' | 'fr';
 const T = strings[lang];
 const view = analysisView(sample?.result, T);
@@ -45,13 +54,14 @@ const scoreClass = SCORES.includes(view.score) ? `score-badge ${view.score}` : '
     {provenance.translated && <><br />{provenance.translated}</>}
   </p>
 
-  <h3 class="eyebrow">{T.summaryHeading}</h3>
+  <H class="eyebrow">{T.summaryHeading}</H>
   <div class="card result-summary-card">
     <p class="result-summary">{view.summary}</p>
     <span class={scoreClass}>{view.scoreLabel}</span>
+    <p class="score-caveat">{T.scoreCaveat}</p>
   </div>
 
-  <h3 class="eyebrow">{T.flawsHeading} <span class="count-badge">{view.flawsCount}</span></h3>
+  <H class="eyebrow">{T.flawsHeading} <span class="count-badge">{view.flawsCount}</span></H>
   {view.flaws.length === 0 ? (
     <p class="no-flaws">{T.noFlaws}</p>
   ) : (
@@ -67,7 +77,7 @@ const scoreClass = SCORES.includes(view.score) ? `score-badge ${view.score}` : '
 
   {view.strengths.length > 0 && (
     <>
-      <h3 class="eyebrow">{T.strengthsHeading}</h3>
+      <H class="eyebrow">{T.strengthsHeading}</H>
       <ul class="strengths-list">
         {view.strengths.map((s) => <li>{s}</li>)}
       </ul>

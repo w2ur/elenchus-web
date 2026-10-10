@@ -377,9 +377,10 @@ h2 {
   color: var(--muted);
 }
 
-/* Quieter than .warning-notice below: this is a standing condition of the
-   free tier, not something that went wrong, so it must not read as an
-   error — mirrors .privacy-notice in sidepanel.css. */
+/* Quieter than .warning-notice below: a statement of how things stand (the
+   bookmarklet's cut text, the install page's hints, the landing privacy
+   line), not something that went wrong, so it must not read as an error —
+   mirrors .privacy-notice in sidepanel.css. */
 .notice {
   margin-bottom: 20px;
   padding: 10px 12px;
@@ -429,14 +430,93 @@ h2 {
   line-height: 1.4;
 }
 
-textarea#text-input {
-  width: 100%;
-  min-height: 220px;
-  resize: vertical;
-  padding: 12px;
+/* --- First screen (house direction B, DESIGN.md) ---------------------------
+   One input card, and the shared saved run beside it from 1024px, under it
+   below. The card is one bordered box holding the example toolbar, the box
+   itself (borderless inside it) and a footer row: counter and free-tier line
+   on the left, Analyze on the right. The free-tier disclosure used to be a
+   bordered .notice above the form; it is the footer's one line now.
+
+   The wide column is the band exception the contract already makes for the
+   house page (max-w-5xl, 64rem), taken only when a sample is there to sit
+   beside the card (Layout.astro's `wide` prop): header row, hero column and
+   <main> widen together, so the first screen keeps one left edge. */
+.first-screen {
+  display: grid;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .page-wide .house,
+  .page-wide .tool-hero-inner,
+  .page-wide main {
+    max-width: 64rem;
+  }
+
+  .first-screen.has-sample {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    align-items: start;
+  }
+}
+
+.input-card {
+  background: var(--bg-card);
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
-  background: var(--bg-card);
+}
+
+/* The focus ring moved from the box to the card the box now sits in: the
+   textarea is borderless inside it, and a ring drawn on it alone would cut
+   across the toolbar and the footer row. --accent as a non-text outline
+   (3:1 floor), as the box carried it before. */
+.input-card:has(#text-input:focus) {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.input-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem 0.5rem;
+  padding: 0.75rem 1rem 0;
+}
+
+.input-toolbar-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  margin-right: 0.25rem;
+}
+
+/* A chip, so a pill (contract §2: only chips are pills). --link on --tint,
+   the pair every quiet control here paints; 28px tall, above the 24px
+   target-size floor. */
+.example-chip {
+  min-height: 1.75rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  background: var(--tint);
+  color: var(--link);
+  font: 500 12px/1.2 'Instrument Sans', system-ui, sans-serif;
+  text-align: left;
+}
+
+.example-chip:hover,
+.example-chip:focus-visible {
+  background: var(--tint-strong);
+  color: var(--link-hover);
+}
+
+textarea#text-input {
+  display: block;
+  width: 100%;
+  min-height: 200px;
+  resize: vertical;
+  padding: 0.75rem 1rem;
+  border: 0;
+  border-radius: var(--radius-card);
+  background: transparent;
   color: var(--text);
   font: inherit;
   font-size: 14px;
@@ -444,17 +524,64 @@ textarea#text-input {
 }
 
 textarea#text-input:focus {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
+  outline: none;
+}
+
+/* A shorter box on a phone, so the footer row (and Analyze) arrives within
+   one short scroll under the example toolbar. */
+@media (max-width: 767px) {
+  textarea#text-input {
+    min-height: 160px;
+  }
+}
+
+.input-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.input-footer-meta {
+  flex: 1 1 16rem;
+  min-width: 0;
 }
 
 .textarea-meta {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: 6px 0 16px;
+  flex-wrap: wrap;
+  gap: 0 0.75rem;
   font-size: 12px;
   color: var(--muted);
+}
+
+/* One line of muted 12px: the disclosure stays on the first screen without
+   the weight of a box. Its own width rule beats `main p`'s 48ch: the footer
+   cell already bounds it. */
+.free-tier-line {
+  margin: 0.125rem 0 0;
+  max-width: none;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+/* The false-premises caveat, next to the score on a live result and on a
+   saved one (owner decision 16). */
+.score-caveat {
+  margin: 0.5rem 0 0;
+  max-width: none;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+/* A loaded example scrolls the panel into view; the sticky header bar would
+   otherwise cover its provenance line. */
+#result-state {
+  scroll-margin-top: 5rem;
 }
 
 .textarea-meta .over-limit {
@@ -472,7 +599,7 @@ textarea#text-input:focus {
    no `data-size`, so that's what renders). */
 #turnstile-container {
   min-height: 65px;
-  margin-bottom: 16px;
+  margin-top: 0.75rem;
 }
 
 /* Regression: .chrome-btn dropped its own border and --bg-card fill (spec §5,
@@ -681,8 +808,7 @@ a.card:hover {
    above a Retry button that provably cannot succeed for either state,
    contradicted that. Applied via JS (renderFailureState toggles this class;
    Analyzer.astro hides Retry alongside it) with the same quiet,
-   informational treatment .notice already uses for the standing free-tier
-   disclosure above the form — background/border tinted from --accent
+   informational treatment .notice uses — background/border tinted from --accent
    rather than left plain, so this state still reads as "about your
    allowance" rather than blending into ordinary body text. */
 .error-message.is-dry-state {
@@ -1034,6 +1160,13 @@ main a {
   margin-top: 1.25rem;
 }
 
+/* Regression: the row's own `display: flex` outranks the UA's [hidden]
+   rule, so hiding it for a loaded example (Analyzer.astro) left all three
+   export buttons on screen, measured in Chrome at 1440. */
+.export-row[hidden] {
+  display: none;
+}
+
 /* --- ToolHero: the band atop the front page (sub-project 2c, Task 3) ------
    --band/--hero-fg/--hero-muted come from house.css, scheme-invariant so
    this band looks the same in light and dark (see house.css's comment on
@@ -1163,7 +1296,7 @@ main a {
   #analyze-form,
   .export-row,
   footer,
-  #free-tier-notice,
+  .first-screen-sample,
   #landing-content,
   #new-analysis-btn {
     display: none;

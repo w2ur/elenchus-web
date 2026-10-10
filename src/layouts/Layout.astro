@@ -25,6 +25,13 @@ interface Props {
    * front page took over as the analyzer.
    */
   noindex?: boolean;
+  /**
+   * True on a front page that shows a saved sample beside the input card:
+   * from 1024px the header row, the hero's inner column and the main column widen
+   * together (global.css `.page-wide`), so the two-column first screen keeps
+   * one left edge with everything above it.
+   */
+  wide?: boolean;
 }
 
 const {
@@ -33,6 +40,7 @@ const {
   lang = 'en',
   path,
   noindex = false,
+  wide = false,
 } = Astro.props;
 
 const enHref = path ? new URL(path, Astro.site).href : null;
@@ -91,7 +99,7 @@ const t = strings[lang] ?? strings.en;
     {enHref && <link rel="alternate" hreflang="x-default" href={enHref} />}
     <title>{title}</title>
   </head>
-  <body>
+  <body class:list={[{ 'page-wide': wide }]}>
     <HouseHeader lang={lang} path={path} />
     {/* The band slot sits BETWEEN the bar and the column, so a hero is flush
         under the header hairline and bleeds to the viewport edge. Rendered

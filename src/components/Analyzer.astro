@@ -10,7 +10,9 @@
 // on both pages, so a missing env var fails the build, not just a
 // visitor's browser").
 import { MAX_TEXT_LENGTH, MIN_TEXT_LENGTH } from '../lib/limits.js';
+import { clientSample } from '../lib/samples.js';
 import { strings } from '../lib/strings.js';
+import SampleResult from './SampleResult.astro';
 
 interface Props {
   lang: 'en' | 'fr';
@@ -29,17 +31,48 @@ interface Props {
    * (true) and still have exactly one heading of their own.
    */
   showHeading?: boolean;
+  /**
+   * The front page's saved samples, from src/lib/samples.js's
+   * frontPageSamples() in the page's own frontmatter (build time), for this
+   * page's language only. `shared` fills the slot beside the input card,
+   * `examples` the "Try an example" chips. Both default to nothing: /analyze
+   * passes neither, and before the owner has frozen any sample the front
+   * page has none to pass, so the slot and the toolbar are simply not
+   * rendered.
+   */
+  shared?: import('../lib/samples.js').Sample | null;
+  examples?: import('../lib/samples.js').Sample[];
 }
 
-const { lang, proxyUrl, webKey, turnstileSiteKey, showHeading = true } = Astro.props;
+const {
+  lang,
+  proxyUrl,
+  webKey,
+  turnstileSiteKey,
+  showHeading = true,
+  shared = null,
+  examples = [],
+} = Astro.props;
 const T = strings[lang];
 
-// The free-tier notice's "use your own API key" link must point somewhere
-// that actually offers that path. It used to point at
+// The examples the client can load, as JSON in a data-* attribute: Astro
+// escapes attribute values, so model text never reaches the HTML through
+// set:html or an inline <script> body (where a "</script>" inside a sample
+// would close the tag). Only this page's language is in it.
+const sampleData = examples.length > 0 ? JSON.stringify(examples.map(clientSample)) : null;
+
+// The free-tier note's Details link: the Elenchus web section of the one
+// house privacy policy. Built from T.privacyUrl, never written out as a
+// second literal: check-privacy-sync.sh (assertion 5, elenchus repo) counts
+// the privacyUrl entries in strings.js and would not see a copy here.
+const privacyDetailsUrl = `${T.privacyUrl}#elenchus-web`;
+
+// The failure states' "Chrome extension" link (errorState.js, through
+// data-extension-url below) must point somewhere that actually offers the
+// bring-your-own-key path. It used to point at
 // github.com/w2ur/elenchus, but that repo is private (`gh repo view
 // w2ur/elenchus --json isPrivate` → true) — a 404 for every visitor, in the
-// one part of the page that most needs to be trustworthy (the data-training
-// disclosure). The Chrome Web Store listing is public and is where the
+// part of the page that most needs to be trustworthy. The Chrome Web Store listing is public and is where the
 // extension — and with it the actual bring-your-own-key settings panel —
 // lives. `?hl=` matches the per-language form the portfolio hub already
 // uses for this listing.
@@ -52,6 +85,8 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
 // "15000" is three chances to drift.
 ---
 
+<div class:list={['first-screen', { 'has-sample': shared }]}>
+<div class="first-screen-main">
 {
   showHeading && (
     <>
@@ -60,13 +95,6 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
     </>
   )
 }
-
-<p class="notice" id="free-tier-notice">
-  <span class="notice-text">{T.freeTierNoticeText}<a
-    href={CHROME_WEB_STORE_URL}
-    target="_blank"
-    rel="noopener noreferrer">{T.freeTierNoticeLink}</a>{T.freeTierNoticeEnd}</span>
-</p>
 
 <!--
   Set only when the bookmarklet hands text over and that text had to be cut
@@ -77,15 +105,37 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
 <p class="notice" id="handoff-notice" hidden><span class="notice-text"></span></p>
 
 <form id="analyze-form" novalidate>
-  <label class="sr-only" for="text-input">{T.textareaLabel}</label>
-  <textarea
-    id="text-input"
-    maxlength={MAX_TEXT_LENGTH}
-    placeholder={T.textareaPlaceholder}
-    required></textarea>
-  <div class="textarea-meta">
-    <span id="char-count">{T.charCount(0, MAX_TEXT_LENGTH)}</span>
-    <span id="length-warning" hidden></span>
+  {/* One input card (house direction B): the example toolbar, the box, and
+      a footer row holding the counter, the one-line free-tier note and
+      Analyze. The free-tier disclosure used to be a bordered notice box
+      above the form; it is this line now (owner decision 17). */}
+  <div class="input-card">
+    {
+      examples.length > 0 && (
+        <div class="input-toolbar" role="group" aria-labelledby="examples-label">
+          <span class="input-toolbar-label" id="examples-label">{T.examplesLabel}</span>
+          {examples.map((s) => (
+            <button type="button" class="example-chip" data-sample-id={s.id}>{s.title}</button>
+          ))}
+        </div>
+      )
+    }
+    <label class="sr-only" for="text-input">{T.textareaLabel}</label>
+    <textarea
+      id="text-input"
+      maxlength={MAX_TEXT_LENGTH}
+      placeholder={T.textareaPlaceholder}
+      required></textarea>
+    <div class="input-footer">
+      <div class="input-footer-meta">
+        <div class="textarea-meta">
+          <span id="char-count">{T.charCount(0, MAX_TEXT_LENGTH)}</span>
+          <span id="length-warning" hidden></span>
+        </div>
+        <p class="free-tier-line">{T.freeTierLine} <a href={privacyDetailsUrl}>{T.freeTierDetails}</a></p>
+      </div>
+      <button id="analyze-btn" class="btn-primary" type="submit" aria-describedby="length-warning" disabled>{T.analyzeBtn}</button>
+    </div>
   </div>
 
   {/* data-language: without it the widget follows the BROWSER locale, so an
@@ -111,8 +161,6 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
       c.dataset.theme = r.contains('dark') ? 'dark' : r.contains('light') ? 'light' : 'auto';
     })();
   </script>
-
-  <button id="analyze-btn" class="btn-primary" type="submit" aria-describedby="length-warning" disabled>{T.analyzeBtn}</button>
 </form>
 
 <!--
@@ -156,6 +204,10 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
 </div>
 
 <div id="result-state" aria-live="polite" aria-atomic="false" hidden>
+  {/* Set only while a loaded example is on the panel (render.js
+      renderSample()), cleared by the next live renderAnalysis(): the same
+      "Saved run · … · AI-generated" line SampleResult.astro prints. */}
+  <p id="result-provenance" class="house-sample-label" hidden></p>
   <p id="truncation-warning" class="warning-notice" hidden>{T.truncationWarning}</p>
 
   <h2 class="eyebrow">{T.summaryHeading}</h2>
@@ -167,6 +219,9 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
   <div class="card" id="result-summary-card">
     <p id="result-summary"></p>
     <span id="result-score" class="score-badge"></span>
+    {/* Static: true of every result, live or saved, and read right where a
+        good score on a falsehood would be misread. */}
+    <p class="score-caveat">{T.scoreCaveat}</p>
   </div>
 
   <h2 class="eyebrow">{T.flawsHeading} <span id="flaws-count" class="count-badge"></span></h2>
@@ -186,6 +241,18 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
 
   <button id="new-analysis-btn" class="btn-secondary" type="button">{T.newAnalysisBtn}</button>
 </div>
+</div>
+
+{
+  shared && (
+    <div class="first-screen-sample">
+      <SampleResult sample={shared} headingLevel={2} />
+    </div>
+  )
+}
+</div>
+
+{sampleData && <div id="sample-data" data-samples={sampleData} hidden></div>}
 
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
@@ -230,7 +297,7 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
     readFragment,
   } from '../lib/handoff.js';
   import { callProxy } from '../lib/proxyClient.js';
-  import { renderAnalysis } from '../lib/render.js';
+  import { pickSample, renderAnalysis, renderSample } from '../lib/render.js';
   import { strings as STRINGS } from '../lib/strings.js';
   import { toMarkdown, exportFilename } from '../lib/exportMarkdown.js';
   import { turnstileTheme } from '../lib/theme.js';
@@ -264,6 +331,8 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
   const exportCopyBtn = document.getElementById('export-copy');
   const exportDownloadBtn = document.getElementById('export-download');
   const exportPrintBtn = document.getElementById('export-print');
+  const exportRow = exportCopyBtn.parentElement;
+  const sampleData = document.getElementById('sample-data');
 
   // Set the moment a result renders (see renderAnalysis() call below), so
   // the export row always exports the analysis currently on screen — never
@@ -278,14 +347,21 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
     flawsListEl: document.getElementById('flaws-list'),
     strengthsSectionEl: document.getElementById('strengths-section'),
     strengthsListEl: document.getElementById('strengths-list'),
+    provenanceEl: document.getElementById('result-provenance'),
   };
 
-  /** @param {'form' | 'loading' | 'error' | 'result'} state */
+  /**
+   * 'sample' keeps the form AND the result on screen: a loaded example shows
+   * the text that was analysed above what the model said about it, and the
+   * visitor can still press Analyze on it.
+   *
+   * @param {'form' | 'loading' | 'error' | 'result' | 'sample'} state
+   */
   function showState(state) {
-    form.hidden = state !== 'form';
+    form.hidden = state !== 'form' && state !== 'sample';
     loadingState.hidden = state !== 'loading';
     errorState.hidden = state !== 'error';
-    resultState.hidden = state !== 'result';
+    resultState.hidden = state !== 'result' && state !== 'sample';
   }
 
   function updateMeta() {
@@ -483,12 +559,38 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
       }
       truncationWarning.hidden = !wasTruncated;
       lastResult = outcome.data;
+      // renderAnalysis() also clears a loaded example's provenance line.
       renderAnalysis(outcome.data, resultElements, T);
+      exportRow.hidden = false;
       showState('result');
     } finally {
       resetTurnstile();
     }
   });
+
+  // "Try an example": the chips load a saved run from #sample-data, which the
+  // build wrote with this page's language only. No fetch, no Turnstile token
+  // and no daily allowance spent: nothing is sent anywhere. The box gets the
+  // text, the panel gets the result under its "Saved run · … · AI-generated"
+  // line. The export row is hidden for a saved run: an exported file would
+  // carry the model's output without that label (owner decision 8).
+  for (const chip of document.querySelectorAll('.example-chip')) {
+    chip.addEventListener('click', () => {
+      const sample = pickSample(sampleData?.dataset.samples, chip.dataset.sampleId);
+      if (!sample) return;
+      textInput.value = typeof sample.text === 'string' ? sample.text.slice(0, MAX_LEN) : '';
+      updateMeta();
+      handoffNotice.hidden = true;
+      handoffNoticeText.textContent = '';
+      truncationWarning.hidden = true;
+      lastResult = null;
+      exportRow.hidden = true;
+      renderSample(sample, resultElements, T);
+      showState('sample');
+      const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      resultState.scrollIntoView({ block: 'start', behavior: still ? 'auto' : 'smooth' });
+    });
+  }
 
   retryBtn.addEventListener('click', () => showState('form'));
   newAnalysisBtn.addEventListener('click', () => showState('form'));

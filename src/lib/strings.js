@@ -5,17 +5,15 @@
 // different (no settings page, no provider choice, no chrome.storage). The
 // only place these two tables are required to agree is the
 // severity/score *labels*, because those describe the same enum values the
-// Worker returns to both surfaces; C4 covers the automated drift-check
-// between them. Wording for `severities`/`scores` and for the free-tier
-// notice is matched by hand here to the freeTierNoticeText/
-// freeTierNoticeLink/freeTierNoticeEnd/severities/scores entries of
+// Worker returns to both surfaces; scripts/check-labels-sync.sh is the
+// automated drift-check between them. Wording for `severities`/`scores` is
+// matched by hand to the severities/scores entries of
 // ~/Dev/elenchus/i18n/strings.js (EN and FR tables) — cited by name, not
 // line: that's a different repo, moving independently — so the same
-// analysis reads identically on both surfaces. Exception, flagged to C4
-// (it owns the automated drift-check): freeTierNoticeText/Link/End
-// deliberately diverge from the extension's wording here, because this
-// site has no settings page for the extension's link to point at — see
-// the CHROME_WEB_STORE_URL comment in src/components/Analyzer.astro.
+// analysis reads identically on both surfaces. The free-tier disclosure is
+// this site's own one-line note (freeTierLine), not the extension's
+// freeTierNotice* sentence, which points at a settings page this site does
+// not have.
 //
 // Plain JS with JSDoc, not TypeScript — see CLAUDE.md.
 
@@ -49,10 +47,25 @@ export const strings = {
     handoffTruncated:
       'This page had more than 15,000 characters, so only the beginning was brought over. Edit the text below if the part you wanted to examine is missing.',
 
-    freeTierNoticeText:
-      "Free tier: this text is sent to model providers that may log it and train on it. Avoid analyzing confidential text, or ",
-    freeTierNoticeLink: 'use your own API key in the Elenchus extension',
-    freeTierNoticeEnd: '.',
+    // The one-line free-tier note in the input card's footer row (owner
+    // decision 17, 2026-10-10: the bordered notice box above the form became
+    // this line). Ruling R4: the free-tier provider "may log and train on"
+    // the text, the cautious wording /privacy carries too. The Details link
+    // is built in Analyzer.astro from the policy URL further down plus
+    // "#elenchus-web", never written out here: check-privacy-sync.sh
+    // (assertion 5) counts the lines of this file naming that key, so even
+    // this comment must not spell it.
+    freeTierLine: 'Free tier: model providers may log and train on this text.',
+    freeTierDetails: 'Details',
+
+    // The input card's toolbar. Each chip is labelled with its sample's own
+    // `title` (the testbed page's h1, or the committed FR translation's).
+    examplesLabel: 'Try an example',
+
+    // The false-premises caveat, next to the score on a live result and on a
+    // saved one. Same claim as exportMarkdown.js's caveat line, without its
+    // em dash (test/strings.test.js pins the two to each other).
+    scoreCaveat: 'Elenchus checks reasoning, not facts: a tight argument on false premises scores well here.',
 
     // The canonical privacy policy: ONE document for the whole Untilt house —
     // Doxa, this site and the extension — served at untilt.app/privacy and
@@ -200,10 +213,13 @@ export const strings = {
     handoffTruncated:
       'Cette page dépassait 15 000 caractères : seul le début a été repris. Modifiez le texte ci-dessous si le passage que vous vouliez examiner en est absent.',
 
-    freeTierNoticeText:
-      "Version gratuite : ce texte est envoyé à des fournisseurs de modèles susceptibles de l'enregistrer et de s'en servir pour l'entraînement. Évitez d'analyser un texte confidentiel, ou ",
-    freeTierNoticeLink: 'utilisez votre propre clé API dans l’extension Elenchus',
-    freeTierNoticeEnd: '.',
+    // Voir le commentaire du bloc `en`.
+    freeTierLine: 'Version gratuite : les fournisseurs de modèles peuvent enregistrer ce texte et s’en servir pour l’entraînement.',
+    freeTierDetails: 'Détails',
+
+    examplesLabel: 'Essayer un exemple',
+
+    scoreCaveat: 'Elenchus vérifie le raisonnement, pas les faits : un argument serré sur des prémisses fausses obtient un bon score ici.',
 
     // Voir le commentaire du bloc `en` : la politique est liée, jamais
     // recopiée ici. La version française vit sous /fr/.

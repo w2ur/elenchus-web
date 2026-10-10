@@ -7,15 +7,13 @@
 # ~/Dev/elenchus/scripts/check-prompt-sync.sh.
 #
 # Deliberately narrow. This repo's src/lib/strings.js and the extension's
-# i18n/strings.js overlap in more than severities/scores, and some of that
-# overlap is INTENTIONALLY different: freeTierNoticeText, freeTierNoticeLink
-# and freeTierNoticeEnd read differently here on purpose — this site has no
-# settings page for the extension's own wording to point at, so the link
-# text was extended and "this page's text" became "this text" (see the
-# CHROME_WEB_STORE_URL comment in src/components/Analyzer.astro, and the
-# file comment atop src/lib/strings.js). Comparing every shared key would
-# red on those three every single run, and a check that cries wolf gets
-# disabled — so only severities/scores are compared, explicitly, below.
+# i18n/strings.js share more key names than severities/scores, and some of
+# those are INTENTIONALLY different: this site has no settings page for the
+# extension's own wording to point at, so its free-tier disclosure is its own
+# one-line note (freeTierLine) rather than the extension's freeTierNotice*
+# sentence (see the file comment atop src/lib/strings.js). Comparing every
+# shared key would red on that every single run, and a check that cries wolf
+# gets disabled — so only severities/scores are compared, explicitly, below.
 #
 # Exits 1 on drift, 2 if either file is missing or cannot be read.
 set -euo pipefail
@@ -37,7 +35,7 @@ const path = require("path");
 
 const [webPath, extPath] = process.argv.slice(1);
 
-// The only tables this script is responsible for. freeTierNotice* is
+// The only tables this script is responsible for. The free-tier copy is
 // excluded on purpose — see the file header above.
 const TABLES = ["severities", "scores"];
 const LANGS = ["en", "fr"];

@@ -32,8 +32,12 @@ export const landingCopy = {
     // One italic word, as the house contract (§2) sets it: two read as a
     // phrase in a switched face, not as the one word that carries the stress.
     heroTitle: 'Does this argument *hold* up?',
+    // Two lines at 1440 (owner decision 16, 2026-10-10), the "does not check
+    // facts" claim still first. The false-premises caveat that used to close
+    // this lede now sits next to the score (strings.js scoreCaveat), where a
+    // good score on a falsehood is actually read.
     heroLede:
-      'Elenchus does not check facts. It checks whether the conclusions follow from what came before: circular reasoning, false dilemmas, unsupported leaps, loaded framing. A tight argument on false premises scores well here; that is the tool working, not failing.',
+      'Elenchus does not check facts. It checks whether each conclusion follows from what came before: circular reasoning, false dilemmas, unsupported leaps.',
     heroChips: ['Any text', 'Nothing to install', 'No account'],
 
     getHeading: 'What you get back',
@@ -90,7 +94,7 @@ export const landingCopy = {
     // Un seul mot en italique (contrat maison §2). Espace insécable avant « ? ».
     heroTitle: 'Cet argument *tient-il* debout\u00a0?',
     heroLede:
-      'Elenchus ne vérifie pas les faits. Il examine si les conclusions découlent de ce qui les précède : raisonnement circulaire, faux dilemmes, sauts non justifiés, cadrage orienté. Un argument serré sur des prémisses fausses obtient un bon score ici ; c’est l’outil qui fonctionne, pas qui échoue.',
+      'Elenchus ne vérifie pas les faits. Il examine si chaque conclusion découle de ce qui la précède : raisonnement circulaire, faux dilemmes, sauts non justifiés.',
     heroChips: ['Tout texte', 'Rien à installer', 'Sans compte'],
 
     getHeading: 'Ce que vous obtenez',

@@ -33,9 +33,14 @@ Instrument Sans and DM Sans, self-hosted under `public/fonts/`, are both
 SIL Open Font License 1.1 — see `public/fonts/OFL.txt`.
 
 **Status:** three ways in, in both languages. The front page is the
-analyzer: a ToolHero band (title + the "does not fact-check" disclaimer as
-its lede) directly above the paste box, then the rest of the landing content
-below.
+analyzer: a ToolHero band (title + a two-line lede that opens on the "does
+not fact-check" disclaimer), then one input card ("Try an example" chips,
+the paste box, a footer row with the character counter, a one-line free-tier
+note linking to the privacy policy's Elenchus web section, and Analyze),
+with the Turnstile widget under it and a saved sample run beside the card
+from 1024px wide (under it on a phone), then the rest of the landing content
+below. The "reasoning, not facts" caveat sits next to the score on every
+result, live or saved.
 
 | Page | English | French |
 |---|---|---|
@@ -152,6 +157,16 @@ sample={…} />`), which renders it into the static HTML at build time through
 the same `analysisView()` (`src/lib/render.js`) the live result uses, under
 the provenance label "Saved run · <date> · <servedBy> · prompt <promptVersion>
 · AI-generated" (French twin in `src/lib/strings.js`).
+
+On the front page, `src/lib/samples.js` reads the files at build time, from
+each page's frontmatter, and only that page's language: `2-mixed` fills the
+slot beside the input card, and `2-mixed`, `3-short` and `1-sound` become
+the "Try an example" chips. A chip loads its sample from data embedded in the
+page (no network call): the text goes in the box and the result in the
+result panel, under the same provenance label, which the next live analysis
+clears. Until the files exist the build prints a note and the page renders
+neither the slot nor the chips; a file that exists but is malformed fails the
+build.
 
 ## Build
 

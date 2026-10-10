@@ -189,6 +189,9 @@ export function renderFlawCard(flaw, T) {
  * @property {HTMLElement} flawsListEl
  * @property {HTMLElement} strengthsSectionEl
  * @property {HTMLElement} strengthsListEl
+ * @property {HTMLElement} [provenanceEl] the "Saved run · …" line over a
+ *   loaded sample (Analyzer.astro's #result-provenance); renderAnalysis()
+ *   clears it, renderSample() sets it
  */
 
 /**
@@ -202,6 +205,15 @@ export function renderFlawCard(flaw, T) {
  */
 export function renderAnalysis(result, elements, T) {
   const view = analysisView(result, T);
+
+  // A live result is not a saved run: whatever provenance line a loaded
+  // sample left on the panel goes before anything else is drawn, so a live
+  // analysis can never sit under "Saved run · … · AI-generated" naming a
+  // model and a date it did not come from.
+  if (elements.provenanceEl) {
+    elements.provenanceEl.textContent = '';
+    elements.provenanceEl.hidden = true;
+  }
 
   // `summary` is set via textContent — it is prose, never markup, and never
   // needs to reach innerHTML at all.
@@ -225,4 +237,50 @@ export function renderAnalysis(result, elements, T) {
     li.textContent = s;
     elements.strengthsListEl.appendChild(li);
   }
+}
+
+/**
+ * Renders a saved sample into the live result panel: the same
+ * renderAnalysis() a live result takes (same clamps, same escaping), then
+ * the provenance line SampleResult.astro prints over the static frame, from
+ * the same sampleProvenance(). Owner decision 8: saved output is shown only
+ * labelled AI-generated and naming its model, wherever it is shown. Written
+ * with textContent and a <br> element, never innerHTML: every value comes
+ * from the sample file, which holds model output.
+ *
+ * @param {{ result?: unknown, date?: unknown, servedBy?: unknown, promptVersion?: unknown, translated?: unknown }} sample
+ * @param {ResultElements & { provenanceEl: HTMLElement }} elements
+ * @param {Parameters<typeof renderAnalysis>[2] & Parameters<typeof sampleProvenance>[1]} T
+ */
+export function renderSample(sample, elements, T) {
+  renderAnalysis(/** @type {any} */ (sample?.result), elements, T);
+  const { label, translated } = sampleProvenance(sample, T);
+  const el = elements.provenanceEl;
+  el.textContent = label;
+  if (translated) {
+    el.appendChild(document.createElement('br'));
+    el.appendChild(document.createTextNode(translated));
+  }
+  el.hidden = false;
+}
+
+/**
+ * Finds one sample in the JSON the page embedded at build time
+ * (Analyzer.astro's #sample-data, written from src/lib/samples.js). No
+ * fetch: the page already holds its own language's samples, and only those.
+ * Malformed JSON or an unknown id gives null, never a throw.
+ *
+ * @param {string | undefined} json
+ * @param {string} id
+ * @returns {Record<string, unknown> | null}
+ */
+export function pickSample(json, id) {
+  let list;
+  try {
+    list = JSON.parse(json ?? '');
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(list)) return null;
+  return list.find((s) => s && typeof s === 'object' && s.id === id) ?? null;
 }

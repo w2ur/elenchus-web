@@ -7,11 +7,13 @@ import ToolHero from '../../components/ToolHero.astro';
 import Layout from '../../layouts/Layout.astro';
 import { ELENCHUS_PROXY_URL, ELENCHUS_WEB_KEY, TURNSTILE_SITE_KEY } from '../../lib/config.js';
 import { landingCopy } from '../../lib/pageCopy.js';
+import { frontPageSamples } from '../../lib/samples.js';
 
 const C = landingCopy.fr;
+const { shared, examples } = frontPageSamples('fr');
 ---
 
-<Layout title={C.title} description={C.description} lang="fr" path="/">
+<Layout title={C.title} description={C.description} lang="fr" path="/" wide={shared !== null}>
   <ToolHero
     slot="band"
     eyebrow={C.heroEyebrow}
@@ -25,6 +27,8 @@ const C = landingCopy.fr;
     webKey={ELENCHUS_WEB_KEY}
     turnstileSiteKey={TURNSTILE_SITE_KEY}
     showHeading={false}
+    shared={shared}
+    examples={examples}
   />
   <Landing lang="fr" />
 </Layout>

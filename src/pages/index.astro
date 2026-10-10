@@ -15,11 +15,15 @@ import Layout from '../layouts/Layout.astro';
 // /analyze does.
 import { ELENCHUS_PROXY_URL, ELENCHUS_WEB_KEY, TURNSTILE_SITE_KEY } from '../lib/config.js';
 import { landingCopy } from '../lib/pageCopy.js';
+import { frontPageSamples } from '../lib/samples.js';
 
 const C = landingCopy.en;
+// Build time, this language's files only (src/lib/samples.js). With none
+// frozen yet, both are empty and the page renders no slot and no chips.
+const { shared, examples } = frontPageSamples('en');
 ---
 
-<Layout title={C.title} description={C.description} lang="en" path="/">
+<Layout title={C.title} description={C.description} lang="en" path="/" wide={shared !== null}>
   <ToolHero
     slot="band"
     eyebrow={C.heroEyebrow}
@@ -33,6 +37,8 @@ const C = landingCopy.en;
     webKey={ELENCHUS_WEB_KEY}
     turnstileSiteKey={TURNSTILE_SITE_KEY}
     showHeading={false}
+    shared={shared}
+    examples={examples}
   />
   <Landing lang="en" />
 </Layout>

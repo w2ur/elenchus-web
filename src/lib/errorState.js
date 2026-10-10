@@ -98,7 +98,7 @@ export function selectFailureState(outcome) {
  * has simply spent today's allowance. Those get no alarm-red box — see the
  * `.is-dry-state` CSS class applied alongside this flag, which trades the
  * red `.error-message` treatment for the same quiet, informational one
- * `.notice` already uses for the standing free-tier disclosure.
+ * `.notice` uses for the bookmarklet's handoff message.
  *
  * Whether the Retry button is offered is a SEPARATE question, answered by
  * `canRetry()` below — the two sets used to be the same one and are not

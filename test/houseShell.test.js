@@ -776,11 +776,22 @@ describe('the front page does not reflow its own form when fonts finish loading'
 // Task 2/3 follow-up: the print sheet was written before Task 3 moved the
 // landing content below the analyzer and before a printed RESULT existed to
 // look at, so neither had ever been checked against it.
+// Regression (task E2): `.export-row { display: flex }` outranks the UA
+// [hidden] rule, so hiding the row for a loaded example left all three export
+// buttons on screen (measured in Chrome at 1440).
+describe('the export row can be hidden', () => {
+  it('[hidden] wins over the row\'s own display', () => {
+    expect(ruleBody(css, '.export-row[hidden] {')).toMatch(/display:\s*none/);
+  });
+});
+
 describe('print: a printed RESULT carries the analysis, not the whole site', () => {
   const print = css.slice(css.indexOf('@media print'));
 
   it('hides the landing sections and the "analyze again" button, not just the chrome/form', () => {
-    for (const sel of ['#landing-content', '#new-analysis-btn']) {
+    // .first-screen-sample (task E2): the saved run beside the card is not
+    // the result being printed.
+    for (const sel of ['#landing-content', '#new-analysis-btn', '.first-screen-sample']) {
       expect(print).toMatch(new RegExp(`${sel.replace(/[.#]/g, '\\$&')}[^}]*display:\\s*none`));
     }
   });

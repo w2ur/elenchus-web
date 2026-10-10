@@ -57,8 +57,8 @@ beforeAll(async () => {
 });
 
 /** @returns {Promise<{ html: string, doc: Document, frame: Element }>} */
-async function render(s) {
-  const html = await container.renderToString(SampleResult, { props: { sample: s } });
+async function render(s, extra = {}) {
+  const html = await container.renderToString(SampleResult, { props: { sample: s, ...extra } });
   const doc = new JSDOM(`<!doctype html><body>${html}</body>`).window.document;
   return { html, doc, frame: doc.querySelector('.house-sample') };
 }
@@ -90,6 +90,22 @@ describe('SampleResult.astro', () => {
     expect(label).toContain("Texte traduit de l'original anglais");
     expect(frame.getAttribute('lang')).toBe('fr');
     expect(frame.querySelector('h3').textContent).toBe(strings.fr.summaryHeading);
+  });
+
+  it('carries the false-premises caveat next to the score', async () => {
+    const { frame } = await render(sample());
+    expect(frame.querySelector('.result-summary-card .score-caveat').textContent).toBe(strings.en.scoreCaveat);
+  });
+
+  // Beside the input card the frame sits directly under the page's h1, where
+  // h3s broke the heading order (axe heading-order, Lighthouse on / with a
+  // sample present, task E2).
+  it('takes h2 headings when asked, h3 by default', async () => {
+    const two = (await render(sample(), { headingLevel: 2 })).frame;
+    expect(two.querySelectorAll('h2.eyebrow').length).toBeGreaterThan(0);
+    expect(two.querySelector('h3')).toBeNull();
+    const three = (await render(sample())).frame;
+    expect(three.querySelector('h2')).toBeNull();
   });
 
   it('shows the no-flaws line when the saved run has none', async () => {

@@ -140,15 +140,17 @@ challenge's own console probing. Accepted noise, not this site's error. The
 capture's console stays empty.
 
 The front page (`src/pages/index.astro` + `src/pages/fr/index.astro`) IS the
-analyzer: `<ToolHero>` (band, title, the "does not
-fact-check" lede, chips), then `<Analyzer>` (paste box, Turnstile widget,
-results panel, the enum clamp on model output), then `<Landing>` (the
-remaining ways-to-use-it / what-you-get / limits / privacy content).
+analyzer: `<ToolHero>` (band, title, the two-line "does not fact-check"
+lede, chips), then `<Analyzer>` (input card: example chips, paste box,
+counter · free-tier line · Analyze, Turnstile under it; the saved run beside
+it from 1024px; results panel), then `<Landing>`. **`src/lib/samples.js`
+runs in page frontmatter only**: its glob would put both languages in the
+client bundle. No sample files: no slot, no chips.
 `src/pages/analyze.astro` and `src/pages/fr/analyze.astro` still exist —
 `test/configFailLoud.test.js` hard-codes them as the build-time env gate —
 but now carry a `noindex` meta and a forced Netlify 301 to the front page
 (`netlify.toml`); they compose the same `Analyzer` component with no
-`ToolHero` above it. The bookmarklet install page is
+`ToolHero`. The bookmarklet install page is
 `src/pages/bookmarklet.astro` + `src/pages/fr/bookmarklet.astro` over
 `src/components/BookmarkletInstall.astro`, and its built `javascript:` URL
 now targets the front page, not `/analyze`. `src/lib/clamp.js`,
@@ -409,12 +411,9 @@ load the `elenchus-web-palette` skill before changing one.
 `scripts/check-labels-sync.sh` exits 1 when the severity/score label tables
 in `src/lib/strings.js` drift from the extension's `~/Dev/elenchus/i18n/
 strings.js`, and exits 2 when either file is missing or unreadable. It
-compares only `severities`/`scores` in both languages — never
-`freeTierNoticeText`/`freeTierNoticeLink`/`freeTierNoticeEnd`, which
-deliberately diverge from the extension's wording (this site has no settings
-page for the extension's link to point at) and would red on every run if
-compared. **This check is advisory** — this repo has no CI yet, and see
-"Visibility" above before adding a gate.
+compares only `severities`/`scores`: the free-tier copy diverges from the
+extension's on purpose and would red every run. **This check is advisory** —
+this repo has no CI yet, and see "Visibility" above before adding a gate.
 
 ## Build
 
