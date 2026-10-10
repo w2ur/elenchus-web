@@ -58,7 +58,7 @@ const provenance = sampleProvenance(sample, T);
     <p class="score-caveat">{T.scoreCaveat}</p>
   </div>
 
-  <H class="eyebrow">{T.flawsHeading} <span class="count-badge">{view.flawsCount}</span></H>
+  <H class="eyebrow">{T.flawsHeading}{" "}<span class="count-badge">{view.flawsCount}</span></H>
   {view.flaws.length === 0 ? (
     <p class="no-flaws">{T.noFlaws}</p>
   ) : (
