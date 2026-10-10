@@ -1,0 +1,68 @@
+---
+// The method band: four panels, one per step of what the analysis does,
+// each a small contour drawing over a caption and one line. Copy is
+// pageCopy.js `method` (both languages side by side).
+//
+// The drawings are the house contour language, not icons from a set: panels
+// 1 and 4 reuse the bloom's own rings (Analyzer.astro's .house-bloom paths,
+// rescaled into a 64-unit box), 2 and 3 are open contour lines in the same
+// stroke. All four draw in `currentColor` and fill nothing but a summit dot,
+// so they follow --link in both schemes with no per-scheme rule, and they
+// are decorative (aria-hidden): the caption under each carries the meaning.
+import { landingCopy } from '../lib/pageCopy.js';
+
+interface Props {
+  lang: 'en' | 'fr';
+}
+
+const { lang } = Astro.props;
+const C = landingCopy[lang];
+---
+
+<h2 class="section-heading">{C.methodHeading}</h2>
+<ol class="method-band">
+  {C.method.map((step, i) => (
+    <li class="method-panel">
+      <svg class="method-art" width="56" height="56" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        {i === 0 && (
+          <>
+            <path d="M32 59C32 59 11 53 8 35C5 17 20 8 32 5C44 2 59 11 56 29C53 47 32 59 32 59Z" />
+            <path d="M32 47C32 47 19.25 42.5 17.75 32C16.25 21.5 25.25 15.5 32 14C38.75 12.5 47.75 18.5 46.25 29C44.75 39.5 32 47 32 47Z" />
+            <path d="M32 35.75C32 35.75 26.3 33.8 25.7 29.75C25.1 25.7 28.25 23 32 22.25C35.75 21.5 38.9 24.5 38.45 28.7C38 32.9 32 35.75 32 35.75Z" />
+            <circle cx="32" cy="28.75" r="2.25" fill="currentColor" stroke="none" />
+          </>
+        )}
+        {i === 1 && (
+          <>
+            <path d="M6 52C16 46 26 54 36 49C46 44 52 50 58 47" />
+            <path d="M10 39C18 34 28 40 36 36C44 32 50 36 54 34" />
+            <path d="M16 26C22 22 30 27 36 24C42 21 46 24 50 22" />
+            <path d="M22 58L28 44L31 31L34 14" stroke-dasharray="2 3.5" />
+            <circle cx="34" cy="11" r="2.25" fill="currentColor" stroke="none" />
+          </>
+        )}
+        {i === 2 && (
+          <>
+            <path d="M18 50C10 50 6 44 7 37C8 30 14 27 20 28C26 29 29 35 28 41C27 47 24 50 18 50Z" />
+            <path d="M18 44C14.5 44 12.5 41 13 37.5C13.5 34 16 33 18.5 33.5C21 34 22.5 37 22 40C21.5 43 20.5 44 18 44Z" />
+            <path d="M46 50C40 50 36 46 36 40C36 34 40 30 46 30C52 30 57 34 56 41C55 47 52 50 46 50Z" />
+            <path d="M46 44C43 44 41 42 41 39.5C41 37 43 35 46 35C49 35 51 37 50.5 40C50 42.5 48.5 44 46 44Z" />
+            <path d="M32 38V12" />
+            <path d="M32 12L43 16L32 20" />
+          </>
+        )}
+        {i === 3 && (
+          <>
+            <path d="M32 46.6C32 46.6 15.2 41.8 12.8 27.4C10.4 13 22.4 5.8 32 3.4C41.6 1 53.6 8.2 51.2 22.6C48.8 37 32 46.6 32 46.6Z" />
+            <path d="M32 37C32 37 21.8 33.4 20.6 25C19.4 16.6 26.6 11.8 32 10.6C37.4 9.4 44.6 14.2 43.4 22.6C42.2 31 32 37 32 37Z" />
+            <path d="M32 28C32 28 27.4 26.4 27 23.2C26.5 20 29 17.8 32 17.2C35 16.6 37.5 19 37.2 22.4C36.8 25.7 32 28 32 28Z" />
+            <path d="M10 57H54" />
+            <path d="M10 54V60M32 54V60M54 54V60" />
+          </>
+        )}
+      </svg>
+      <h3 class="method-caption">{step.caption}</h3>
+      <p class="method-line">{step.line}</p>
+    </li>
+  ))}
+</ol>

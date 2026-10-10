@@ -35,9 +35,11 @@ describe('landingCopy.ways', () => {
 // Regression (design audit 2026-10-09): em-dash bursts across the front
 // page — two in the bookmarklet card, one each in the lede, a "What you get"
 // item and the limits paragraph. At most one per block, and none in the
-// blocks the audit named.
+// blocks the audit named. The "What you get" list became the method band and
+// the example cards in E3; their lines are covered here and, with no em dash
+// at all, in test/examplesPage.test.js.
 describe('front-page copy: em-dashes', () => {
-  const blocks = (C) => [C.heroLede, ...C.getItems, ...C.ways.map((w) => w.body), C.limitsText];
+  const blocks = (C) => [C.heroLede, ...C.method.map((m) => m.line), ...C.ways.map((w) => w.body), C.limitsText];
   const dashes = (s) => (s.match(/—/g) ?? []).length;
 
   it.each(['en', 'fr'])('%s: no visible block carries more than one em-dash', (lang) => {
@@ -46,7 +48,7 @@ describe('front-page copy: em-dashes', () => {
 
   it.each(['en', 'fr'])('%s: the blocks the audit named carry none', (lang) => {
     const C = landingCopy[lang];
-    for (const b of [C.heroLede, C.getItems[3], C.ways[0].body, C.limitsText]) {
+    for (const b of [C.heroLede, C.ways[0].body, C.limitsText]) {
       expect(dashes(b), b).toBe(0);
     }
   });

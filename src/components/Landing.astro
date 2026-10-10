@@ -8,18 +8,40 @@
 // analyzer itself, band first, and CLAUDE.md's rule that the fact-check
 // claim precede every call to action means it belongs there, above the
 // paste box, not further down a page it no longer opens. What is left here
-// is the rest of the landing content: the two other ways to use the tool, what
-// you get back, the free-tier limits and the privacy/house links.
-import { landingCopy } from '../lib/pageCopy.js';
+// is the rest of the landing content: the method band, what you get back
+// (three cards into the Examples page), the two other ways to use the tool,
+// the free-tier limits and the privacy/house links.
+//
+// Section headings are sentence-case <h2 class="section-heading">, not
+// eyebrows (owner decision 18, 2026-10-10): an uppercase kicker over each
+// block read as a label with no heading under it.
+import MethodBand from './MethodBand.astro';
+import { analysisView } from '../lib/render.js';
+import { examplesCopy, landingCopy } from '../lib/pageCopy.js';
+import { EXAMPLE_IDS } from '../lib/samples.js';
 import { strings } from '../lib/strings.js';
 
 interface Props {
   lang: 'en' | 'fr';
+  /** This language's saved runs (samples.js frontPageSamples), possibly none. */
+  examples?: { id: string; title: string; result?: unknown }[];
 }
 
-const { lang } = Astro.props;
+const { lang, examples = [] } = Astro.props;
 const C = landingCopy[lang];
+const E = examplesCopy[lang];
 const T = strings[lang];
+
+// One card per example id, in the chips' order. The kind line is static
+// copy, so a card exists before its run does and its anchor on the Examples
+// page always resolves; the run's own title and score join it once the file
+// is there.
+const examplesBase = lang === 'fr' ? '/fr/examples/' : '/examples/';
+const cards = EXAMPLE_IDS.map((id) => {
+  const sample = examples.find((s) => s.id === id);
+  const view = sample ? analysisView(sample.result, T) : null;
+  return { id, href: `${examplesBase}#${id}`, ...E.kinds[id], title: sample?.title ?? null, view };
+});
 
 // Same listing URL and per-language `?hl=` form the analyzer and the
 // portfolio hub already use for this extension.
@@ -43,7 +65,24 @@ const HOUSE_URL = 'https://untilt.app/';
     CTAs included — because ul/h2/p are all visible-by-default in print;
     only the header/nav/form/Turnstile/footer had ever been targeted. */}
 <div id="landing-content">
-  <h2 class="eyebrow">{C.waysHeading}</h2>
+  <MethodBand lang={lang} />
+
+  <h2 class="section-heading">{C.getHeading}</h2>
+  <ul class="ways example-cards">
+    {cards.map((card) => (
+      <li class="way">
+        <a class="card way-card" href={card.href}>
+          <span class="way-title">{card.name}</span>
+          <span class="way-body">{card.body}</span>
+          {card.title && <span class="example-card-title">&ldquo;{card.title}&rdquo;</span>}
+          {card.view && card.view.score !== 'unknown' && <span class={card.view.scoreClass}>{card.view.scoreLabel}</span>}
+          <span class="way-cta">{C.getCta}</span>
+        </a>
+      </li>
+    ))}
+  </ul>
+
+  <h2 class="section-heading">{C.waysHeading}</h2>
   <ul class="ways">
     {
       ways.map((way, i) => (
@@ -86,12 +125,7 @@ const HOUSE_URL = 'https://untilt.app/';
     }
   </ul>
 
-  <h2 class="eyebrow">{C.getHeading}</h2>
-  <ul>
-    {C.getItems.map((item) => <li>{item}</li>)}
-  </ul>
-
-  <h2 class="eyebrow">{C.limitsHeading}</h2>
+  <h2 class="section-heading">{C.limitsHeading}</h2>
   <p>{C.limitsText}</p>
 
   <p class="notice">

@@ -1,6 +1,6 @@
 // @vitest-environment node
 //
-// E3: the Examples page.
+// E3: the Examples page, the front page's example cards and the method band.
 // The components are rendered through Astro's container API (same compiler
 // and escaping as the build; see test/sampleResult.test.js) and parsed with
 // JSDOM, so the assertions read the markup a visitor gets.
@@ -14,7 +14,9 @@ import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { JSDOM } from 'jsdom';
 import { beforeAll, describe, expect, it } from 'vitest';
 import ExamplesPage from '../src/components/ExamplesPage.astro';
-import { examplesCopy } from '../src/lib/pageCopy.js';
+import Landing from '../src/components/Landing.astro';
+import MethodBand from '../src/components/MethodBand.astro';
+import { examplesCopy, landingCopy } from '../src/lib/pageCopy.js';
 import { EXAMPLE_IDS } from '../src/lib/samples.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -103,10 +105,71 @@ describe('the Examples page', () => {
   });
 });
 
-describe('the Examples page copy', () => {
-  it.each(['en', 'fr'])('%s: carries no em dash', (lang) => {
+describe('the front page below the fold', () => {
+  it.each(['en', 'fr'])('%s: three example cards link to their Examples anchors', async (lang) => {
+    const { doc: d } = await doc(Landing, { lang, examples: [] });
+    const base = lang === 'fr' ? '/fr/examples/' : '/examples/';
+    const hrefs = [...d.querySelectorAll('.example-cards a')].map((a) => a.getAttribute('href'));
+    expect(hrefs).toEqual(EXAMPLE_IDS.map((id) => `${base}#${id}`));
+  });
+
+  it('a card carries its run title and score once the run exists', async () => {
+    const { doc: d } = await doc(Landing, { lang: 'en', examples: [sample('3-short', 'en')] });
+    const card = d.querySelector('.example-cards a[href="/examples/#3-short"]');
+    expect(card.querySelector('.example-card-title').textContent).toContain('Synthetic 3-short en');
+    expect(card.querySelector('.score-badge.weak')).not.toBeNull();
+  });
+
+  // Owner decision 18 (2026-10-10): sentence-case headings, no kickers.
+  it.each(['en', 'fr'])('%s: every landing heading is a sentence-case h2, not an eyebrow', async (lang) => {
+    const { doc: d } = await doc(Landing, { lang, examples: [] });
+    const h2s = [...d.querySelectorAll('h2')];
+    expect(h2s.length).toBe(4);
+    for (const h of h2s) {
+      expect(h.className).toBe('section-heading');
+      const t = h.textContent.trim();
+      expect(t[0]).toBe(t[0].toUpperCase());
+      expect(t.slice(1)).not.toBe(t.slice(1).toUpperCase());
+    }
+  });
+
+  it.each(['en', 'fr'])('%s: copy carries no em dash', (lang) => {
+    const C = landingCopy[lang];
     const E = examplesCopy[lang];
-    const all = [E.title, E.description, E.heading, ...E.intro, E.empty, E.missing, E.textLabel, ...Object.values(E.kinds).flatMap((k) => [k.name, k.body])];
+    const all = [
+      C.methodHeading, C.getHeading, C.getCta, ...C.method.flatMap((m) => [m.caption, m.line]),
+      E.title, E.description, E.heading, ...E.intro, E.empty, E.missing, E.textLabel,
+      ...Object.values(E.kinds).flatMap((k) => [k.name, k.body]),
+    ];
     for (const s of all) expect(s, s).not.toMatch(/—/);
+  });
+});
+
+describe('the method band', () => {
+  it('EN captions are the four agreed ones, FR has four too', () => {
+    expect(landingCopy.en.method.map((m) => m.caption)).toEqual([
+      'Finds the conclusion', 'Traces what supports it', 'Flags the gap', 'Scores the whole',
+    ]);
+    expect(landingCopy.fr.method).toHaveLength(4);
+  });
+
+  it('four inline contour drawings, currentColor, decorative, no raster', async () => {
+    const { doc: d } = await doc(MethodBand, { lang: 'en' });
+    const svgs = [...d.querySelectorAll('.method-panel svg')];
+    expect(svgs).toHaveLength(4);
+    for (const svg of svgs) {
+      expect(svg.getAttribute('aria-hidden')).toBe('true');
+      expect(svg.getAttribute('stroke')).toBe('currentColor');
+      expect(svg.getAttribute('fill')).toBe('none');
+      expect(svg.querySelectorAll('path').length).toBeGreaterThan(0);
+      // Only currentColor fills: a hex here would be one scheme's colour.
+      for (const el of svg.querySelectorAll('[fill], [stroke]')) {
+        for (const a of ['fill', 'stroke']) {
+          const v = el.getAttribute(a);
+          if (v !== null) expect(['none', 'currentColor']).toContain(v);
+        }
+      }
+    }
+    expect(d.querySelector('img, image')).toBeNull();
   });
 });

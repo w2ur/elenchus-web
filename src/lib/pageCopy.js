@@ -40,13 +40,23 @@ export const landingCopy = {
       'Elenchus does not check facts. It checks whether each conclusion follows from what came before: circular reasoning, false dilemmas, unsupported leaps.',
     heroChips: ['Any text', 'Nothing to install', 'No account'],
 
-    getHeading: 'What you get back',
-    getItems: [
-      'A summary of what the text is actually arguing.',
-      'An overall reasoning score: strong, moderate or weak.',
-      'Each flaw found, with its severity and the passage it comes from.',
-      'The strengths: what the argument does well.',
+    // The method band: four panels, each a contour drawing and one caption
+    // with one line under it. Product copy, truthful to the prompt
+    // (elenchus-proxy/src/prompt.mjs): it quotes each flaw, rates its
+    // severity, and returns a three-level score plus optional strengths.
+    methodHeading: 'How it reads a text',
+    method: [
+      { caption: 'Finds the conclusion', line: 'What the text is trying to get you to accept.' },
+      { caption: 'Traces what supports it', line: 'The reasons and evidence it offers on the way there.' },
+      { caption: 'Flags the gap', line: 'Each step that does not follow, quoted, with how serious it is.' },
+      { caption: 'Scores the whole', line: 'Strong, moderate or weak, and what the argument does well.' },
     ],
+
+    // Three cards, one per saved run, each linking to its section on the
+    // Examples page. The names and lines come from examplesCopy.kinds, so the
+    // card and the section it opens cannot describe the text differently.
+    getHeading: 'What you get back',
+    getCta: 'See the full run',
 
     // Two cards, not three (design audit 2026-10-09): a "Paste it" card used
     // to lead this list and pointed at the paste box directly above it — the
@@ -97,13 +107,16 @@ export const landingCopy = {
       'Elenchus ne vérifie pas les faits. Il examine si chaque conclusion découle de ce qui la précède : raisonnement circulaire, faux dilemmes, sauts non justifiés.',
     heroChips: ['Tout texte', 'Rien à installer', 'Sans compte'],
 
-    getHeading: 'Ce que vous obtenez',
-    getItems: [
-      'Un résumé de ce que le texte soutient réellement.',
-      'Un score de raisonnement global : solide, modéré ou faible.',
-      'Chaque faille repérée, avec sa gravité et le passage dont elle vient.',
-      'Les points forts : ce que l’argumentation réussit.',
+    methodHeading: 'Comment il lit un texte',
+    method: [
+      { caption: 'Repère la conclusion', line: 'Ce que le texte cherche à vous faire admettre.' },
+      { caption: 'Remonte ce qui la soutient', line: 'Les raisons et les éléments qu’il avance pour y arriver.' },
+      { caption: 'Signale la faille', line: 'Chaque étape qui ne suit pas, citée, avec sa gravité.' },
+      { caption: 'Note l’ensemble', line: 'Solide, modéré ou faible, et ce que l’argument réussit.' },
     ],
+
+    getHeading: 'Ce que vous obtenez',
+    getCta: 'Voir l’analyse complète',
 
     waysHeading: 'Deux autres façons de l’utiliser',
     ways: [

@@ -877,9 +877,8 @@ describe('the eyebrow follows the house contract (§2: Instrument Sans, uppercas
     expect(css).toMatch(/\.tool-hero \.eyebrow,\s*\.tool-hero \.lede\s*\{[^}]*var\(--hero-muted\)/s);
   });
 
-  it('every section heading carries it — Landing, the install page and the results', () => {
+  it('every section heading carries it — the install page and the results', () => {
     for (const [name, src] of [
-      ['Landing.astro', landing],
       ['BookmarkletInstall.astro', bookmarkletInstall],
       ['Analyzer.astro', analyzer],
     ]) {
