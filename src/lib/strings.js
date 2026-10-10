@@ -55,7 +55,12 @@ export const strings = {
     // "#elenchus-web", never written out here: check-privacy-sync.sh
     // (assertion 5) counts the lines of this file naming that key, so even
     // this comment must not spell it.
-    freeTierLine: 'Free tier: model providers may log and train on this text.',
+    // Read as one sentence: freeTierLine, then the freeTierOwnKey link (the
+    // extension's store page), then freeTierEnd. The two halves keep the
+    // advice the old notice gave: no confidential text, or bring your own key.
+    freeTierLine: 'Free tier: model providers may log and train on this text, so avoid confidential text, or',
+    freeTierOwnKey: 'use your own key in the Elenchus extension',
+    freeTierEnd: '.',
     freeTierDetails: 'Details',
 
     // The input card's toolbar. Each chip is labelled with its sample's own
@@ -216,7 +221,9 @@ export const strings = {
       'Cette page dépassait 15 000 caractères : seul le début a été repris. Modifiez le texte ci-dessous si le passage que vous vouliez examiner en est absent.',
 
     // Voir le commentaire du bloc `en`.
-    freeTierLine: 'Version gratuite : les fournisseurs de modèles peuvent enregistrer ce texte et s’en servir pour l’entraînement.',
+    freeTierLine: 'Version gratuite : les fournisseurs de modèles peuvent enregistrer ce texte et s’en servir pour l’entraînement ; évitez donc les textes confidentiels, ou',
+    freeTierOwnKey: 'utilisez votre propre clé dans l’extension Elenchus',
+    freeTierEnd: '.',
     freeTierDetails: 'Détails',
 
     examplesLabel: 'Essayer un exemple',

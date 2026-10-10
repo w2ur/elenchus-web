@@ -105,6 +105,14 @@ describe('Analyzer footer row and result card', () => {
     // lose text pasted into the box. New tab, as the old notice did.
     expect(details.getAttribute('target')).toBe('_blank');
     expect(details.getAttribute('rel')).toBe('noopener');
+    // Regression (final review L): the one-line note dropped the old notice's
+    // advice, "avoid confidential text" and the own-key path. Both are back,
+    // the own-key half linking to the extension's store page.
+    expect(line.textContent).toMatch(lang === 'en' ? /avoid confidential text/ : /évitez donc les textes confidentiels/);
+    const ownKey = [...line.querySelectorAll('a')].find((a) => a.textContent === strings[lang].freeTierOwnKey);
+    expect(ownKey.getAttribute('href')).toBe(`https://chromewebstore.google.com/detail/elenchus/bodfmokjnmkkdobfcnfbplnbplgdbfgl?hl=${lang}`);
+    expect(ownKey.getAttribute('target')).toBe('_blank');
+    expect(line.textContent.replace(/\s+/g, ' ')).toContain(`${strings[lang].freeTierLine} ${strings[lang].freeTierOwnKey}${strings[lang].freeTierEnd} ${strings[lang].freeTierDetails}`);
     // Counter, line and Analyze share the one footer row.
     const footer = doc.querySelector('.input-footer');
     expect(footer.querySelector('#char-count')).not.toBeNull();
@@ -157,7 +165,7 @@ describe('first-screen copy', () => {
 
   it.each(['en', 'fr'])('%s: no em dash in the new first-screen copy', (lang) => {
     const T = strings[lang];
-    for (const s of [T.freeTierLine, T.freeTierDetails, T.examplesLabel, T.scoreCaveat, landingCopy[lang].heroLede]) {
+    for (const s of [T.freeTierLine, T.freeTierOwnKey, T.freeTierEnd, T.freeTierDetails, T.examplesLabel, T.scoreCaveat, landingCopy[lang].heroLede]) {
       expect(s).not.toContain('—');
     }
   });
