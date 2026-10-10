@@ -1,0 +1,41 @@
+{
+  "id": "3-short",
+  "lang": "en",
+  "title": "On founders and mornings",
+  "text": "Every founder I know who made it wakes up at 5am. Meanwhile the ones who sleep in are still stuck. The science on this is settled.",
+  "translated": false,
+  "result": {
+    "summary": "The text presents a weak argument relying on hasty generalization, survivorship bias, and an appeal to authority.",
+    "score": "weak",
+    "flaws": [
+      {
+        "type": "Hasty generalization",
+        "quote": "Every founder I know who made it wakes up at 5am.",
+        "explanation": "The author generalizes from a personal sample of founders to all founders without sufficient evidence.",
+        "severity": "significant"
+      },
+      {
+        "type": "Survivorship bias",
+        "quote": "Meanwhile the ones who sleep in are still stuck.",
+        "explanation": "The author only considers visible failures (those who sleep in and are stuck) while ignoring successful people who sleep in, skewing the comparison.",
+        "severity": "significant"
+      },
+      {
+        "type": "Appeal to authority",
+        "quote": "The science on this is settled.",
+        "explanation": "The claim is backed by a vague reference to 'the science' rather than presenting actual evidence or reasoning.",
+        "severity": "minor"
+      }
+    ],
+    "strengths": []
+  },
+  "servedBy": "nvidia/nemotron-3-super-120b-a12b:free",
+  "requestedModels": [
+    "google/gemma-4-26b-a4b-it:free",
+    "nvidia/nemotron-3-super-120b-a12b:free"
+  ],
+  "promptVersion": "v2",
+  "date": "2026-10-10",
+  "attempt": 1,
+  "rerunReason": null
+}

@@ -1,0 +1,49 @@
+{
+  "id": "2-mixed",
+  "lang": "en",
+  "title": "Why remote work is destroying our industry",
+  "text": "I have now managed remote teams at three companies, and the pattern is unmistakable. In every case, the engineers who worked from home shipped less code, attended fewer design discussions, and were the first to leave when things got difficult. Remote work simply does not function for software teams.\n\nConsider the evidence. Yahoo ended its remote work programme in 2013. IBM recalled thousands of remote staff to offices in 2017. Best Buy abandoned its results-only work environment. Three of the most recognisable names in technology looked at the data available to them and reached the same conclusion. That is not a coincidence; that is a verdict.\n\nThe studies claiming productivity gains deserve little weight. Most of them are produced by researchers who themselves work remotely, or funded by the very companies selling video conferencing software. It is hardly surprising that people whose comfort depends on an answer manage to find it.\n\nThe most vocal advocate of remote work in our own organisation is a junior developer who has never managed anyone, has been with the company for eight months, and by his own admission has not been in the office since March. It is difficult to take seriously a theory of team management advanced by someone with no experience of managing a team.\n\nNone of this is to say people should never work from home. An occasional day is fine. But the idea that a serious engineering organisation can be run without a shared physical space is, on the evidence, wishful thinking.",
+  "translated": false,
+  "result": {
+    "summary": "The argument relies on personal anecdote, selectively chosen corporate examples, and ad hominem dismissals of contrary evidence, making its overall reasoning weak.",
+    "score": "weak",
+    "flaws": [
+      {
+        "type": "Anecdote as proof",
+        "quote": "I have now managed remote teams at three companies, and the pattern is unmistakable. In every case, the engineers who worked from home shipped less code, attended fewer design discussions, and were the first to leave when things got difficult.",
+        "explanation": "The author uses personal experience from a limited number of companies as proof for a universal claim about remote work, which does not establish a general pattern.",
+        "severity": "significant"
+      },
+      {
+        "type": "Cherry-picking",
+        "quote": "Consider the evidence. Yahoo ended its remote work programme in 2013. IBM recalled thousands of remote staff to offices in 2017. Best Buy abandoned its results-only work environment. Three of the most recognisable names in technology looked at the data available to them and reached the same conclusion.",
+        "explanation": "The author selects only companies that discontinued remote work while ignoring many firms that have successfully operated remotely, biasing the evidence.",
+        "severity": "significant"
+      },
+      {
+        "type": "Ad hominem",
+        "quote": "The studies claiming productivity gains deserve little weight. Most of them are produced by researchers who themselves work remotely, or funded by the very companies selling video conferencing software. It is hardly surprising that people whose comfort depends on an answer manage to find it.",
+        "explanation": "The argument attacks the researchers' motives and funding sources instead of addressing the substance of their studies, dismissing evidence based on perceived bias.",
+        "severity": "significant"
+      },
+      {
+        "type": "Ad hominem",
+        "quote": "The most vocal advocate of remote work in our own organisation is a junior developer who has never managed anyone, has been with the company for eight months, and by his own admission has not been in the office since March. It is difficult to take seriously a theory of team management advanced by someone with no experience of managing a team.",
+        "explanation": "The author rejects the advocate's position by focusing on their lack of managerial experience rather than engaging with any arguments they might present.",
+        "severity": "significant"
+      }
+    ],
+    "strengths": [
+      "Acknowledges that occasional remote work can be acceptable, showing a qualified rather than absolute stance."
+    ]
+  },
+  "servedBy": "nvidia/nemotron-3-super-120b-a12b:free",
+  "requestedModels": [
+    "google/gemma-4-26b-a4b-it:free",
+    "nvidia/nemotron-3-super-120b-a12b:free"
+  ],
+  "promptVersion": "v2",
+  "date": "2026-10-10",
+  "attempt": 1,
+  "rerunReason": null
+}

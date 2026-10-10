@@ -1,0 +1,41 @@
+{
+  "id": "3-short",
+  "lang": "fr",
+  "title": "Des fondateurs et des matins",
+  "text": "Tous les fondateurs que je connais et qui ont réussi se lèvent à 5 h du matin. Pendant ce temps, ceux qui font la grasse matinée sont toujours coincés. Sur ce sujet, la science a tranché.",
+  "translated": true,
+  "result": {
+    "summary": "Le raisonnement repose sur une généralisation hâtive basée sur un échantillon personnel, un biais de survie en ne considérant que les fondateurs visibles, et un appel à l'autorité non étayé, ce qui le rend faible.",
+    "score": "weak",
+    "flaws": [
+      {
+        "type": "Généralisation hâtive",
+        "quote": "Tous les fondateurs que je connais et qui ont réussi se lèvent à 5 h du matin.",
+        "explanation": "Cette phrase généralise à tous les fondateurs réussis à partir d'un petit échantillon personnel, ce qui constitue une généralisation hâtive. Un échantillon plus large et représentatif serait nécessaire pour soutenir cette affirmation.",
+        "severity": "significant"
+      },
+      {
+        "type": "Biais de survie",
+        "quote": "Tous les fondateurs que je connais et qui ont réussi se lèvent à 5 h du matin.",
+        "explanation": "L'auteur ne considère que les fondateurs qui ont réussi et sont visibles, ignorant ceux qui se lèvent tôt mais n'ont pas réussi ou ceux qui réussissent autrement, ce qui constitue un biais de survie. Cela fausse la perception de la relation entre l'heure de lever et le succès.",
+        "severity": "significant"
+      },
+      {
+        "type": "Appel à l'autorité",
+        "quote": "Sur ce sujet, la science a tranché.",
+        "explanation": "L'auteur invoque la science comme preuve sans fournir aucune référence ou donnée, remplaçant l'argument par un appel à l'autorité non étayé. Cela affaiblit l'argument car aucune preuve réelle n'est présentée.",
+        "severity": "significant"
+      }
+    ],
+    "strengths": []
+  },
+  "servedBy": "nvidia/nemotron-3-super-120b-a12b:free",
+  "requestedModels": [
+    "google/gemma-4-26b-a4b-it:free",
+    "nvidia/nemotron-3-super-120b-a12b:free"
+  ],
+  "promptVersion": "v2",
+  "date": "2026-10-10",
+  "attempt": 1,
+  "rerunReason": null
+}
