@@ -99,7 +99,13 @@ export function promptVersion(systemPrompt) {
   return m[1];
 }
 
-/** EN input: what the bookmarklet would send from the testbed page, h1 as title. */
+/**
+ * EN input from the testbed page, extracted with the bookmarklet's own
+ * extractText() but NOT identical to what the bookmarklet would send: the h1
+ * is removed first and stored apart as `title`, because the page shows the
+ * title separately (the chip label, the Examples page heading) and repeating
+ * it as the first line of `text` would print it twice.
+ */
 export function loadEnglish(id, testbedDir = TESTBED) {
   const html = readFileSync(join(testbedDir, `${id}.html`), 'utf8');
   const { document } = new JSDOM(html).window;
