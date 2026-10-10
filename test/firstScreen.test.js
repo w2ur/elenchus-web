@@ -99,7 +99,12 @@ describe('Analyzer footer row and result card', () => {
     const { doc } = await render({ lang });
     const line = doc.querySelector('.input-footer .free-tier-line');
     expect(line.textContent).toContain(strings[lang].freeTierLine);
-    expect(line.querySelector('a').getAttribute('href')).toBe(`${strings[lang].privacyUrl}#elenchus-web`);
+    const details = [...line.querySelectorAll('a')].find((a) => a.textContent === strings[lang].freeTierDetails);
+    expect(details.getAttribute('href')).toBe(`${strings[lang].privacyUrl}#elenchus-web`);
+    // Regression (final review K): Details navigated the same tab, which can
+    // lose text pasted into the box. New tab, as the old notice did.
+    expect(details.getAttribute('target')).toBe('_blank');
+    expect(details.getAttribute('rel')).toBe('noopener');
     // Counter, line and Analyze share the one footer row.
     const footer = doc.querySelector('.input-footer');
     expect(footer.querySelector('#char-count')).not.toBeNull();

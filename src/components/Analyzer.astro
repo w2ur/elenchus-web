@@ -64,7 +64,9 @@ const sampleData = examples.length > 0 ? JSON.stringify(examples.map(clientSampl
 // The free-tier note's Details link: the Elenchus web section of the one
 // house privacy policy. Built from T.privacyUrl, never written out as a
 // second literal: check-privacy-sync.sh (assertion 5, elenchus repo) counts
-// the privacyUrl entries in strings.js and would not see a copy here.
+// the privacyUrl entries in strings.js and would not see a copy here. It opens
+// a new tab, as the old notice's link did: in the same tab, Back may not
+// restore text pasted into the box.
 const privacyDetailsUrl = `${T.privacyUrl}#elenchus-web`;
 
 // The failure states' "Chrome extension" link (errorState.js, through
@@ -132,7 +134,7 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
           <span id="char-count">{T.charCount(0, MAX_TEXT_LENGTH)}</span>
           <span id="length-warning" hidden></span>
         </div>
-        <p class="free-tier-line">{T.freeTierLine} <a href={privacyDetailsUrl}>{T.freeTierDetails}</a></p>
+        <p class="free-tier-line">{T.freeTierLine} <a href={privacyDetailsUrl} target="_blank" rel="noopener">{T.freeTierDetails}</a></p>
       </div>
       <button id="analyze-btn" class="btn-primary" type="submit" aria-describedby="length-warning" disabled>{T.analyzeBtn}</button>
     </div>
