@@ -62,6 +62,9 @@ describe('the Examples page', () => {
     expect(d.querySelectorAll('.house-sample')).toHaveLength(0);
     // The page-level note stands for all three; no per-section repeat.
     expect(d.querySelectorAll('.example-missing')).toHaveLength(0);
+    // Regression: 90fb60f — the intro described three saved runs above a
+    // notice saying none exist.
+    expect(d.querySelectorAll('.examples-intro')).toHaveLength(0);
   });
 
   it('with some runs, shows each in full and names the missing one', async () => {
@@ -69,6 +72,7 @@ describe('the Examples page', () => {
     const { doc: d } = await doc(ExamplesPage, { lang: 'en', ids: EXAMPLE_IDS, samples });
     expect(d.querySelector('.notice')).toBeNull();
     expect(d.querySelectorAll('.house-sample')).toHaveLength(2);
+    expect(d.querySelectorAll('.examples-intro')).toHaveLength(examplesCopy.en.intro.length);
     const mixed = d.getElementById('2-mixed');
     expect(mixed.querySelector('.example-text-title').textContent).toBe('Synthetic 2-mixed en');
     // Paragraph breaks survive: two <p> in the text, not one run-on block.

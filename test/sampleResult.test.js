@@ -108,6 +108,14 @@ describe('SampleResult.astro', () => {
     expect(three.querySelector('h2')).toBeNull();
   });
 
+  // Regression: 8541afa — Astro dropped the space before the count span, so
+  // the saved run read "FLAWS(3)".
+  it('separates the Flaws heading from its count', async () => {
+    const { frame } = await render(sample());
+    const heading = [...frame.querySelectorAll('.eyebrow')].find((h) => h.querySelector('.count-badge'));
+    expect(heading.textContent).toBe(`${strings.en.flawsHeading} (1)`);
+  });
+
   it('shows the no-flaws line when the saved run has none', async () => {
     const { frame } = await render(sample({ result: { summary: 's', score: 'strong', flaws: [], strengths: [] } }));
     expect(frame.querySelector('.no-flaws').textContent).toBe(strings.en.noFlaws);
