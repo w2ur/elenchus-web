@@ -232,6 +232,14 @@ describe('the contract header', () => {
     expect(nav).toMatch(/chromewebstore\.google\.com/);
     expect(nav).toMatch(/hl=\$\{lang\}|hl=\{lang\}/);
   });
+  it('the Examples URL comes from strings.js navExamplesHref, never a hand-built literal', () => {
+    const nav = readFileSync('src/components/ToolNav.astro', 'utf-8');
+    const landing = readFileSync('src/components/Landing.astro', 'utf-8');
+    for (const src of [nav, landing]) {
+      expect(src).toMatch(/\.navExamplesHref/);
+      expect(src).not.toMatch(/'\/(fr\/)?examples\/'/);
+    }
+  });
   it('the mobile bar exists, is the same four items, and is hidden on desktop', () => {
     expect(css).toMatch(/\.tool-nav-bar\s*\{[^}]*position:\s*fixed;[^}]*bottom:\s*0/s);
     expect(css).toMatch(/@media \(min-width: 768px\)\s*\{[^}]*\.tool-nav-bar\s*\{[^}]*display:\s*none/s);

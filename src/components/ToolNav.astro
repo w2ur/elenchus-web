@@ -19,7 +19,6 @@ interface Props {
 const { lang = 'en', path } = Astro.props;
 const t = strings[lang] ?? strings.en;
 
-const examplesHref = lang === 'fr' ? '/fr/examples/' : '/examples/';
 const bookmarkletHref = lang === 'fr' ? '/fr/bookmarklet/' : '/bookmarklet/';
 
 // The Chrome Web Store listing, `?hl=` matching the per-language form used
@@ -34,7 +33,7 @@ const CHROME_WEB_STORE_URL = `https://chromewebstore.google.com/detail/elenchus/
 // English-canonical value regardless of `lang`. That also means the check
 // keeps working unchanged once sub-project 2c flips navAnalyseHref to '/'.
 const isAnalyseActive = path === strings.en.navAnalyseHref;
-const isExamplesActive = path === '/examples/';
+const isExamplesActive = path === strings.en.navExamplesHref;
 const isBookmarkletActive = path === '/bookmarklet/';
 ---
 
@@ -57,7 +56,7 @@ const isBookmarkletActive = path === '/bookmarklet/';
   {/* A page of saved runs: a document with ruled lines, drawn as ONE path
       (several subpaths) so test/houseShell.test.js's d= count stays one per
       icon. */}
-  <a href={examplesHref} aria-current={isExamplesActive ? 'page' : undefined}>
+  <a href={t.navExamplesHref} aria-current={isExamplesActive ? 'page' : undefined}>
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <path d="M14 3H7a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7ZM14 3v4h4M9 12h6M9 16h4"></path>
     </svg>

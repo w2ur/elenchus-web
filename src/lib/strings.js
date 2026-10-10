@@ -100,6 +100,7 @@ export const strings = {
     // is `/` since sub-project 2c, Task 3 made the front page the analyzer.
     navLabel: 'Elenchus',
     navAnalyseHref: '/',
+    navExamplesHref: '/examples/',
     // US spelling, like every other English string here ("Analyze" button,
     // "analyzing"): the nav said "Analyse" beside an "Analyze" button.
     navAnalyse: 'Analyze',
@@ -241,6 +242,7 @@ export const strings = {
     // reader clicks — it must land on the French front page.
     navLabel: 'Elenchus',
     navAnalyseHref: '/fr/',
+    navExamplesHref: '/fr/examples/',
     navAnalyse: 'Analyser',
     navExamples: 'Exemples',
     navBookmarklet: 'Bookmarklet',

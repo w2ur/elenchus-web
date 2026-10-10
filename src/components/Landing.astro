@@ -39,10 +39,9 @@ const T = strings[lang];
 // AI-generated label and model name (owner decision 8), and that label does
 // not fit a three-across card. The full run, label included, is one click
 // away on the Examples page.
-const examplesBase = lang === 'fr' ? '/fr/examples/' : '/examples/';
 const cards = EXAMPLE_IDS.flatMap((id) => {
   const sample = examples.find((s) => s.id === id);
-  return sample ? [{ id, href: `${examplesBase}#${id}`, ...E.kinds[id], title: sample.title }] : [];
+  return sample ? [{ id, href: `${T.navExamplesHref}#${id}`, ...E.kinds[id], title: sample.title }] : [];
 });
 
 // Same listing URL and per-language `?hl=` form the analyzer and the
