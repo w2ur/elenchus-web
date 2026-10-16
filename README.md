@@ -195,3 +195,7 @@ them there.
 Netlify builds and deploys automatically on push to `main` (`netlify.toml`:
 `npm run build`, publish `dist`). Netlify project creation, environment
 variables and DNS are the owner's job, not this repo's.
+
+## License
+
+All rights reserved. The fonts under `public/fonts/` keep their own SIL Open Font License 1.1.
